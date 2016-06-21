@@ -1,7 +1,7 @@
-import fs from 'fs';
 import path from 'path';
 import {serial as test} from 'ava';
 import tempfile from 'tempfile';
+import del from 'del';
 import Conf from './';
 
 const fixture = '🦄';
@@ -127,11 +127,9 @@ test('`projectName` option', t => {
 });
 
 test('ensure `.store` is always an object', t => {
-	const tmp = tempfile();
-	const conf = new Conf({cwd: tmp});
-	try {
-		fs.unlinkSync(tmp);
-	} catch (err) {}
+	const cwd = tempfile();
+	const conf = new Conf({cwd});
+	del.sync(cwd, {force: true});
 	t.notThrows(() => conf.get('foo'));
 });
 
@@ -148,4 +146,5 @@ test.only('automatic `projectName` inference', t => {
 	conf.set('foo', fixture);
 	t.is(conf.get('foo'), fixture);
 	t.true(conf.path.includes('conf'));
+	del.sync(conf.path, {force: true});
 });
