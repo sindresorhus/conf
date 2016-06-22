@@ -111,19 +111,17 @@ test('`configName` option', t => {
 	t.is(conf.get('foo'), undefined);
 	conf.set('foo', fixture);
 	t.is(conf.get('foo'), fixture);
-	t.is(path.basename(conf.path), configName);
+	t.is(path.basename(conf.path, '.json'), configName);
 });
 
 test('`projectName` option', t => {
-	const projectName = 'project-name-123';
-	const conf = new Conf({
-		cwd: tempfile(),
-		projectName
-	});
+	const projectName = 'conf-fixture-project-name';
+	const conf = new Conf({projectName});
 	t.is(conf.get('foo'), undefined);
 	conf.set('foo', fixture);
 	t.is(conf.get('foo'), fixture);
 	t.true(conf.path.includes(projectName));
+	del.sync(conf.path, {force: true});
 });
 
 test('ensure `.store` is always an object', t => {
@@ -141,7 +139,7 @@ test('instance is iterable', t => {
 	t.deepEqual(Array.from(t.context.conf), [['foo', fixture], ['bar', fixture]]);
 });
 
-test.only('automatic `projectName` inference', t => {
+test('automatic `projectName` inference', t => {
 	const conf = new Conf();
 	conf.set('foo', fixture);
 	t.is(conf.get('foo'), fixture);
