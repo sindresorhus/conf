@@ -8,7 +8,7 @@ const envPaths = require('env-paths');
 
 const obj = () => Object.create(null);
 
-// get the uncached parent
+// prevent caching of this module so module.parent is always accurate
 delete require.cache[__filename];
 const parentDir = path.dirname(module.parent.filename);
 
