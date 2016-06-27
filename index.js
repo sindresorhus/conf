@@ -33,6 +33,9 @@ class Conf {
 	get(key) {
 		return dotProp.get(this.store, key);
 	}
+	getAll() {
+		return dotProp.get(this.store);
+	}
 	set(key, val) {
 		const store = this.store;
 

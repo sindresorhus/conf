@@ -92,6 +92,10 @@ Set multiple items at once.
 
 Get an item.
 
+#### .getAll()
+
+Get all items.
+
 #### .has(key)
 
 Check if an item exists.
