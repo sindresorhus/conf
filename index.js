@@ -15,9 +15,13 @@ const parentDir = path.dirname(module.parent.filename);
 class Conf {
 	constructor(opts) {
 		const pkgPath = pkgUp.sync(parentDir);
-		opts = Object.assign({projectName: require(pkgPath).name}, opts);
 
-		if (!opts.projectName) {
+		// If the package.json was not found, avoid breaking with `require(null)`.
+		if (pkgPath) {
+			opts = Object.assign({projectName: require(pkgPath).name}, opts);
+		}
+
+		if (!opts || !opts.projectName) {
 			throw new Error('Project name could not be inferred. Please specify the `projectName` option.');
 		}
 
