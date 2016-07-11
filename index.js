@@ -17,7 +17,7 @@ class Conf {
 		const pkgPath = pkgUp.sync(parentDir);
 		opts = Object.assign({projectName: require(pkgPath).name}, opts);
 
-		if (!opts.projectName) {
+		if (!opts.projectName && !opts.cwd) {
 			throw new Error('Project name could not be inferred. Please specify the `projectName` option.');
 		}
 

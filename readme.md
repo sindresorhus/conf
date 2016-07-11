@@ -72,6 +72,8 @@ Default: System default [user config directory](https://github.com/sindresorhus/
 
 **You most likely don't need this.**
 
+Overrides `projectName`.
+
 The only use-case I can think of is having the config located in the app directory or on some external storage.
 
 ### Instance
