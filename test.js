@@ -2,6 +2,7 @@ import path from 'path';
 import {serial as test} from 'ava';
 import tempfile from 'tempfile';
 import del from 'del';
+import pkgUp from 'pkg-up';
 import Conf from './';
 
 const fixture = '🦄';
@@ -160,4 +161,16 @@ test('`cwd` option overrides `projectName` option', t => {
 	conf.set('foo', fixture);
 	t.is(conf.get('foo'), fixture);
 	del.sync(conf.path, {force: true});
+});
+
+test('safely handle missing package.json', t => {
+	const pkgUpSyncOrig = pkgUp.sync;
+	pkgUp.sync = () => null;
+
+	let conf;
+	t.notThrows(() => {
+		conf = new Conf({projectName: 'conf-fixture-project-name'});
+	});
+	del.sync(conf.path, {force: true});
+	pkgUp.sync = pkgUpSyncOrig;
 });
