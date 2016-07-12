@@ -148,6 +148,21 @@ test('automatic `projectName` inference', t => {
 	del.sync(conf.path, {force: true});
 });
 
+test('`cwd` option overrides `projectName` option', t => {
+	const cwd = tempfile();
+
+	let conf;
+	t.notThrows(() => {
+		conf = new Conf({cwd, projectName: ''});
+	});
+
+	t.true(conf.path.startsWith(cwd));
+	t.is(conf.get('foo'), undefined);
+	conf.set('foo', fixture);
+	t.is(conf.get('foo'), fixture);
+	del.sync(conf.path, {force: true});
+});
+
 test('safely handle missing `project.json`', t => {
 	const pkgUpSyncOrig = pkgUp.sync;
 	pkgUp.sync = () => null;

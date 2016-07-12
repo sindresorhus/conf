@@ -16,12 +16,12 @@ class Conf {
 	constructor(opts) {
 		const pkgPath = pkgUp.sync(parentDir);
 
-		// If the package.json was not found, avoid breaking with `require(null)`.
-		if (pkgPath) {
-			opts = Object.assign({projectName: require(pkgPath).name}, opts);
-		}
+		opts = Object.assign({
+			// if the package.json was not found, avoid breaking with `require(null)`
+			projectName: pkgPath && require(pkgPath).name
+		}, opts);
 
-		if (!opts || !opts.projectName) {
+		if (!opts.projectName && !opts.cwd) {
 			throw new Error('Project name could not be inferred. Please specify the `projectName` option.');
 		}
 
