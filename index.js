@@ -25,7 +25,6 @@ class Conf {
 			throw new Error('Project name could not be inferred. Please specify the `projectName` option.');
 		}
 
-		// add some tests for these options
 		opts = Object.assign({
 			cwd: envPaths(opts.projectName).config,
 			configName: 'config'
