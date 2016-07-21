@@ -26,9 +26,12 @@ class Conf {
 		}
 
 		opts = Object.assign({
-			cwd: envPaths(opts.projectName).config,
 			configName: 'config'
 		}, opts);
+
+		if (!opts.cwd) {
+			opts.cwd = envPaths(opts.projectName).config;
+		}
 
 		this.path = path.resolve(opts.cwd, `${opts.configName}.json`);
 		this.store = Object.assign(obj(), opts.defaults, this.store);

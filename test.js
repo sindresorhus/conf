@@ -171,6 +171,20 @@ test('safely handle missing package.json', t => {
 	t.notThrows(() => {
 		conf = new Conf({projectName: 'conf-fixture-project-name'});
 	});
+
+	del.sync(conf.path, {force: true});
+	pkgUp.sync = pkgUpSyncOrig;
+});
+
+test('handle `cwd` being set and `projectName` not being set', t => {
+	const pkgUpSyncOrig = pkgUp.sync;
+	pkgUp.sync = () => null;
+
+	let conf;
+	t.notThrows(() => {
+		conf = new Conf({cwd: 'conf-fixture-cwd'});
+	});
+
 	del.sync(conf.path, {force: true});
 	pkgUp.sync = pkgUpSyncOrig;
 });
