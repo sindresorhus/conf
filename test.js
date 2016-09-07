@@ -43,6 +43,10 @@ test('.set() with object', t => {
 	t.is(t.context.conf.get('baz.foo.bar'), 'baz');
 });
 
+test('.set() invalid key', t => {
+	t.throws(() => t.context.conf.set(1, 'unicorn'), 'Expected `key` to be of type `string` or `object`, got number');
+});
+
 test('.has()', t => {
 	t.context.conf.set('foo', fixture);
 	t.context.conf.set('baz.boo', fixture);

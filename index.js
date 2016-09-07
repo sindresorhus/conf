@@ -40,9 +40,13 @@ class Conf {
 		return dotProp.get(this.store, key);
 	}
 	set(key, val) {
+		if (typeof key !== 'string' && typeof key !== 'object') {
+			throw new TypeError(`Expected \`key\` to be of type \`string\` or \`object\`, got ${typeof key}`);
+		}
+
 		const store = this.store;
 
-		if (val === undefined) {
+		if (typeof key === 'object') {
 			Object.keys(key).forEach(k => {
 				dotProp.set(store, k, key[k]);
 			});
