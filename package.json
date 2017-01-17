@@ -34,8 +34,8 @@
     "write"
   ],
   "dependencies": {
-    "dot-prop": "^3.0.0",
-    "env-paths": "^0.3.0",
+    "dot-prop": "^4.1.0",
+    "env-paths": "^1.0.0",
     "mkdirp": "^0.5.1",
     "pkg-up": "^1.0.0"
   },
