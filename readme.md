@@ -136,6 +136,7 @@ I'm also the author of `configstore`. While it's pretty good, I did make some mi
 ## Related
 
 - [electron-config](https://github.com/sindresorhus/electron-config) - Simple config handling for your Electron app or module
+- [cache-conf](https://github.com/SamVerschueren/cache-conf) - Simple cache config handling for your app or module
 
 
 ## License
