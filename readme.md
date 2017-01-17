@@ -22,7 +22,7 @@ config.set('unicorn', '🦄');
 console.log(config.get('unicorn'));
 //=> '🦄'
 
-// use dot-notation to access nested properties
+// Use dot-notation to access nested properties
 config.set('foo.bar', true);
 console.log(config.get('foo'));
 //=> {bar: true}

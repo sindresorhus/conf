@@ -8,7 +8,7 @@ const envPaths = require('env-paths');
 
 const obj = () => Object.create(null);
 
-// prevent caching of this module so module.parent is always accurate
+// Prevent caching of this module so module.parent is always accurate
 delete require.cache[__filename];
 const parentDir = path.dirname(module.parent.filename);
 
@@ -17,8 +17,8 @@ class Conf {
 		const pkgPath = pkgUp.sync(parentDir);
 
 		opts = Object.assign({
-			// if the package.json was not found, avoid breaking with `require(null)`
-			projectName: pkgPath && require(pkgPath).name
+			// If the package.json was not found, avoid breaking with `require(null)`
+			projectName: pkgPath && require(pkgPath).name // eslint-disable-line import/no-dynamic-require
 		}, opts);
 
 		if (!opts.projectName && !opts.cwd) {
@@ -87,13 +87,12 @@ class Conf {
 		}
 	}
 	set store(val) {
-		// ensure the directory exists as it
-		// could have been deleted in the meantime
+		// Ensure the directory exists as it could have been deleted in the meantime
 		mkdirp.sync(path.dirname(this.path));
 
 		fs.writeFileSync(this.path, JSON.stringify(val, null, '\t'));
 	}
-	// TODO: use `Object.entries()` here at some point
+	// TODO: Use `Object.entries()` here at some point
 	* [Symbol.iterator]() {
 		const store = this.store;
 
