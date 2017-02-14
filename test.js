@@ -13,6 +13,7 @@ test.beforeEach(t => {
 
 test('.get()', t => {
 	t.is(t.context.conf.get('foo'), undefined);
+	t.is(t.context.conf.get('foo', '🐴'), '🐴');
 	t.context.conf.set('foo', fixture);
 	t.is(t.context.conf.get('foo'), fixture);
 });

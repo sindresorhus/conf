@@ -36,8 +36,8 @@ class Conf {
 		this.path = path.resolve(opts.cwd, `${opts.configName}.json`);
 		this.store = Object.assign(obj(), opts.defaults, this.store);
 	}
-	get(key) {
-		return dotProp.get(this.store, key);
+	get(key, defaultValue) {
+		return dotProp.get(this.store, key, defaultValue);
 	}
 	set(key, val) {
 		if (typeof key !== 'string' && typeof key !== 'object') {
