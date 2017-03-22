@@ -13,16 +13,10 @@ delete require.cache[__filename];
 class Conf {
 	constructor(opts) {
 		let pkgPath;
-		// Fallback to current package.json if module.parent.filename is null (f.e. in REPL)
 		if (module.parent.filename) {
 			pkgPath = pkgUp.sync(path.dirname(module.parent.filename));
 		} else {
-			pkgPath = path.join(__dirname, 'package.json');
-			try {
-				fs.accessSync(pkgPath, fs.constants.F_OK | fs.constants.R_OK);
-			} catch (err) {
-				pkgPath = null;
-			}
+			pkgPath = pkgUp.sync(process.cwd());
 		}
 
 		opts = Object.assign({

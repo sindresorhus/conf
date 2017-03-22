@@ -195,7 +195,7 @@ test('handle `cwd` being set and `projectName` not being set', t => {
 });
 
 // See https://github.com/sindresorhus/conf/issues/11
-test('fallback to `__dirname` if `module.filname` is `null`', t => {
+test('fallback to `process.cwd` if `module.filename` is `null`', t => {
 	const pkgUpSyncOrig = pkgUp.sync;
 	pkgUp.sync = () => null;
 
