@@ -193,3 +193,19 @@ test('handle `cwd` being set and `projectName` not being set', t => {
 	del.sync(conf.path, {force: true});
 	pkgUp.sync = pkgUpSyncOrig;
 });
+
+// See https://github.com/sindresorhus/conf/issues/11
+test('fallback to `__dirname` if `module.filname` is `null`', t => {
+	const pkgUpSyncOrig = pkgUp.sync;
+	pkgUp.sync = () => null;
+
+	module.filename = null;
+
+	let conf;
+	t.notThrows(() => {
+		conf = new Conf();
+	});
+
+	del.sync(conf.path, {force: true});
+	pkgUp.sync = pkgUpSyncOrig;
+});

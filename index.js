@@ -10,11 +10,20 @@ const obj = () => Object.create(null);
 
 // Prevent caching of this module so module.parent is always accurate
 delete require.cache[__filename];
-const parentDir = path.dirname(module.parent.filename);
-
 class Conf {
 	constructor(opts) {
-		const pkgPath = pkgUp.sync(parentDir);
+		let pkgPath;
+		// Fallback to current package.json if module.parent.filename is null (f.e. in REPL)
+		if (module.parent.filename) {
+			pkgPath = pkgUp.sync(path.dirname(module.parent.filename));
+		} else {
+			pkgPath = path.join(__dirname, 'package.json');
+			try {
+				fs.accessSync(pkgPath, fs.constants.F_OK | fs.constants.R_OK);
+			} catch (err) {
+				pkgPath = null;
+			}
+		}
 
 		opts = Object.assign({
 			// If the package.json was not found, avoid breaking with `require(null)`
