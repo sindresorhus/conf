@@ -12,12 +12,7 @@ const obj = () => Object.create(null);
 delete require.cache[__filename];
 class Conf {
 	constructor(opts) {
-		let pkgPath;
-		if (module.parent.filename) {
-			pkgPath = pkgUp.sync(path.dirname(module.parent.filename));
-		} else {
-			pkgPath = pkgUp.sync(process.cwd());
-		}
+		const pkgPath = pkgUp.sync(path.dirname(module.parent.filename || '.'));
 
 		opts = Object.assign({
 			// If the package.json was not found, avoid breaking with `require(null)`
