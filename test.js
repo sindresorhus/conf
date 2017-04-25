@@ -196,6 +196,7 @@ test('handle `cwd` being set and `projectName` not being set', t => {
 
 // See https://github.com/sindresorhus/conf/issues/11
 test('fallback to cwd if `module.filename` is `null`', t => {
+	const preservedFilename = module.filename;
 	module.filename = null;
 
 	let conf;
@@ -203,5 +204,6 @@ test('fallback to cwd if `module.filename` is `null`', t => {
 		conf = new Conf();
 	});
 
+	module.filename = preservedFilename;
 	del.sync(conf.path, {force: true});
 });
