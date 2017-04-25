@@ -195,15 +195,15 @@ test('handle `cwd` being set and `projectName` not being set', t => {
 	pkgUp.sync = pkgUpSyncOrig;
 });
 
-// See https://github.com/sindresorhus/conf/issues/11
+// See #11
 test('fallback to cwd if `module.filename` is `null`', t => {
 	const preservedFilename = module.filename;
 	module.filename = null;
-	clearRequire('./');
+	clearRequire('.');
 
 	let conf;
 	t.notThrows(() => {
-		conf = require('./');
+		conf = require('.');
 	});
 
 	module.filename = preservedFilename;
