@@ -3,6 +3,7 @@ import {serial as test} from 'ava';
 import tempfile from 'tempfile';
 import del from 'del';
 import pkgUp from 'pkg-up';
+import clearRequire from 'clear-require';
 import Conf from './';
 
 const fixture = '🦄';
@@ -198,10 +199,11 @@ test('handle `cwd` being set and `projectName` not being set', t => {
 test('fallback to cwd if `module.filename` is `null`', t => {
 	const preservedFilename = module.filename;
 	module.filename = null;
+	clearRequire('./');
 
 	let conf;
 	t.notThrows(() => {
-		conf = new Conf();
+		conf = require('./');
 	});
 
 	module.filename = preservedFilename;
