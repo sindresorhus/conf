@@ -3,6 +3,7 @@ import {serial as test} from 'ava';
 import tempfile from 'tempfile';
 import del from 'del';
 import pkgUp from 'pkg-up';
+import clearRequire from 'clear-require';
 import Conf from './';
 
 const fixture = '🦄';
@@ -192,4 +193,19 @@ test('handle `cwd` being set and `projectName` not being set', t => {
 
 	del.sync(conf.path, {force: true});
 	pkgUp.sync = pkgUpSyncOrig;
+});
+
+// See #11
+test('fallback to cwd if `module.filename` is `null`', t => {
+	const preservedFilename = module.filename;
+	module.filename = null;
+	clearRequire('.');
+
+	let conf;
+	t.notThrows(() => {
+		conf = require('.');
+	});
+
+	module.filename = preservedFilename;
+	del.sync(conf.path, {force: true});
 });
