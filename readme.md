@@ -61,7 +61,7 @@ Useful if you need multiple config files for your app or module. For example, di
 #### projectName
 
 Type: `string`<br>
-Default: The `name` field in your package.json
+Default: The `name` field in the package.json closest to where `conf` is imported.
 
 You only need to specify this if you don't have a package.json file in your project.
 
@@ -70,7 +70,7 @@ You only need to specify this if you don't have a package.json file in your proj
 Type: `string`<br>
 Default: System default [user config directory](https://github.com/sindresorhus/env-paths#pathsconfig)
 
-**You most likely don't need this.**
+**You most likely don't need this. Please don't use it unless you really have to.**
 
 Overrides `projectName`.
 
