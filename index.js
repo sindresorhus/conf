@@ -18,7 +18,7 @@ class Conf {
 
 		opts = Object.assign({
 			// If the package.json was not found, avoid breaking with `require(null)`
-			projectName: pkgPath && require(pkgPath).name // eslint-disable-line import/no-dynamic-require
+			projectName: pkgPath && require(pkgPath).name
 		}, opts);
 
 		if (!opts.projectName && !opts.cwd) {
@@ -47,9 +47,9 @@ class Conf {
 		const store = this.store;
 
 		if (typeof key === 'object') {
-			Object.keys(key).forEach(k => {
+			for (const k of Object.keys(key)) {
 				dotProp.set(store, k, key[k]);
-			});
+			}
 		} else {
 			dotProp.set(store, key, val);
 		}

@@ -1,15 +1,15 @@
 import path from 'path';
 import {serial as test} from 'ava';
-import tempfile from 'tempfile';
+import tempy from 'tempy';
 import del from 'del';
 import pkgUp from 'pkg-up';
 import clearRequire from 'clear-require';
-import Conf from './';
+import Conf from '.';
 
 const fixture = '🦄';
 
 test.beforeEach(t => {
-	t.context.conf = new Conf({cwd: tempfile()});
+	t.context.conf = new Conf({cwd: tempy.directory()});
 });
 
 test('.get()', t => {
@@ -100,7 +100,7 @@ test('.store', t => {
 
 test('`defaults` option', t => {
 	const conf = new Conf({
-		cwd: tempfile(),
+		cwd: tempy.directory(),
 		defaults: {
 			foo: 'bar'
 		}
@@ -112,7 +112,7 @@ test('`defaults` option', t => {
 test('`configName` option', t => {
 	const configName = 'alt-config';
 	const conf = new Conf({
-		cwd: tempfile(),
+		cwd: tempy.directory(),
 		configName
 	});
 	t.is(conf.get('foo'), undefined);
@@ -132,7 +132,7 @@ test('`projectName` option', t => {
 });
 
 test('ensure `.store` is always an object', t => {
-	const cwd = tempfile();
+	const cwd = tempy.directory();
 	const conf = new Conf({cwd});
 	del.sync(cwd, {force: true});
 	t.notThrows(() => conf.get('foo'));
@@ -155,7 +155,7 @@ test('automatic `projectName` inference', t => {
 });
 
 test('`cwd` option overrides `projectName` option', t => {
-	const cwd = tempfile();
+	const cwd = tempy.directory();
 
 	let conf;
 	t.notThrows(() => {
