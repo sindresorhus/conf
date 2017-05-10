@@ -2,7 +2,7 @@
 const fs = require('fs');
 const path = require('path');
 const dotProp = require('dot-prop');
-const mkdirp = require('mkdirp');
+const makeDir = require('make-dir');
 const pkgUp = require('pkg-up');
 const envPaths = require('env-paths');
 
@@ -75,7 +75,7 @@ class Conf {
 			return Object.assign(obj(), JSON.parse(fs.readFileSync(this.path, 'utf8')));
 		} catch (err) {
 			if (err.code === 'ENOENT') {
-				mkdirp.sync(path.dirname(this.path));
+				makeDir.sync(path.dirname(this.path));
 				return obj();
 			}
 
@@ -88,7 +88,7 @@ class Conf {
 	}
 	set store(val) {
 		// Ensure the directory exists as it could have been deleted in the meantime
-		mkdirp.sync(path.dirname(this.path));
+		makeDir.sync(path.dirname(this.path));
 
 		fs.writeFileSync(this.path, JSON.stringify(val, null, '\t'));
 	}
