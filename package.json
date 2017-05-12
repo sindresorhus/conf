@@ -38,7 +38,6 @@
     "dot-prop": "^4.1.0",
     "env-paths": "^1.0.0",
     "make-dir": "^1.0.0",
-    "mkdirp": "^0.5.1",
     "pkg-up": "^2.0.0"
   },
   "devDependencies": {
