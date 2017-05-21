@@ -3,7 +3,7 @@ import {serial as test} from 'ava';
 import tempy from 'tempy';
 import del from 'del';
 import pkgUp from 'pkg-up';
-import clearRequire from 'clear-require';
+import clearModule from 'clear-module';
 import Conf from '.';
 
 const fixture = '🦄';
@@ -199,7 +199,7 @@ test('handle `cwd` being set and `projectName` not being set', t => {
 test('fallback to cwd if `module.filename` is `null`', t => {
 	const preservedFilename = module.filename;
 	module.filename = null;
-	clearRequire('.');
+	clearModule('.');
 
 	let conf;
 	t.notThrows(() => {

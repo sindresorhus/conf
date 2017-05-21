@@ -42,7 +42,7 @@
   },
   "devDependencies": {
     "ava": "*",
-    "clear-require": "^2.0.0",
+    "clear-module": "^2.1.0",
     "del": "^2.2.1",
     "tempy": "^0.1.0",
     "xo": "*"
