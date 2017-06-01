@@ -39,6 +39,9 @@ class Conf {
 	get(key, defaultValue) {
 		return dotProp.get(this.store, key, defaultValue);
 	}
+	getAll() {
+		return dotProp.get(this.store);
+	}
 	set(key, val) {
 		if (typeof key !== 'string' && typeof key !== 'object') {
 			throw new TypeError(`Expected \`key\` to be of type \`string\` or \`object\`, got ${typeof key}`);

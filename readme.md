@@ -94,6 +94,10 @@ Set multiple items at once.
 
 Get an item or `defaultValue` if the item does not exist.
 
+#### .getAll()
+
+Get all items.
+
 #### .has(key)
 
 Check if an item exists.
