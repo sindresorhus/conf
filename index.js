@@ -10,7 +10,7 @@ const obj = () => Object.create(null);
 
 // Prevent caching of this module so module.parent is always accurate
 delete require.cache[__filename];
-const parentDir = path.dirname(module.parent && module.parent.filename || '.');
+const parentDir = path.dirname((module.parent && module.parent.filename) || '.');
 
 class Conf {
 	constructor(opts) {
