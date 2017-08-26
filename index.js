@@ -1,6 +1,7 @@
 'use strict';
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 const dotProp = require('dot-prop');
 const makeDir = require('make-dir');
 const pkgUp = require('pkg-up');
@@ -33,6 +34,7 @@ class Conf {
 			opts.cwd = envPaths(opts.projectName).config;
 		}
 
+		this.cryptoKey = opts.cryptoKey || null;
 		this.path = path.resolve(opts.cwd, `${opts.configName}.json`);
 		this.store = Object.assign(obj(), opts.defaults, this.store);
 	}
@@ -72,7 +74,16 @@ class Conf {
 	}
 	get store() {
 		try {
-			return Object.assign(obj(), JSON.parse(fs.readFileSync(this.path, 'utf8')));
+			let data = fs.readFileSync(this.path, 'utf8');
+
+			// If `options.cryptoKey` is given, decrypt data.
+			if (this.cryptoKey) {
+				const decipher = crypto.createDecipher('aes-256-cbc', this.cryptoKey);
+				data = decipher.update(data, 'hex', 'utf8');
+				data += decipher.final('utf8');
+			}
+
+			return Object.assign(obj(), JSON.parse(data));
 		} catch (err) {
 			if (err.code === 'ENOENT') {
 				makeDir.sync(path.dirname(this.path));
@@ -90,7 +101,16 @@ class Conf {
 		// Ensure the directory exists as it could have been deleted in the meantime
 		makeDir.sync(path.dirname(this.path));
 
-		fs.writeFileSync(this.path, JSON.stringify(val, null, '\t'));
+		let data = JSON.stringify(val, null, '\t');
+
+		// If `options.cryptoKey` is given, encrypt data.
+		if (this.cryptoKey) {
+			const cipher = crypto.createCipher('aes-256-cbc', this.cryptoKey);
+			data = cipher.update(data, 'utf8', 'hex');
+			data += cipher.final('hex');
+		}
+
+		fs.writeFileSync(this.path, data);
 	}
 	// TODO: Use `Object.entries()` here at some point
 	* [Symbol.iterator]() {
