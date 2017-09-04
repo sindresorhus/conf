@@ -34,7 +34,7 @@ class Conf {
 			opts.cwd = envPaths(opts.projectName).config;
 		}
 
-		this.cryptoKey = opts.cryptoKey || null;
+		this.encryptionKey = opts.encryptionKey;
 		this.path = path.resolve(opts.cwd, `${opts.configName}.json`);
 		this.store = Object.assign(obj(), opts.defaults, this.store);
 	}
@@ -76,9 +76,8 @@ class Conf {
 		try {
 			let data = fs.readFileSync(this.path, 'utf8');
 
-			// If `options.cryptoKey` is given, decrypt data.
-			if (this.cryptoKey) {
-				const decipher = crypto.createDecipher('aes-256-cbc', this.cryptoKey);
+			if (this.encryptionKey) {
+				const decipher = crypto.createDecipher('aes-256-cbc', this.encryptionKey);
 				data = decipher.update(data, 'hex', 'utf8');
 				data += decipher.final('utf8');
 			}
@@ -103,9 +102,9 @@ class Conf {
 
 		let data = JSON.stringify(val, null, '\t');
 
-		// If `options.cryptoKey` is given, encrypt data.
-		if (this.cryptoKey) {
-			const cipher = crypto.createCipher('aes-256-cbc', this.cryptoKey);
+		// If `options.encryptionKey` is given, encrypt data.
+		if (this.encryptionKey) {
+			const cipher = crypto.createCipher('aes-256-cbc', this.encryptionKey);
 			data = cipher.update(data, 'utf8', 'hex');
 			data += cipher.final('hex');
 		}

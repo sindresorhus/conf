@@ -211,15 +211,9 @@ test('fallback to cwd if `module.filename` is `null`', t => {
 	del.sync(conf.path, {force: true});
 });
 
-// Test encryption.
-test('.get() (encrypted)', t => {
+test('encryption', t => {
 	t.is(t.context.cryptoConf.get('foo'), undefined);
 	t.is(t.context.cryptoConf.get('foo', '🐴'), '🐴');
-	t.context.cryptoConf.set('foo', fixture);
-	t.is(t.context.cryptoConf.get('foo'), fixture);
-});
-
-test('.set() (encrypted)', t => {
 	t.context.cryptoConf.set('foo', fixture);
 	t.context.cryptoConf.set('baz.boo', fixture);
 	t.is(t.context.cryptoConf.get('foo'), fixture);
