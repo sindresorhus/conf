@@ -8,7 +8,7 @@ All you have to care about is what to persist. This module will handle all the d
 ## Install
 
 ```
-$ npm install --save conf
+$ npm install conf
 ```
 
 
@@ -85,6 +85,8 @@ The instance is [`iterable`](https://developer.mozilla.org/en/docs/Web/JavaScrip
 #### .set(key, value)
 
 Set an item.
+
+It writes atomically, so if the process crashes during a write it will not corrupt the existing config.
 
 #### .set(object)
 
