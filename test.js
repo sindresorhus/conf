@@ -10,7 +10,6 @@ const fixture = '🦄';
 
 test.beforeEach(t => {
 	t.context.conf = new Conf({cwd: tempy.directory()});
-	t.context.cryptoConf = new Conf({cwd: tempy.directory(), cryptoKey: 'abc123'});
 });
 
 test('.get()', t => {
@@ -212,10 +211,11 @@ test('fallback to cwd if `module.filename` is `null`', t => {
 });
 
 test('encryption', t => {
-	t.is(t.context.cryptoConf.get('foo'), undefined);
-	t.is(t.context.cryptoConf.get('foo', '🐴'), '🐴');
-	t.context.cryptoConf.set('foo', fixture);
-	t.context.cryptoConf.set('baz.boo', fixture);
-	t.is(t.context.cryptoConf.get('foo'), fixture);
-	t.is(t.context.cryptoConf.get('baz.boo'), fixture);
+	const conf = new Conf({cwd: tempy.directory(), cryptoKey: 'abc123'});
+	t.is(conf.get('foo'), undefined);
+	t.is(conf.get('foo', '🐴'), '🐴');
+	conf.set('foo', fixture);
+	conf.set('baz.boo', fixture);
+	t.is(conf.get('foo'), fixture);
+	t.is(conf.get('baz.boo'), fixture);
 });
