@@ -84,7 +84,9 @@ Type: `string | Buffer | TypedArray | DataView`
 Default: `undefined`
 
 Note that this **is not intended for security purposes**, since the encryption key would be easily found inside a plain-text NodeJS application.
-Its main use is for obscurity: if a user was looking through the user config directory and found the config file, since it's a simple json file they may be tempted to modify/add/remove a key/value pair. By providing an encryption key `Conf` will obfuscate the file which should hopefully deter any users from doing so.  
+
+Its main use is for obscurity: if a user was looking through the user config directory and found the config file, since it's a simple json file they may be tempted to modify/add/remove a key/value pair. By providing an encryption key `Conf` will obfuscate the file which should hopefully deter any users from doing so.
+
 It also has the added bonus that it will maintain a config file's integrity: if the file is changed in any way then decryption will not work, in which case the store will just reset back to its default state.
 
 ### Instance
