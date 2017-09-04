@@ -80,7 +80,7 @@ The only use-case I can think of is having the config located in the app directo
 
 #### encryptionKey
 
-Type: `string | Buffer | TypedArray | DataView`
+Type: `string | Buffer | TypedArray | DataView`<br>
 Default: `undefined`
 
 Note that this **is not intended for security purposes**, since the encryption key would be easily found inside a plain-text NodeJS application.
