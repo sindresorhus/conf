@@ -8,7 +8,7 @@ All you have to care about is what to persist. This module will handle all the d
 ## Install
 
 ```
-$ npm install --save conf
+$ npm install conf
 ```
 
 
@@ -36,6 +36,8 @@ Or [create a subclass](https://github.com/sindresorhus/electron-store/blob/maste
 
 
 ## API
+
+Changes are written to disk atomically, so if the process crashes during a write, it will not corrupt the existing config.
 
 ### Conf([options])
 

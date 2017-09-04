@@ -6,6 +6,7 @@ const dotProp = require('dot-prop');
 const makeDir = require('make-dir');
 const pkgUp = require('pkg-up');
 const envPaths = require('env-paths');
+const writeFileAtomic = require('write-file-atomic');
 
 const obj = () => Object.create(null);
 
@@ -101,14 +102,13 @@ class Conf {
 		makeDir.sync(path.dirname(this.path));
 
 		let data = JSON.stringify(val, null, '\t');
-
 		if (this.encryptionKey) {
 			const cipher = crypto.createCipher('aes-256-cbc', this.encryptionKey);
 			data = cipher.update(data, 'utf8', 'hex');
 			data += cipher.final('hex');
 		}
 
-		fs.writeFileSync(this.path, data);
+		writeFileAtomic.sync(this.path, data);
 	}
 	// TODO: Use `Object.entries()` here at some point
 	* [Symbol.iterator]() {
