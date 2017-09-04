@@ -102,7 +102,6 @@ class Conf {
 
 		let data = JSON.stringify(val, null, '\t');
 
-		// If `options.encryptionKey` is given, encrypt data.
 		if (this.encryptionKey) {
 			const cipher = crypto.createCipher('aes-256-cbc', this.encryptionKey);
 			data = cipher.update(data, 'utf8', 'hex');
