@@ -75,12 +75,11 @@ class Conf {
 	}
 	get store() {
 		try {
-			let data = fs.readFileSync(this.path, 'utf8');
+			let data = fs.readFileSync(this.path, this.encryptionKey ? null : 'utf8');
 
 			if (this.encryptionKey) {
 				const decipher = crypto.createDecipher('aes-256-cbc', this.encryptionKey);
-				data = decipher.update(data, 'hex', 'utf8');
-				data += decipher.final('utf8');
+				data = Buffer.concat([decipher.update(data), decipher.final()]);
 			}
 
 			return Object.assign(obj(), JSON.parse(data));
@@ -104,8 +103,7 @@ class Conf {
 		let data = JSON.stringify(val, null, '\t');
 		if (this.encryptionKey) {
 			const cipher = crypto.createCipher('aes-256-cbc', this.encryptionKey);
-			data = cipher.update(data, 'utf8', 'hex');
-			data += cipher.final('hex');
+			data = Buffer.concat([cipher.update(data), cipher.final()]);
 		}
 
 		writeFileAtomic.sync(this.path, data);

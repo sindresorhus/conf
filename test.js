@@ -212,7 +212,7 @@ test('fallback to cwd if `module.filename` is `null`', t => {
 });
 
 test('encryption', t => {
-	const conf = new Conf({cwd: tempy.directory(), cryptoKey: 'abc123'});
+	const conf = new Conf({cwd: tempy.directory(), encryptionKey: 'abc123'});
 	t.is(conf.get('foo'), undefined);
 	t.is(conf.get('foo', '🐴'), '🐴');
 	conf.set('foo', fixture);
