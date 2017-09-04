@@ -37,6 +37,8 @@ Or [create a subclass](https://github.com/sindresorhus/electron-store/blob/maste
 
 ## API
 
+Changes are written to disk atomically, so if the process crashes during a write, it will not corrupt the existing config.
+
 ### Conf([options])
 
 Returns a new instance.
@@ -85,8 +87,6 @@ The instance is [`iterable`](https://developer.mozilla.org/en/docs/Web/JavaScrip
 #### .set(key, value)
 
 Set an item.
-
-It writes atomically, so if the process crashes during a write it will not corrupt the existing config.
 
 #### .set(object)
 
