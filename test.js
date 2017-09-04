@@ -191,7 +191,7 @@ test('handle `cwd` being set and `projectName` not being set', t => {
 		conf = new Conf({cwd: 'conf-fixture-cwd'});
 	});
 
-	del.sync(conf.path, {force: true});
+	del.sync(path.dirname(conf.path));
 	pkgUp.sync = pkgUpSyncOrig;
 });
 
@@ -203,9 +203,10 @@ test('fallback to cwd if `module.filename` is `null`', t => {
 
 	let conf;
 	t.notThrows(() => {
-		conf = require('.');
+		const Conf = require('.');
+		conf = new Conf({cwd: 'conf-fixture-fallback-module-filename-null'});
 	});
 
 	module.filename = preservedFilename;
-	del.sync(conf.path, {force: true});
+	del.sync(path.dirname(conf.path));
 });
