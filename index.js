@@ -5,6 +5,7 @@ const dotProp = require('dot-prop');
 const makeDir = require('make-dir');
 const pkgUp = require('pkg-up');
 const envPaths = require('env-paths');
+const writeFileAtomic = require('write-file-atomic');
 
 const obj = () => Object.create(null);
 
@@ -90,7 +91,7 @@ class Conf {
 		// Ensure the directory exists as it could have been deleted in the meantime
 		makeDir.sync(path.dirname(this.path));
 
-		fs.writeFileSync(this.path, JSON.stringify(val, null, '\t'));
+		writeFileAtomic.sync(this.path, JSON.stringify(val, null, '\t'));
 	}
 	// TODO: Use `Object.entries()` here at some point
 	* [Symbol.iterator]() {
