@@ -89,6 +89,8 @@ Its main use is for obscurity: if a user was looking through the user config dir
 
 It also has the added bonus that it will maintain a config file's integrity: if the file is changed in any way then decryption will not work, in which case the store will just reset back to its default state.
 
+When specified, the `Conf` module will encrypt the store using the `"aes-256-cbc"` encryption algorithm.
+
 ### Instance
 
 You can use [dot-notation](https://github.com/sindresorhus/dot-prop) in a `key` to access nested properties.

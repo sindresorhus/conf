@@ -103,7 +103,7 @@ class Conf {
 		let data = JSON.stringify(val, null, '\t');
 		if (this.encryptionKey) {
 			const cipher = crypto.createCipher('aes-256-cbc', this.encryptionKey);
-			data = Buffer.concat([cipher.update(data), cipher.final()]);
+			data = Buffer.concat([cipher.update(Buffer.from(data)), cipher.final()]);
 		}
 
 		writeFileAtomic.sync(this.path, data);
