@@ -101,6 +101,7 @@ class Conf {
 		makeDir.sync(path.dirname(this.path));
 
 		let data = JSON.stringify(val, null, '\t');
+
 		if (this.encryptionKey) {
 			const cipher = crypto.createCipher('aes-256-cbc', this.encryptionKey);
 			data = Buffer.concat([cipher.update(Buffer.from(data)), cipher.final()]);

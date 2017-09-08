@@ -80,16 +80,16 @@ The only use-case I can think of is having the config located in the app directo
 
 #### encryptionKey
 
-Type: `string | Buffer | TypedArray | DataView`<br>
+Type: `string` `Buffer` `TypedArray` `DataView`<br>
 Default: `undefined`
 
-Note that this **is not intended for security purposes**, since the encryption key would be easily found inside a plain-text NodeJS application.
+Note that this is **not intended for security purposes**, since the encryption key would be easily found inside a plain-text Node.js app.
 
-Its main use is for obscurity: if a user was looking through the user config directory and found the config file, since it's a simple json file they may be tempted to modify/add/remove a key/value pair. By providing an encryption key `Conf` will obfuscate the file which should hopefully deter any users from doing so.
+Its main use is for obscurity. If a user looks through the config directory and finds the config file, since it's just a JSON file, they may be tempted to modify it. By providing an encryption key, the file will be obfuscated, which should hopefully deter any users from doing so.
 
-It also has the added bonus that it will maintain a config file's integrity: if the file is changed in any way then decryption will not work, in which case the store will just reset back to its default state.
+It also has the added bonus of ensuring the config file's integrity. If the file is changed in any way, the decryption will not work, in which case the store will just reset back to its default state.
 
-When specified, the `Conf` module will encrypt the store using the `"aes-256-cbc"` encryption algorithm.
+When specified, the store will be encrypted using the [`aes-256-cbc`](https://en.wikipedia.org/wiki/Block_cipher_mode_of_operation) encryption algorithm.
 
 ### Instance
 
