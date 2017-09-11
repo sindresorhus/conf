@@ -220,3 +220,52 @@ test('encryption', t => {
 	t.is(conf.get('foo'), fixture);
 	t.is(conf.get('baz.boo'), fixture);
 });
+
+test('onDidChange()', t => {
+	const conf = t.context.conf;
+
+	t.plan(12);
+
+	const checkFoo = (newValue, oldValue, key) => {
+		t.is(newValue, '🐴');
+		t.is(oldValue, fixture);
+		t.is(key, 'foo');
+	};
+
+	const checkBaz = (newValue, oldValue, key) => {
+		t.is(newValue, '🐴');
+		t.is(oldValue, fixture);
+		t.is(key, 'baz.boo');
+	};
+
+	conf.set('foo', fixture);
+	let unsubscribe = conf.onDidChange('foo', checkFoo);
+	conf.set('foo', '🐴');
+	unsubscribe();
+	conf.set('foo', fixture);
+
+	conf.set('baz.boo', fixture);
+	unsubscribe = conf.onDidChange('baz.boo', checkBaz);
+	conf.set('baz.boo', '🐴');
+	unsubscribe();
+	conf.set('baz.boo', fixture);
+
+	const checkUndefined = (newValue, oldValue, key) => {
+		t.is(oldValue, fixture);
+		t.is(newValue, undefined);
+		t.is(key, 'foo');
+	};
+	const checkSet = (newValue, oldValue, key) => {
+		t.is(oldValue, undefined);
+		t.is(newValue, '🐴');
+		t.is(key, 'foo');
+	};
+
+	unsubscribe = conf.onDidChange('foo', checkUndefined);
+	conf.delete('foo');
+	unsubscribe();
+	unsubscribe = conf.onDidChange('foo', checkSet);
+	conf.set('foo', '🐴');
+	unsubscribe();
+	conf.set('foo', fixture);
+});
