@@ -224,18 +224,16 @@ test('encryption', t => {
 test('onDidChange()', t => {
 	const conf = t.context.conf;
 
-	t.plan(12);
+	t.plan(8);
 
-	const checkFoo = (newValue, oldValue, key) => {
+	const checkFoo = (newValue, oldValue) => {
 		t.is(newValue, '🐴');
 		t.is(oldValue, fixture);
-		t.is(key, 'foo');
 	};
 
-	const checkBaz = (newValue, oldValue, key) => {
+	const checkBaz = (newValue, oldValue) => {
 		t.is(newValue, '🐴');
 		t.is(oldValue, fixture);
-		t.is(key, 'baz.boo');
 	};
 
 	conf.set('foo', fixture);
@@ -250,15 +248,13 @@ test('onDidChange()', t => {
 	unsubscribe();
 	conf.set('baz.boo', fixture);
 
-	const checkUndefined = (newValue, oldValue, key) => {
+	const checkUndefined = (newValue, oldValue) => {
 		t.is(oldValue, fixture);
 		t.is(newValue, undefined);
-		t.is(key, 'foo');
 	};
-	const checkSet = (newValue, oldValue, key) => {
+	const checkSet = (newValue, oldValue) => {
 		t.is(oldValue, undefined);
 		t.is(newValue, '🐴');
-		t.is(key, 'foo');
 	};
 
 	unsubscribe = conf.onDidChange('foo', checkUndefined);

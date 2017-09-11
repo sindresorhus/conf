@@ -123,7 +123,7 @@ Delete all items.
 
 #### .onDidChange(key, callback)
 
-`callback`: `function (newValue, oldValue, key) { /* ... */ }`
+`callback`: `function (newValue, oldValue) { /* ... */ }`
 
 Watches the given `key`, calling `callback` on any changes. When a key is first set `oldValue` will be `undefined`, and when a key is deleted `newValue` will be `undefined`.
 

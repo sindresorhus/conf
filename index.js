@@ -76,21 +76,22 @@ class Conf {
 	onDidChange(key, callback) {
 		if (typeof key !== 'string') {
 			throw new TypeError(`Expected \`key\` to be of type \`string\`, got ${typeof key}`);
-		} else if (typeof callback !== 'function') {
+		}
+		if (typeof callback !== 'function') {
 			throw new TypeError(`Expected \`callback\` to be of type \`function\`, got ${typeof callback}`);
 		}
 
-		let currentValue = key ? this.get(key) : this.store;
+		let currentValue = this.get(key);
 
 		const onChange = () => {
 			const oldValue = currentValue;
-			const newValue = key ? this.get(key) : this.store;
+			const newValue = this.get(key);
 
 			try {
 				assert.deepEqual(newValue, oldValue);
 			} catch (err) {
 				currentValue = newValue;
-				callback.call(this, newValue, oldValue, key);
+				callback.call(this, newValue, oldValue);
 			}
 		};
 
