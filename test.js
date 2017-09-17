@@ -221,6 +221,17 @@ test('encryption', t => {
 	t.is(conf.get('baz.boo'), fixture);
 });
 
+test('encryption - upgrade', t => {
+	const cwd = tempy.directory();
+
+	const before = new Conf({cwd});
+	before.set('foo', fixture);
+	t.is(before.get('foo'), fixture);
+
+	const after = new Conf({cwd, encryptionKey: 'abc123'});
+	t.is(after.get('foo'), fixture);
+});
+
 test('onDidChange()', t => {
 	const conf = t.context.conf;
 

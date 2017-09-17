@@ -107,8 +107,12 @@ class Conf {
 			let data = fs.readFileSync(this.path, this.encryptionKey ? null : 'utf8');
 
 			if (this.encryptionKey) {
-				const decipher = crypto.createDecipher('aes-256-cbc', this.encryptionKey);
-				data = Buffer.concat([decipher.update(data), decipher.final()]);
+				try {
+					return Object.assign(obj(), JSON.parse(data));
+				} catch (err) {
+					const decipher = crypto.createDecipher('aes-256-cbc', this.encryptionKey);
+					data = Buffer.concat([decipher.update(data), decipher.final()]);
+				}
 			}
 
 			return Object.assign(obj(), JSON.parse(data));
