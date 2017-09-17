@@ -4,6 +4,8 @@
 
 All you have to care about is what to persist. This module will handle all the dull details like where and how.
 
+*If you need this for Electron, check out [`electron-store`](https://github.com/sindresorhus/electron-store) instead.*
+
 
 ## Install
 
