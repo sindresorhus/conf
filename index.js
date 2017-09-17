@@ -110,8 +110,12 @@ class Conf {
 				try {
 					return Object.assign(obj(), JSON.parse(data));
 				} catch (err) {
-					const decipher = crypto.createDecipher('aes-256-cbc', this.encryptionKey);
-					data = Buffer.concat([decipher.update(data), decipher.final()]);
+					try {
+						const decipher = crypto.createDecipher('aes-256-cbc', this.encryptionKey);
+						data = Buffer.concat([decipher.update(data), decipher.final()]);
+					} catch (err) {
+						return obj();
+					}
 				}
 			}
 
