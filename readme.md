@@ -121,6 +121,12 @@ Delete an item.
 
 Delete all items.
 
+#### .onDidChange(key, callback)
+
+`callback`: `(newValue, oldValue) => {}`
+
+Watches the given `key`, calling `callback` on any changes. When a key is first set `oldValue` will be `undefined`, and when a key is deleted `newValue` will be `undefined`.
+
 #### .size
 
 Get the item count.

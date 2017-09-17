@@ -2,6 +2,8 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const assert = require('assert');
+const EventEmitter = require('events');
 const dotProp = require('dot-prop');
 const makeDir = require('make-dir');
 const pkgUp = require('pkg-up');
@@ -35,6 +37,7 @@ class Conf {
 			opts.cwd = envPaths(opts.projectName).config;
 		}
 
+		this.events = new EventEmitter();
 		this.encryptionKey = opts.encryptionKey;
 		this.path = path.resolve(opts.cwd, `${opts.configName}.json`);
 		this.store = Object.assign(obj(), opts.defaults, this.store);
@@ -69,6 +72,32 @@ class Conf {
 	}
 	clear() {
 		this.store = obj();
+	}
+	onDidChange(key, callback) {
+		if (typeof key !== 'string') {
+			throw new TypeError(`Expected \`key\` to be of type \`string\`, got ${typeof key}`);
+		}
+
+		if (typeof callback !== 'function') {
+			throw new TypeError(`Expected \`callback\` to be of type \`function\`, got ${typeof callback}`);
+		}
+
+		let currentValue = this.get(key);
+
+		const onChange = () => {
+			const oldValue = currentValue;
+			const newValue = this.get(key);
+
+			try {
+				assert.deepEqual(newValue, oldValue);
+			} catch (err) {
+				currentValue = newValue;
+				callback.call(this, newValue, oldValue);
+			}
+		};
+
+		this.events.on('change', onChange);
+		return () => this.events.removeListener('change', onChange);
 	}
 	get size() {
 		return Object.keys(this.store).length;
@@ -108,6 +137,7 @@ class Conf {
 		}
 
 		writeFileAtomic.sync(this.path, data);
+		this.events.emit('change');
 	}
 	// TODO: Use `Object.entries()` here at some point
 	* [Symbol.iterator]() {
