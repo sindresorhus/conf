@@ -108,15 +108,9 @@ class Conf {
 
 			if (this.encryptionKey) {
 				try {
-					return Object.assign(obj(), JSON.parse(data));
-				} catch (err) {
-					try {
-						const decipher = crypto.createDecipher('aes-256-cbc', this.encryptionKey);
-						data = Buffer.concat([decipher.update(data), decipher.final()]);
-					} catch (err) {
-						return obj();
-					}
-				}
+					const decipher = crypto.createDecipher('aes-256-cbc', this.encryptionKey);
+					data = Buffer.concat([decipher.update(data), decipher.final()]);
+				} catch (err) {/* ignore */}
 			}
 
 			return Object.assign(obj(), JSON.parse(data));
