@@ -1,3 +1,4 @@
+import fs from 'fs';
 import path from 'path';
 import {serial as test} from 'ava';
 import tempy from 'tempy';
@@ -219,6 +220,30 @@ test('encryption', t => {
 	conf.set('baz.boo', fixture);
 	t.is(conf.get('foo'), fixture);
 	t.is(conf.get('baz.boo'), fixture);
+});
+
+test('encryption - upgrade', t => {
+	const cwd = tempy.directory();
+
+	const before = new Conf({cwd});
+	before.set('foo', fixture);
+	t.is(before.get('foo'), fixture);
+
+	const after = new Conf({cwd, encryptionKey: 'abc123'});
+	t.is(after.get('foo'), fixture);
+});
+
+test('encryption - corrupt file', t => {
+	const cwd = tempy.directory();
+
+	const before = new Conf({cwd, encryptionKey: 'abc123'});
+	before.set('foo', fixture);
+	t.is(before.get('foo'), fixture);
+
+	fs.appendFileSync(path.join(cwd, 'config.json'), 'corrupt file');
+
+	const after = new Conf({cwd, encryptionKey: 'abc123'});
+	t.is(after.get('foo'), undefined);
 });
 
 test('onDidChange()', t => {
