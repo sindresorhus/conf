@@ -50,6 +50,10 @@ class Conf {
 			throw new TypeError(`Expected \`key\` to be of type \`string\` or \`object\`, got ${typeof key}`);
 		}
 
+		if (typeof key !== 'object' && val === undefined) {
+			throw new TypeError('Use `delete()` to clear values');
+		}
+
 		const store = this.store;
 
 		if (typeof key === 'object') {
