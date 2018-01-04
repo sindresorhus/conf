@@ -21,8 +21,9 @@ class Conf {
 		const pkgPath = pkgUp.sync(parentDir);
 
 		opts = Object.assign({
-			// If the package.json was not found, avoid breaking with `require(null)`
-			projectName: pkgPath && require(pkgPath).name
+			// Can't use `require` because of Webpack being annoying:
+			// https://github.com/webpack/webpack/issues/196
+			projectName: pkgPath && JSON.parse(fs.readFileSync(pkgPath, 'utf8')).name
 		}, opts);
 
 		if (!opts.projectName && !opts.cwd) {
