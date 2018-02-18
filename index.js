@@ -43,9 +43,11 @@ class Conf {
 		this.path = path.resolve(opts.cwd, `${opts.configName}.json`);
 		this.store = Object.assign(obj(), opts.defaults, this.store);
 	}
+
 	get(key, defaultValue) {
 		return dotProp.get(this.store, key, defaultValue);
 	}
+
 	set(key, val) {
 		if (typeof key !== 'string' && typeof key !== 'object') {
 			throw new TypeError(`Expected \`key\` to be of type \`string\` or \`object\`, got ${typeof key}`);
@@ -63,17 +65,21 @@ class Conf {
 
 		this.store = store;
 	}
+
 	has(key) {
 		return dotProp.has(this.store, key);
 	}
+
 	delete(key) {
 		const store = this.store;
 		dotProp.delete(store, key);
 		this.store = store;
 	}
+
 	clear() {
 		this.store = obj();
 	}
+
 	onDidChange(key, callback) {
 		if (typeof key !== 'string') {
 			throw new TypeError(`Expected \`key\` to be of type \`string\`, got ${typeof key}`);
@@ -100,9 +106,11 @@ class Conf {
 		this.events.on('change', onChange);
 		return () => this.events.removeListener('change', onChange);
 	}
+
 	get size() {
 		return Object.keys(this.store).length;
 	}
+
 	get store() {
 		try {
 			let data = fs.readFileSync(this.path, this.encryptionKey ? null : 'utf8');
@@ -128,6 +136,7 @@ class Conf {
 			throw err;
 		}
 	}
+
 	set store(val) {
 		// Ensure the directory exists as it could have been deleted in the meantime
 		makeDir.sync(path.dirname(this.path));
@@ -142,6 +151,7 @@ class Conf {
 		writeFileAtomic.sync(this.path, data);
 		this.events.emit('change');
 	}
+
 	// TODO: Use `Object.entries()` here at some point
 	* [Symbol.iterator]() {
 		const store = this.store;
