@@ -10,61 +10,61 @@ const pkgUp = require('pkg-up');
 const envPaths = require('env-paths');
 const writeFileAtomic = require('write-file-atomic');
 
-const obj = () => Object.create(null);
+const plainObject = () => Object.create(null);
 
 // Prevent caching of this module so module.parent is always accurate
 delete require.cache[__filename];
 const parentDir = path.dirname((module.parent && module.parent.filename) || '.');
 
 class Conf {
-	constructor(opts) {
+	constructor(options) {
 		const pkgPath = pkgUp.sync(parentDir);
 
-		opts = Object.assign({
+		options = Object.assign({
 			// Can't use `require` because of Webpack being annoying:
 			// https://github.com/webpack/webpack/issues/196
 			projectName: pkgPath && JSON.parse(fs.readFileSync(pkgPath, 'utf8')).name
-		}, opts);
+		}, options);
 
-		if (!opts.projectName && !opts.cwd) {
+		if (!options.projectName && !options.cwd) {
 			throw new Error('Project name could not be inferred. Please specify the `projectName` option.');
 		}
 
-		opts = Object.assign({
+		options = Object.assign({
 			configName: 'config'
-		}, opts);
+		}, options);
 
-		if (!opts.cwd) {
-			opts.cwd = envPaths(opts.projectName).config;
+		if (!options.cwd) {
+			options.cwd = envPaths(options.projectName).config;
 		}
 
 		this.events = new EventEmitter();
-		this.encryptionKey = opts.encryptionKey;
-		this.path = path.resolve(opts.cwd, `${opts.configName}.json`);
-		this.store = Object.assign(obj(), opts.defaults, this.store);
+		this.encryptionKey = options.encryptionKey;
+		this.path = path.resolve(options.cwd, `${options.configName}.json`);
+		this.store = Object.assign(plainObject(), options.defaults, this.store);
 	}
 
 	get(key, defaultValue) {
 		return dotProp.get(this.store, key, defaultValue);
 	}
 
-	set(key, val) {
+	set(key, value) {
 		if (typeof key !== 'string' && typeof key !== 'object') {
 			throw new TypeError(`Expected \`key\` to be of type \`string\` or \`object\`, got ${typeof key}`);
 		}
 
-		if (typeof key !== 'object' && val === undefined) {
+		if (typeof key !== 'object' && value === undefined) {
 			throw new TypeError('Use `delete()` to clear values');
 		}
 
-		const store = this.store;
+		const {store} = this;
 
 		if (typeof key === 'object') {
 			for (const k of Object.keys(key)) {
 				dotProp.set(store, k, key[k]);
 			}
 		} else {
-			dotProp.set(store, key, val);
+			dotProp.set(store, key, value);
 		}
 
 		this.store = store;
@@ -75,13 +75,13 @@ class Conf {
 	}
 
 	delete(key) {
-		const store = this.store;
+		const {store} = this;
 		dotProp.delete(store, key);
 		this.store = store;
 	}
 
 	clear() {
-		this.store = obj();
+		this.store = plainObject();
 	}
 
 	onDidChange(key, callback) {
@@ -100,8 +100,9 @@ class Conf {
 			const newValue = this.get(key);
 
 			try {
+				// TODO: Use `util.isDeepStrictEqual` when targeting Node.js 10
 				assert.deepEqual(newValue, oldValue);
-			} catch (err) {
+			} catch (_) {
 				currentValue = newValue;
 				callback.call(this, newValue, oldValue);
 			}
@@ -123,29 +124,29 @@ class Conf {
 				try {
 					const decipher = crypto.createDecipher('aes-256-cbc', this.encryptionKey);
 					data = Buffer.concat([decipher.update(data), decipher.final()]);
-				} catch (err) {/* ignore */}
+				} catch (_) {}
 			}
 
-			return Object.assign(obj(), JSON.parse(data));
-		} catch (err) {
-			if (err.code === 'ENOENT') {
+			return Object.assign(plainObject(), JSON.parse(data));
+		} catch (error) {
+			if (error.code === 'ENOENT') {
 				makeDir.sync(path.dirname(this.path));
-				return obj();
+				return plainObject();
 			}
 
-			if (err.name === 'SyntaxError') {
-				return obj();
+			if (error.name === 'SyntaxError') {
+				return plainObject();
 			}
 
-			throw err;
+			throw error;
 		}
 	}
 
-	set store(val) {
+	set store(value) {
 		// Ensure the directory exists as it could have been deleted in the meantime
 		makeDir.sync(path.dirname(this.path));
 
-		let data = JSON.stringify(val, null, '\t');
+		let data = JSON.stringify(value, null, '\t');
 
 		if (this.encryptionKey) {
 			const cipher = crypto.createCipher('aes-256-cbc', this.encryptionKey);
@@ -156,9 +157,9 @@ class Conf {
 		this.events.emit('change');
 	}
 
-	// TODO: Use `Object.entries()` here at some point
+	// TODO: Use `Object.entries()` when targeting Node.js 8
 	* [Symbol.iterator]() {
-		const store = this.store;
+		const {store} = this;
 
 		for (const key of Object.keys(store)) {
 			yield [key, store[key]];

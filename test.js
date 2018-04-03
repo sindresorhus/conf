@@ -63,7 +63,7 @@ test('.has()', t => {
 });
 
 test('.delete()', t => {
-	const conf = t.context.conf;
+	const {conf} = t.context;
 	conf.set('foo', 'bar');
 	conf.set('baz.boo', true);
 	conf.set('baz.foo.bar', 'baz');
@@ -148,7 +148,7 @@ test('instance is iterable', t => {
 		foo: fixture,
 		bar: fixture
 	});
-	t.deepEqual(Array.from(t.context.conf), [['foo', fixture], ['bar', fixture]]);
+	t.deepEqual([...t.context.conf], [['foo', fixture], ['bar', fixture]]);
 });
 
 test('automatic `projectName` inference', t => {
@@ -251,7 +251,7 @@ test('encryption - corrupt file', t => {
 });
 
 test('onDidChange()', t => {
-	const conf = t.context.conf;
+	const {conf} = t.context;
 
 	t.plan(8);
 
