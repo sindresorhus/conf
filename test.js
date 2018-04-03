@@ -46,6 +46,10 @@ test('.set() with object', t => {
 	t.is(t.context.conf.get('baz.foo.bar'), 'baz');
 });
 
+test('.set() with undefined', t => {
+	t.throws(() => t.context.conf.set('foo', undefined), 'Use `delete()` to clear values');
+});
+
 test('.set() invalid key', t => {
 	t.throws(() => t.context.conf.set(1, 'unicorn'), 'Expected `key` to be of type `string` or `object`, got number');
 });
