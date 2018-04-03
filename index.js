@@ -35,7 +35,7 @@ class Conf {
 		}, opts);
 
 		if (!opts.cwd) {
-			opts.cwd = envPaths(opts.projectName).config;
+			opts.cwd = envPaths(opts.projectName, {suffix: opts.suffix}).config;
 		}
 
 		this.events = new EventEmitter();
