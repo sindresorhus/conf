@@ -41,7 +41,14 @@ class Conf {
 		this.events = new EventEmitter();
 		this.encryptionKey = options.encryptionKey;
 		this.path = path.resolve(options.cwd, `${options.configName}.json`);
-		this.store = Object.assign(plainObject(), options.defaults, this.store);
+
+		const fileStore = this.store;
+		const store = Object.assign(plainObject(), options.defaults, this.store);
+		try {
+			assert.deepEqual(fileStore, store);
+		} catch (e) {
+			this.store = store;
+		}
 	}
 
 	get(key, defaultValue) {

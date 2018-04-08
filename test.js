@@ -294,3 +294,18 @@ test('onDidChange()', t => {
 	unsubscribe();
 	conf.set('foo', fixture);
 });
+
+// See #32
+test('doesn\'t write to disk upon instanciation if and only if the store didn\'t change', t => {
+	let exists = fs.existsSync(t.context.conf.path);
+	t.is(exists, false);
+
+	const conf = new Conf({
+		cwd: tempy.directory(),
+		defaults: {
+			foo: 'bar'
+		}
+	});
+	exists = fs.existsSync(conf.path);
+	t.is(exists, true);
+});
