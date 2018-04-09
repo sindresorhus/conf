@@ -43,7 +43,7 @@ class Conf {
 		this.path = path.resolve(options.cwd, `${options.configName}.json`);
 
 		const fileStore = this.store;
-		const store = Object.assign(plainObject(), options.defaults, this.store);
+		const store = Object.assign(plainObject(), options.defaults, fileStore);
 		try {
 			assert.deepEqual(fileStore, store);
 		} catch (e) {
