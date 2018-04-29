@@ -57,6 +57,8 @@ Type: `Object`
 
 Default config.
 
+If `key` already exists in config file the value doesn't change. If the key or the config file don't yet exist they will be created and set to the default value.
+
 #### configName
 
 Type: `string`<br>
