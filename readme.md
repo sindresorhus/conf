@@ -66,6 +66,14 @@ Name of the config file (without extension).
 
 Useful if you need multiple config files for your app or module. For example, different config files between two major versions.
 
+#### fileExtension
+type: `string`<br>
+Default: `.json`
+
+Extension of the config file.
+
+Useful if you want to interact with a file with a custom file extension that can be associated with your app. These might be simple save/export/preference files that are intended to be shareable or saved outside of the application.
+
 #### projectName
 
 Type: `string`<br>

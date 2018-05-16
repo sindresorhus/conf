@@ -126,6 +126,18 @@ test('`configName` option', t => {
 	t.is(path.basename(conf.path, '.json'), configName);
 });
 
+test('`fileExtension` option', t => {
+	const fileExtension = '.alt-ext';
+	const conf = new Conf({
+		cwd: tempy.directory(),
+		fileExtension
+	});
+	t.is(conf.get('foo'), undefined);
+	conf.set('foo', fixture);
+	t.is(conf.get('foo'), fixture);
+	t.is(path.extname(conf.path), fileExtension);
+});
+
 test('`projectName` option', t => {
 	const projectName = 'conf-fixture-project-name';
 	const conf = new Conf({projectName});
