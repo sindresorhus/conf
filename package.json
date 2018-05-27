@@ -1,6 +1,6 @@
 {
 	"name": "conf",
-	"version": "1.4.0",
+	"version": "2.0.0",
 	"description": "Simple config handling for your app or module",
 	"license": "MIT",
 	"repository": "sindresorhus/conf",
