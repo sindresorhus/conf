@@ -32,7 +32,7 @@ class Conf {
 
 		options = Object.assign({
 			configName: 'config',
-			fileExtension: '.json'
+			fileExtension: 'json'
 		}, options);
 
 		if (!options.cwd) {
@@ -41,7 +41,7 @@ class Conf {
 
 		this.events = new EventEmitter();
 		this.encryptionKey = options.encryptionKey;
-		this.path = path.resolve(options.cwd, `${options.configName}${options.fileExtension}`);
+		this.path = path.resolve(options.cwd, `${options.configName}.${options.fileExtension}`);
 
 		const fileStore = this.store;
 		const store = Object.assign(plainObject(), options.defaults, fileStore);
