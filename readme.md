@@ -66,14 +66,6 @@ Name of the config file (without extension).
 
 Useful if you need multiple config files for your app or module. For example, different config files between two major versions.
 
-#### fileExtension
-type: `string`<br>
-Default: `.json`
-
-Extension of the config file.
-
-Useful if you want to interact with a file with a custom file extension that can be associated with your app. These might be simple save/export/preference files that are intended to be shareable or saved outside of the application.
-
 #### projectName
 
 Type: `string`<br>
@@ -104,6 +96,15 @@ Its main use is for obscurity. If a user looks through the config directory and 
 It also has the added bonus of ensuring the config file's integrity. If the file is changed in any way, the decryption will not work, in which case the store will just reset back to its default state.
 
 When specified, the store will be encrypted using the [`aes-256-cbc`](https://en.wikipedia.org/wiki/Block_cipher_mode_of_operation) encryption algorithm.
+
+#### fileExtension
+
+type: `string`<br>
+Default: `json`
+
+Extension of the config file.
+
+You would usually not need this, but could useful if you want to interact with a file with a custom file extension that can be associated with your app. These might be simple save/export/preference files that are intended to be shareable or saved outside of the app.
 
 ### Instance
 
