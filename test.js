@@ -127,7 +127,7 @@ test('`configName` option', t => {
 });
 
 test('`fileExtension` option', t => {
-	const fileExtension = '.alt-ext';
+	const fileExtension = 'alt-ext';
 	const conf = new Conf({
 		cwd: tempy.directory(),
 		fileExtension
@@ -135,7 +135,7 @@ test('`fileExtension` option', t => {
 	t.is(conf.get('foo'), undefined);
 	conf.set('foo', fixture);
 	t.is(conf.get('foo'), fixture);
-	t.is(path.extname(conf.path), fileExtension);
+	t.is(path.extname(conf.path), `.${fileExtension}`);
 });
 
 test('`projectName` option', t => {
