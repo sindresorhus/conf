@@ -104,7 +104,7 @@ Default: `json`
 
 Extension of the config file.
 
-You would usually not need this, but could useful if you want to interact with a file with a custom file extension that can be associated with your app. These might be simple save/export/preference files that are intended to be shareable or saved outside of the app.
+You would usually not need this, but could be useful if you want to interact with a file with a custom file extension that can be associated with your app. These might be simple save/export/preference files that are intended to be shareable or saved outside of the app.
 
 ### Instance
 
