@@ -43,6 +43,14 @@ class Conf {
 		this.encryptionKey = options.encryptionKey;
 		this.path = path.resolve(options.cwd, `${options.configName}.${options.fileExtension}`);
 
+		if (options.validate) {
+			try {
+				JSON.parse(fs.readFileSync(this.path));
+			} catch (ex) {
+				throw ex;
+			}
+		}
+
 		const fileStore = this.store;
 		const store = Object.assign(plainObject(), options.defaults, fileStore);
 		try {

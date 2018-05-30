@@ -321,3 +321,8 @@ test('doesn\'t write to disk upon instanciation if and only if the store didn\'t
 	exists = fs.existsSync(conf.path);
 	t.is(exists, true);
 });
+
+test('`validate` option', t => {
+	fs.writeFileSync(t.context.conf.path, 'Some text');
+	t.throws(() => new Conf({cwd: tempy.directory(), validate: true}));
+});
