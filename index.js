@@ -161,7 +161,7 @@ class Conf {
 			data = Buffer.concat([cipher.update(Buffer.from(data)), cipher.final()]);
 		}
 
-		writeFileAtomic.sync(this.path, data);
+		writeFileAtomic.sync(this.path, data, {mode: 0o600});
 		this.events.emit('change');
 	}
 
