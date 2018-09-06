@@ -77,6 +77,7 @@ module.exports = class Conf {
 		} catch (_) {
 			this.store = store;
 		}
+		this.watch();
 	}
 
 	get(key, defaultValue) {
@@ -171,8 +172,7 @@ module.exports = class Conf {
 			return Object.assign(plainObject(), this.deserialize(data));
 		} catch (error) {
 			if (error.code === 'ENOENT') {
-				// TODO: Use `fs.mkdirSync` `recursive` option when targeting Node.js 12
-				makeDir.sync(path.dirname(this.path));
+				this.createDir();
 				return plainObject();
 			}
 
@@ -185,8 +185,7 @@ module.exports = class Conf {
 	}
 
 	set store(value) {
-		// Ensure the directory exists as it could have been deleted in the meantime
-		makeDir.sync(path.dirname(this.path));
+		this.createDir();
 
 		let data = this.serialize(value);
 
@@ -199,6 +198,28 @@ module.exports = class Conf {
 		this.events.emit('change');
 	}
 
+	createDir() {
+		// Ensure the directory exists as it could have been deleted in the meantime
+		// TODO: Use `fs.mkdirSync` `recursive` option when targeting Node.js 12
+		makeDir.sync(path.dirname(this.path));
+	}
+
+	watch() {
+		this.createDir();
+
+		let wait = false;
+		fs.watch(path.dirname(this.path), {encoding: this.encryptionKey ? null : 'utf8'}, () => {
+			if (wait) {
+				return;
+			}
+			wait = setTimeout(() => {
+				wait = false;
+			}, 100);
+			this.events.emit('change');
+		});
+	}
+
+	// TODO: Use `Object.entries()` when targeting Node.js 8
 	* [Symbol.iterator]() {
 		for (const [key, value] of Object.entries(this.store)) {
 			yield [key, value];
