@@ -9,6 +9,7 @@ const makeDir = require('make-dir');
 const pkgUp = require('pkg-up');
 const envPaths = require('env-paths');
 const writeFileAtomic = require('write-file-atomic');
+const semver = require('semver');
 
 const plainObject = () => Object.create(null);
 
@@ -19,11 +20,12 @@ const parentDir = path.dirname((module.parent && module.parent.filename) || '.')
 class Conf {
 	constructor(options) {
 		const pkgPath = pkgUp.sync(parentDir);
+		const pkg = pkgPath && JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
 
 		options = Object.assign({
 			// Can't use `require` because of Webpack being annoying:
 			// https://github.com/webpack/webpack/issues/196
-			projectName: pkgPath && JSON.parse(fs.readFileSync(pkgPath, 'utf8')).name
+			projectName: pkg && pkg.name, projectVersion: pkg && pkg.version
 		}, options);
 
 		if (!options.projectName && !options.cwd) {
@@ -50,6 +52,8 @@ class Conf {
 		} catch (e) {
 			this.store = store;
 		}
+
+		this.migrate(options, options.projectVersion);
 	}
 
 	get(key, defaultValue) {
@@ -90,6 +94,26 @@ class Conf {
 
 	clear() {
 		this.store = plainObject();
+	}
+
+	migrate(options, expectedVersion) {
+		if (options.migrations) {
+			const runningVersion = this.store.packageVersion || '0.0.0';
+
+			if (semver.lt(runningVersion, expectedVersion)) {
+				const migrationsToRun = Object.keys(options.migrations).filter(version => {
+					return semver.lt(version, expectedVersion) && semver.gt(version, runningVersion);
+				}).sort(semver);
+
+				for (const version of migrationsToRun) {
+					options.migrations[version](this);
+				}
+			}
+
+			if (runningVersion !== expectedVersion) {
+				this.set('packageVersion', expectedVersion);
+			}
+		}
 	}
 
 	onDidChange(key, callback) {

@@ -321,3 +321,52 @@ test('doesn\'t write to disk upon instanciation if and only if the store didn\'t
 	exists = fs.existsSync(conf.path);
 	t.is(exists, true);
 });
+
+test('migrates to the next version', t => {
+	const cwd = tempy.directory();
+	const conf1 = new Conf({cwd});
+
+	conf1.clear();
+	conf1.set('packageVersion', '0.0.4');
+	conf1.set('old', 'old');
+
+	const conf2 = new Conf({
+		cwd,
+		migrations: {
+			'0.0.3': store => {
+				store.set('03', 1);
+			},
+			'1.0.1': store => {
+				const old = store.get('old');
+				store.set('new', old);
+				store.delete('old');
+			},
+			'1.9.9': store => {
+				store.set('2', 1);
+			},
+			'4.0.0': store => {
+				store.set('4', 1);
+			}
+		}
+	});
+
+	t.is(conf2.get('old'), undefined);
+	t.is(conf2.get('03'), undefined);
+	t.is(conf2.get('4'), undefined);
+	t.is(conf2.get('new'), 'old');
+	t.is(conf2.get('2'), 1);
+	t.is(conf2.get('packageVersion'), require('./package.json').version);
+});
+
+test('packageVersion is set initially', t => {
+	const conf = new Conf({cwd: tempy.directory(), migrations: {}});
+
+	t.not(conf.get('packageVersion'), undefined);
+	t.is(conf.get('packageVersion'), require('./package.json').version);
+});
+
+test('packageVersion is not set without migrations', t => {
+	const {conf} = t.context;
+
+	t.is(conf.get('packageVersion'), undefined);
+});

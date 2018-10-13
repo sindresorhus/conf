@@ -73,6 +73,13 @@ Default: The `name` field in the package.json closest to where `conf` is importe
 
 You only need to specify this if you don't have a package.json file in your project.
 
+#### projectVersion
+
+Type: `string`<br>
+Default: The `version` field in the package.json closest to where `conf` is imported.
+
+You only need to specify this if you don't have a package.json file in your project and are using migrations.
+
 #### cwd
 
 Type: `string`<br>
@@ -105,6 +112,35 @@ Default: `json`
 Extension of the config file.
 
 You would usually not need this, but could be useful if you want to interact with a file with a custom file extension that can be associated with your app. These might be simple save/export/preference files that are intended to be shareable or saved outside of the app.
+
+#### migrations
+
+ type: `object`<br>
+ Default: `undefined`
+
+ Migrations to be run between versions.
+
+ Useful for transitioning conf changes between application versions. Ex:
+ ```js
+ // version is set to 0.0.1, the current app version is 2.0.8, old is set to 1
+ const store = new Conf({
+ 	migrations: {
+ 		'0.0.0': store => {
+ 			store.set('bad key', 2);
+ 		},
+ 		'1.0.0': store => {
+ 			const old = store.get('old');
+ 			store.set('new', old);
+ 			store.delete('old');
+ 		},
+ 		'1.0.2': store => {
+ 			store.set('a new key', 't');
+ 		}
+ 	}
+ });
+ console.log(store.store);
+ // { version: '2.0.8', new: 1, 'a new key': 't' }
+ ```
 
 ### Instance
 
