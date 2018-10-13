@@ -3,7 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
-const assert = require('assert');
+const {isDeepStrictEqual} = require('util');
 const EventEmitter = require('events');
 const dotProp = require('dot-prop');
 const makeDir = require('make-dir');
@@ -72,9 +72,7 @@ module.exports = class Conf {
 
 		const fileStore = this.store;
 		const store = Object.assign(plainObject(), options.defaults, fileStore);
-		try {
-			assert.deepEqual(fileStore, store);
-		} catch (_) {
+		if (!isDeepStrictEqual(fileStore, store)) {
 			this.store = store;
 		}
 	}
@@ -140,10 +138,7 @@ module.exports = class Conf {
 			const oldValue = currentValue;
 			const newValue = this.get(key);
 
-			try {
-				// TODO: Use `util.isDeepStrictEqual` when targeting Node.js 10
-				assert.deepEqual(newValue, oldValue);
-			} catch (_) {
+			if (!isDeepStrictEqual(newValue, oldValue)) {
 				currentValue = newValue;
 				callback.call(this, newValue, oldValue);
 			}
