@@ -44,11 +44,7 @@ class Conf {
 		this.path = path.resolve(options.cwd, `${options.configName}.${options.fileExtension}`);
 
 		if (options.validate) {
-			try {
-				JSON.parse(fs.readFileSync(this.path));
-			} catch (ex) {
-				throw ex;
-			}
+			JSON.parse(fs.readFileSync(this.path));
 		}
 
 		const fileStore = this.store;
