@@ -22,6 +22,7 @@ $ npm install conf
 
 ```js
 const Conf = require('conf');
+
 const config = new Conf();
 
 config.set('unicorn', '🦄');

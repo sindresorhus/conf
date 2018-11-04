@@ -1,3 +1,4 @@
+/* eslint-disable node/no-deprecated-api */
 'use strict';
 const fs = require('fs');
 const path = require('path');
@@ -49,7 +50,7 @@ class Conf {
 		const store = Object.assign(plainObject(), options.defaults, fileStore);
 		try {
 			assert.deepEqual(fileStore, store);
-		} catch (e) {
+		} catch (_) {
 			this.store = store;
 		}
 	}
