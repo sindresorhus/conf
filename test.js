@@ -126,6 +126,30 @@ test('`configName` option', t => {
 	t.is(path.basename(conf.path, '.json'), configName);
 });
 
+test('no `suffix` option', t => {
+	const conf = new Conf();
+	// Maintain behaviour of 2.0.0
+	t.true(conf.path.includes('-node'));
+});
+
+test('with `suffix` option set to empty string', t => {
+	const projectSuffix = '';
+	const conf = new Conf({projectSuffix});
+	// Config file's directory root
+	const configRoot = path.resolve(conf.path, '../..');
+	// Extract the config file's parent folder
+	const rootName = path.basename(configRoot);
+	// Expect to not have the path
+	t.false(rootName.includes(`-${projectSuffix}`));
+});
+
+test('with `projectSuffix` option set to non-empty string', t => {
+	const projectSuffix = 'new-projectSuffix';
+	const conf = new Conf({projectSuffix});
+	// New option starting from 2.0.0 (excluded)
+	t.true(conf.path.includes(`-${projectSuffix}`));
+});
+
 test('`fileExtension` option', t => {
 	const fileExtension = 'alt-ext';
 	const conf = new Conf({
