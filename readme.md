@@ -74,6 +74,63 @@ Default: The `name` field in the package.json closest to where `conf` is importe
 
 You only need to specify this if you don't have a package.json file in your project.
 
+#### projectSuffix
+
+Type: `string`<br>
+Default: `nodejs`
+
+Suffix to be added to `projectName` during config file creation.
+
+You can pass an empty string in order to disable any suffixes at all.
+
+##### Examples
+
+Every example in this subsection is supposedly used in a project called `test-project`.
+
+**Default option**
+
+```js
+const conf = new Conf();
+```
+
+The config file will be placed in the following subtree:
+```
+$OS_SPECIFIC_PATH
+├─── test-project-nodejs
+|   └─── Config
+|       └─── config.json
+```
+
+**Empty string option**
+
+```js
+const projectSuffix = '';
+const conf = new Conf({projectSuffix});
+```
+
+The config file will be placed in the following subtree:
+```
+$OS_SPECIFIC_PATH
+├─── test-project // <--- Here! No '-nodejs' suffix!
+|   └─── Config
+|       └─── config.json
+```
+
+**Custom string option**
+
+```js
+const projectSuffix = 'custom';
+const conf = new Conf({projectSuffix});
+```
+
+The config file will be placed in the following subtree:
+```
+$OS_SPECIFIC_PATH
+├─── test-project-custom // <--- Here! We have our very own '-custom' suffix!
+|   └─── Config
+|       └─── config.json
+```
+
 #### cwd
 
 Type: `string`<br>
