@@ -87,7 +87,7 @@ You can pass an empty string in order to disable any suffixes at all.
 
 Every example in this subsection is supposedly used in a project called `test-project`.
 
-**Default option**
+###### Default option
 
 ```js
 const conf = new Conf();
@@ -101,7 +101,7 @@ $OS_SPECIFIC_PATH
 |       └─── config.json
 ```
 
-**Empty string option**
+###### Empty string option
 
 ```js
 const projectSuffix = '';
@@ -116,7 +116,7 @@ $OS_SPECIFIC_PATH
 |       └─── config.json
 ```
 
-**Custom string option**
+###### Custom string option
 
 ```js
 const projectSuffix = 'custom';
