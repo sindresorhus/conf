@@ -135,18 +135,14 @@ test('no `suffix` option', t => {
 test('with `suffix` option set to empty string', t => {
 	const projectSuffix = '';
 	const conf = new Conf({projectSuffix});
-	// Config file's directory root
 	const configRoot = path.resolve(conf.path, '../..');
-	// Extract the config file's parent folder
 	const rootName = path.basename(configRoot);
-	// Expect to not have the path
 	t.false(rootName.includes(`-${projectSuffix}`));
 });
 
 test('with `projectSuffix` option set to non-empty string', t => {
 	const projectSuffix = 'new-projectSuffix';
 	const conf = new Conf({projectSuffix});
-	// New option starting from 2.0.0 (excluded)
 	t.true(conf.path.includes(`-${projectSuffix}`));
 });
 

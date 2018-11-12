@@ -34,7 +34,6 @@ class Conf {
 		options = Object.assign({
 			configName: 'config',
 			fileExtension: 'json',
-			// Maintain behaviour of 2.0.0 for the new option
 			projectSuffix: 'nodejs'
 		}, options);
 

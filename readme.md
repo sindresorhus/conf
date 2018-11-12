@@ -79,7 +79,7 @@ You only need to specify this if you don't have a package.json file in your proj
 Type: `string`<br>
 Default: `nodejs`
 
-Suffix to be added to `projectName` during config file creation.
+Suffix appended to `projectName` during config file creation to avoid name conflicts with native apps.
 
 You can pass an empty string in order to disable any suffixes at all.
 
@@ -112,21 +112,6 @@ The config file will be placed in the following subtree:
 ```
 $OS_SPECIFIC_PATH
 ├─── test-project // <--- Here! No '-nodejs' suffix!
-|   └─── Config
-|       └─── config.json
-```
-
-###### Custom string option
-
-```js
-const projectSuffix = 'custom';
-const conf = new Conf({projectSuffix});
-```
-
-The config file will be placed in the following subtree:
-```
-$OS_SPECIFIC_PATH
-├─── test-project-custom // <--- Here! We have our very own '-custom' suffix!
 |   └─── Config
 |       └─── config.json
 ```
