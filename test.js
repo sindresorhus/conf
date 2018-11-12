@@ -332,8 +332,14 @@ test('doesn\'t write to disk upon instanciation if and only if the store didn\'t
 	t.is(exists, true);
 });
 
-test('`validate` option', t => {
-	fs.writeFileSync(t.context.conf.path, 'Some text');
+test('`validate` option with invalid data', t => {
 	const conf = new Conf({cwd: tempy.directory(), validate: true});
-	t.throws(() => conf.store);
+	fs.writeFileSync(conf.path, 'Non-JSON data');
+	t.deepEqual(conf.store, {});
+});
+
+test('`validate` option with valid data', t => {
+	const conf = new Conf({cwd: tempy.directory(), validate: true});
+	conf.set('foo', 'bar');
+	t.deepEqual(conf.store, {foo: 'bar'});
 });

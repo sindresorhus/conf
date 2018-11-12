@@ -44,9 +44,9 @@ class Conf {
 		this.encryptionKey = options.encryptionKey;
 
 		const fileExtension = options.fileExtension ? `.${options.fileExtension}` : '';
-		this.path = path.resolve(options.cwd, `${options.configName}.${options.fileExtension}`);
-    
-		this.validate = options.validate;
+		this.path = path.resolve(options.cwd, `${options.configName}${fileExtension}`);
+
+		this._validate = options.validate;
 
 		const fileStore = this.store;
 		const store = Object.assign(plainObject(), options.defaults, fileStore);
@@ -140,8 +140,9 @@ class Conf {
 				} catch (_) {}
 			}
 
-			if (this.validate) {
-				JSON.parse(data);
+			if (this._validate) {
+				const jsonData = JSON.parse(data);
+				return Object.assign(plainObject(), jsonData);
 			}
 
 			return Object.assign(plainObject(), JSON.parse(data));
