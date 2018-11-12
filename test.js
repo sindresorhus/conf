@@ -324,5 +324,6 @@ test('doesn\'t write to disk upon instanciation if and only if the store didn\'t
 
 test('`validate` option', t => {
 	fs.writeFileSync(t.context.conf.path, 'Some text');
-	t.throws(() => new Conf({cwd: tempy.directory(), validate: true}));
+	const conf = new Conf({cwd: tempy.directory(), validate: true});
+	t.throws(() => conf.store);
 });

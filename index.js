@@ -42,10 +42,7 @@ class Conf {
 		this.events = new EventEmitter();
 		this.encryptionKey = options.encryptionKey;
 		this.path = path.resolve(options.cwd, `${options.configName}.${options.fileExtension}`);
-
-		if (options.validate) {
-			JSON.parse(fs.readFileSync(this.path));
-		}
+		this.validate = options.validate;
 
 		const fileStore = this.store;
 		const store = Object.assign(plainObject(), options.defaults, fileStore);
@@ -137,6 +134,10 @@ class Conf {
 					const decipher = crypto.createDecipher('aes-256-cbc', this.encryptionKey);
 					data = Buffer.concat([decipher.update(data), decipher.final()]);
 				} catch (_) {}
+			}
+
+			if (this.validate) {
+				JSON.parse(data);
 			}
 
 			return Object.assign(plainObject(), JSON.parse(data));
