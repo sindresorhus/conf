@@ -41,6 +41,7 @@ class Conf {
 
 		this.events = new EventEmitter();
 		this.encryptionKey = options.encryptionKey;
+		const fileExtension = options.fileExtension ? `.${options.fileExtension}` : '';
 		this.path = path.resolve(options.cwd, `${options.configName}.${options.fileExtension}`);
 		this.validate = options.validate;
 
