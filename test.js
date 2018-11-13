@@ -133,16 +133,21 @@ test('no `suffix` option', t => {
 
 test('with `suffix` option set to empty string', t => {
 	const projectSuffix = '';
-	const conf = new Conf({projectSuffix});
-	const configRoot = path.resolve(conf.path, '../..');
-	const rootName = path.basename(configRoot);
-	t.false(rootName.includes(`-${projectSuffix}`));
+	const projectName = 'conf-temp1-project';
+	const conf = new Conf({projectSuffix, projectName});
+	const configPathSegments = conf.path.split(path.sep);
+	const configRootIndex = configPathSegments.findIndex(segment => segment === projectName);
+	t.true(configRootIndex >= 0 && configRootIndex < configPathSegments.length);
 });
 
 test('with `projectSuffix` option set to non-empty string', t => {
 	const projectSuffix = 'new-projectSuffix';
-	const conf = new Conf({projectSuffix});
-	t.true(conf.path.includes(`-${projectSuffix}`));
+	const projectName = 'conf-temp2-project';
+	const conf = new Conf({projectSuffix, projectName});
+	const configPathSegments = conf.path.split(path.sep);
+	const expectedRootName = `${projectName}-${projectSuffix}`;
+	const configRootIndex = configPathSegments.findIndex(segment => segment === expectedRootName);
+	t.true(configRootIndex >= 0 && configRootIndex < configPathSegments.length);
 });
 
 test('`fileExtension` option', t => {
