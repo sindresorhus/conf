@@ -128,8 +128,7 @@ test('`configName` option', t => {
 
 test('no `suffix` option', t => {
 	const conf = new Conf();
-	// Maintain behaviour of 2.0.0
-	t.true(conf.path.includes('-node'));
+	t.true(conf.path.includes('-nodejs'));
 });
 
 test('with `suffix` option set to empty string', t => {
