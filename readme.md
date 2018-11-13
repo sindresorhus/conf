@@ -97,8 +97,7 @@ The config file will be placed in the following subtree:
 ```
 $OS_SPECIFIC_PATH
 ├─── test-project-nodejs
-|   └─── Config
-|       └─── config.json
+|   └─── $OS_SPECIFIC_CONFIG
 ```
 
 ###### Empty string option
@@ -112,8 +111,7 @@ The config file will be placed in the following subtree:
 ```
 $OS_SPECIFIC_PATH
 ├─── test-project // <--- Here! No '-nodejs' suffix!
-|   └─── Config
-|       └─── config.json
+|   └─── $OS_SPECIFIC_CONFIG
 ```
 
 #### cwd
