@@ -172,7 +172,7 @@ module.exports = class Conf {
 			return Object.assign(plainObject(), this.deserialize(data));
 		} catch (error) {
 			if (error.code === 'ENOENT') {
-				this.createDir();
+				this._ensureDirectory();
 				return plainObject();
 			}
 
@@ -185,7 +185,7 @@ module.exports = class Conf {
 	}
 
 	set store(value) {
-		this.createDir();
+		this._ensureDirectory();
 
 		let data = this.serialize(value);
 
@@ -198,14 +198,14 @@ module.exports = class Conf {
 		this.events.emit('change');
 	}
 
-	createDir() {
+	_ensureDirectory() {
 		// Ensure the directory exists as it could have been deleted in the meantime
 		// TODO: Use `fs.mkdirSync` `recursive` option when targeting Node.js 12
 		makeDir.sync(path.dirname(this.path));
 	}
 
 	watch() {
-		this.createDir();
+		this._ensureDirectory();
 
 		let wait = false;
 		fs.watch(path.dirname(this.path), {encoding: this.encryptionKey ? null : 'utf8'}, () => {
