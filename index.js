@@ -78,7 +78,9 @@ module.exports = class Conf {
 		} catch (_) {
 			this.store = store;
 		}
-		this._watch();
+		if (this.options.watch) {
+			this._watch();
+		}
 	}
 
 	get(key, defaultValue) {
