@@ -102,7 +102,7 @@ class Conf {
 	}
 
 	_migrate(options) {
-		const runningVersion = this.store.packageVersion || '0.0.0';
+		const runningVersion = this.store.__packageVersion__ || '0.0.0';
 
 		if (semver.lt(runningVersion, options.projectVersion)) {
 			const migrationsToRun = Object.keys(options.migrations).filter(version => {
@@ -115,7 +115,7 @@ class Conf {
 		}
 
 		if (runningVersion !== options.projectVersion) {
-			this.set('packageVersion', options.projectVersion);
+			this.set('__packageVersion__', options.projectVersion);
 		}
 	}
 
