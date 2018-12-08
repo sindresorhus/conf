@@ -57,7 +57,7 @@ class Conf {
 		}
 
 		if (options.migrations) {
-			this.migrate(options);
+			this._migrate(options);
 		}
 	}
 
@@ -103,7 +103,7 @@ class Conf {
 
 	_migrate(options) {
 		const runningVersion = this.store.__packageVersion__ || '0.0.0';
-		if (!this.options.projectVersion) {
+		if (!options.projectVersion) {
 			throw new Error('Project version could not be inferred. Please specify the `projectVersion` option.');
 		}
 

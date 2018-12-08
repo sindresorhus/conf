@@ -337,7 +337,7 @@ test('migrates to the next version', t => {
 	const conf1 = new Conf({cwd});
 
 	conf1.clear();
-	conf1.set('packageVersion', '0.0.4');
+	conf1.set('__packageVersion__', '0.0.4');
 	conf1.set('old', 'old');
 
 	const conf2 = new Conf({
@@ -365,18 +365,18 @@ test('migrates to the next version', t => {
 	t.is(conf2.get('4'), undefined);
 	t.is(conf2.get('new'), 'old');
 	t.is(conf2.get('2'), 1);
-	t.is(conf2.get('packageVersion'), require('./package.json').version);
+	t.is(conf2.get('__packageVersion__'), require('./package.json').version);
 });
 
 test('packageVersion is set initially', t => {
 	const conf = new Conf({cwd: tempy.directory(), migrations: {}});
 
-	t.not(conf.get('packageVersion'), undefined);
-	t.is(conf.get('packageVersion'), require('./package.json').version);
+	t.not(conf.get('__packageVersion__'), undefined);
+	t.is(conf.get('__packageVersion__'), require('./package.json').version);
 });
 
 test('packageVersion is not set without migrations', t => {
 	const {conf} = t.context;
 
-	t.is(conf.get('packageVersion'), undefined);
+	t.is(conf.get('__packageVersion__'), undefined);
 });
