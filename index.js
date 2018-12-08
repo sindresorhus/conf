@@ -210,8 +210,10 @@ module.exports = class Conf {
 	_watch() {
 		this._ensureDirectory();
 
-		fs.watch(this.path, debounceFn(() => {
-			this.events.emit('change');
+		fs.watch(this.path, debounceFn(eventType => {
+			if (eventType === 'change') {
+				this.events.emit('change');
+			}
 		}, {wait: 100}));
 	}
 
