@@ -110,7 +110,7 @@ class Conf {
 		if (semver.lt(runningVersion, options.projectVersion)) {
 			const migrationsToRun = Object.keys(options.migrations).filter(version => {
 				return semver.lte(version, options.projectVersion) && semver.gt(version, runningVersion);
-			}).sort(semver);
+			}).sort(semver.compare);
 
 			for (const version of migrationsToRun) {
 				options.migrations[version](this);
