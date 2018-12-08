@@ -96,7 +96,7 @@ class Conf {
 		this.store = plainObject();
 	}
 
-	migrate(options, expectedVersion) {
+	_migrate(options, expectedVersion) {
 		if (options.migrations) {
 			const runningVersion = this.store.packageVersion || '0.0.0';
 
