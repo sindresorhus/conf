@@ -77,7 +77,7 @@ module.exports = class Conf {
 		} catch (_) {
 			this.store = store;
 		}
-		this.watch();
+		this._watch();
 	}
 
 	get(key, defaultValue) {
@@ -204,7 +204,7 @@ module.exports = class Conf {
 		makeDir.sync(path.dirname(this.path));
 	}
 
-	watch() {
+	_watch() {
 		this._ensureDirectory();
 
 		let wait = false;
