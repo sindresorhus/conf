@@ -10,6 +10,7 @@ const makeDir = require('make-dir');
 const pkgUp = require('pkg-up');
 const envPaths = require('env-paths');
 const writeFileAtomic = require('write-file-atomic');
+const debounceFn = require('debounce-fn');
 
 const plainObject = () => Object.create(null);
 
@@ -207,16 +208,9 @@ module.exports = class Conf {
 	_watch() {
 		this._ensureDirectory();
 
-		let wait = false;
-		fs.watch(this.path, () => {
-			if (wait) {
-				return;
-			}
-			wait = setTimeout(() => {
-				wait = false;
-			}, 100);
+		fs.watch(this.path, debounceFn(() => {
 			this.events.emit('change');
-		});
+		}, {wait: 100}));
 	}
 
 	// TODO: Use `Object.entries()` when targeting Node.js 8
