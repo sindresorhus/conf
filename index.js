@@ -1,3 +1,4 @@
+/* eslint-disable node/no-deprecated-api */
 'use strict';
 const fs = require('fs');
 const path = require('path');
@@ -43,13 +44,15 @@ class Conf {
 
 		this.events = new EventEmitter();
 		this.encryptionKey = options.encryptionKey;
-		this.path = path.resolve(options.cwd, `${options.configName}.${options.fileExtension}`);
+
+		const fileExtension = options.fileExtension ? `.${options.fileExtension}` : '';
+		this.path = path.resolve(options.cwd, `${options.configName}${fileExtension}`);
 
 		const fileStore = this.store;
 		const store = Object.assign(plainObject(), options.defaults, fileStore);
 		try {
 			assert.deepEqual(fileStore, store);
-		} catch (e) {
+		} catch (_) {
 			this.store = store;
 		}
 

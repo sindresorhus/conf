@@ -1,6 +1,6 @@
 {
 	"name": "conf",
-	"version": "2.0.0",
+	"version": "2.1.0",
 	"description": "Simple config handling for your app or module",
 	"license": "MIT",
 	"repository": "sindresorhus/conf",
@@ -46,10 +46,10 @@
 		"write-file-atomic": "^2.3.0"
 	},
 	"devDependencies": {
-		"ava": "*",
-		"clear-module": "^2.1.0",
+		"ava": "^0.25.0",
+		"clear-module": "^3.0.0",
 		"del": "^3.0.0",
 		"tempy": "^0.2.1",
-		"xo": "*"
+		"xo": "^0.23.0"
 	}
 }

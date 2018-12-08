@@ -138,6 +138,16 @@ test('`fileExtension` option', t => {
 	t.is(path.extname(conf.path), `.${fileExtension}`);
 });
 
+test('`fileExtension` option = empty string', t => {
+	const configName = 'unicorn';
+	const conf = new Conf({
+		cwd: tempy.directory(),
+		fileExtension: '',
+		configName
+	});
+	t.is(path.basename(conf.path), configName);
+});
+
 test('`projectName` option', t => {
 	const projectName = 'conf-fixture-project-name';
 	const conf = new Conf({projectName});
