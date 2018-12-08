@@ -116,7 +116,7 @@ You would usually not need this, but could be useful if you want to interact wit
 
 #### migrations
 
- type: `object`<br>
+ type: `Object`<br>
  Default: `undefined`
 
  Migrations to be run between versions.
