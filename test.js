@@ -371,7 +371,6 @@ test('migrates to the next version', t => {
 test('packageVersion is set initially', t => {
 	const conf = new Conf({cwd: tempy.directory(), migrations: {}});
 
-	t.not(conf.get('__packageVersion__'), undefined);
 	t.is(conf.get('__packageVersion__'), require('./package.json').version);
 });
 
