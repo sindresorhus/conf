@@ -144,6 +144,15 @@ Suffix appended to `projectName` during config file creation to avoid name confl
 You can pass an empty string to remove the suffix.
 
 For example, on macOS, the config file will be stored in the `~/Library/Preferences/foo-nodejs` directory, where `foo` is the `projectName`.
+#### watch
+
+type: `Boolean`<br>
+Default: `false`
+
+Sets a file watcher.
+
+This is useful if you have more than one instances reading the config. If one instance changes a config, this allows it to get propagated to all instances of Conf. If you only ever have one instance on Conf in your app you can keep this off.
+
 
 ### Instance
 
