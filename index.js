@@ -56,7 +56,9 @@ class Conf {
 			this.store = store;
 		}
 
-		this.migrate(options, options.projectVersion);
+		if (options.migrations) {
+			this.migrate(options);
+		}
 	}
 
 	get(key, defaultValue) {
@@ -99,23 +101,21 @@ class Conf {
 		this.store = plainObject();
 	}
 
-	_migrate(options, expectedVersion) {
-		if (options.migrations) {
-			const runningVersion = this.store.packageVersion || '0.0.0';
+	_migrate(options) {
+		const runningVersion = this.store.packageVersion || '0.0.0';
 
-			if (semver.lt(runningVersion, expectedVersion)) {
-				const migrationsToRun = Object.keys(options.migrations).filter(version => {
-					return semver.lte(version, expectedVersion) && semver.gt(version, runningVersion);
-				}).sort(semver);
+		if (semver.lt(runningVersion, options.projectVersion)) {
+			const migrationsToRun = Object.keys(options.migrations).filter(version => {
+				return semver.lte(version, options.projectVersion) && semver.gt(version, runningVersion);
+			}).sort(semver);
 
-				for (const version of migrationsToRun) {
-					options.migrations[version](this);
-				}
+			for (const version of migrationsToRun) {
+				options.migrations[version](this);
 			}
+		}
 
-			if (runningVersion !== expectedVersion) {
-				this.set('packageVersion', expectedVersion);
-			}
+		if (runningVersion !== options.projectVersion) {
+			this.set('packageVersion', options.projectVersion);
 		}
 	}
 
