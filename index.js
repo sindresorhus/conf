@@ -208,7 +208,7 @@ module.exports = class Conf {
 		this._ensureDirectory();
 
 		let wait = false;
-		fs.watch(path.dirname(this.path), {encoding: this.encryptionKey ? null : 'utf8'}, () => {
+		fs.watch(this.path, () => {
 			if (wait) {
 				return;
 			}
