@@ -103,6 +103,9 @@ class Conf {
 
 	_migrate(options) {
 		const runningVersion = this.store.__packageVersion__ || '0.0.0';
+		if (!this.options.projectVersion) {
+			throw new Error('Project version could not be inferred. Please specify the `projectVersion` option.');
+		}
 
 		if (semver.lt(runningVersion, options.projectVersion)) {
 			const migrationsToRun = Object.keys(options.migrations).filter(version => {
