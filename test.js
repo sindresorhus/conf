@@ -434,3 +434,25 @@ test('`clearInvalidConfig` option - valid data', t => {
 	conf.set('foo', 'bar');
 	t.deepEqual(conf.store, {foo: 'bar'});
 });
+
+test.cb('watches conf file', t => {
+	const cwd = tempy.directory();
+	const conf1 = new Conf({cwd, watch: true});
+	const conf2 = new Conf({cwd});
+
+	conf1.set('foo', '👾');
+
+	t.plan(4);
+
+	const checkFoo = (newValue, oldValue) => {
+		t.is(newValue, '🐴');
+		t.is(oldValue, '👾');
+		conf2.set('foo', '👾');
+		t.end();
+	};
+
+	t.is(conf2.get('foo'), '👾');
+	t.is(conf1.path, conf2.path);
+	conf1.onDidChange('foo', checkFoo);
+	conf2.set('foo', '🐴');
+});

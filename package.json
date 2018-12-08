@@ -38,7 +38,7 @@
 		"cache"
 	],
 	"dependencies": {
-		"debounce-fn": "^1.0.0",
+		"chokidar": "^2.0.4",
 		"dot-prop": "^4.1.0",
 		"env-paths": "^1.0.0",
 		"make-dir": "^2.0.0",

@@ -10,7 +10,7 @@ const makeDir = require('make-dir');
 const pkgUp = require('pkg-up');
 const envPaths = require('env-paths');
 const writeFileAtomic = require('write-file-atomic');
-const debounceFn = require('debounce-fn');
+const chokidar = require('chokidar');
 
 const plainObject = () => Object.create(null);
 
@@ -78,7 +78,7 @@ module.exports = class Conf {
 		} catch (_) {
 			this.store = store;
 		}
-		if (this.options.watch) {
+		if (options.watch) {
 			this._watch();
 		}
 	}
@@ -210,11 +210,13 @@ module.exports = class Conf {
 	_watch() {
 		this._ensureDirectory();
 
-		fs.watch(this.path, debounceFn(eventType => {
-			if (eventType === 'change') {
-				this.events.emit('change');
-			}
-		}, {wait: 100}));
+		if (!fs.existsSync(this.path)) {
+			writeFileAtomic.sync(this.path, JSON.stringify({}, null, '\t'));
+		}
+
+		chokidar.watch(this.path).on('change', () => {
+			this.events.emit('change');
+		});
 	}
 
 	// TODO: Use `Object.entries()` when targeting Node.js 8
