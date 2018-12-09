@@ -151,7 +151,7 @@ Default: `false`
 
 Sets a file watcher.
 
-This is useful if you have more than one instances reading the config. If one instance changes a config, this allows it to get propagated to all instances of Conf. If you only ever have one instance on Conf in your app you can keep this off.
+This is useful if you have more than one instance reading the config. If one instance changes a config, this allows it to get propagated to all other instances. If you only ever have one instance in your app you can keep this off.
 
 
 ### Instance
