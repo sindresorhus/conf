@@ -213,10 +213,9 @@ module.exports = class Conf {
 		if (!fs.existsSync(this.path)) {
 			writeFileAtomic.sync(this.path, JSON.stringify({}, null, '\t'));
 		}
-		chokidar.watch(this.path).on('all', event => {
-			console.log(event);
-			this.events.emit('change');
-		});
+		chokidar.watch(this.path)
+			.on('add', () => this.events.emit('change'))
+			.on('change', () => this.events.emit('change'));
 	}
 
 	// TODO: Use `Object.entries()` when targeting Node.js 8
