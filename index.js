@@ -213,8 +213,9 @@ module.exports = class Conf {
 		if (!fs.existsSync(this.path)) {
 			writeFileAtomic.sync(this.path, JSON.stringify({}, null, '\t'));
 		}
-
+		console.log('watching');
 		chokidar.watch(this.path).on('change', () => {
+			console.log('chokidar changed');
 			this.events.emit('change');
 		});
 	}
