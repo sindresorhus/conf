@@ -145,6 +145,12 @@ Delete all items.
 
 Watches the given `key`, calling `callback` on any changes. When a key is first set `oldValue` will be `undefined`, and when a key is deleted `newValue` will be `undefined`.
 
+#### .onDidAnyChange(callback)
+
+`callback`: `(newValue, oldValue) => {}`
+
+Calls `callback` on changes anywhere in the config file. `oldValue` and `newValue` will be the full config object before after the change, respectively. You must compare `oldValue` to `newValue` to find out what changed.
+
 #### .size
 
 Get the item count.

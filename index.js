@@ -95,6 +95,39 @@ class Conf {
 		this.store = plainObject();
 	}
 
+	static isEqual(newValue, oldValue) {
+		try {
+			// TODO: Use `util.isDeepStrictEqual` when targeting Node.js 10
+			assert.deepEqual(newValue, oldValue);
+		} catch (_) {
+			return false;
+		}
+
+		return true;
+	}
+
+	onDidAnyChange(callback) {
+		if (typeof callback !== 'function') {
+			throw new TypeError(`Expected \`callback\` to be of type \`function\`, got ${typeof callback}`);
+		}
+
+		let currentValue = this.store;
+
+		const onChange = () => {
+			const oldValue = currentValue;
+			const newValue = this.store;
+
+			const didChange = Conf.isEqual(oldValue, newValue) === false;
+			if (didChange) {
+				currentValue = newValue;
+				callback.call(this, newValue, oldValue);
+			}
+		};
+
+		this.events.on('change', onChange);
+		return () => this.events.removeListener('change', onChange);
+	}
+
 	onDidChange(key, callback) {
 		if (typeof key !== 'string') {
 			throw new TypeError(`Expected \`key\` to be of type \`string\`, got ${typeof key}`);
@@ -110,10 +143,8 @@ class Conf {
 			const oldValue = currentValue;
 			const newValue = this.get(key);
 
-			try {
-				// TODO: Use `util.isDeepStrictEqual` when targeting Node.js 10
-				assert.deepEqual(newValue, oldValue);
-			} catch (_) {
+			const didChange = Conf.isEqual(oldValue, newValue) === false;
+			if (didChange) {
 				currentValue = newValue;
 				callback.call(this, newValue, oldValue);
 			}
