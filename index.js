@@ -125,7 +125,11 @@ class Conf {
 		};
 
 		this.events.on('change', onChange);
-		return () => this.events.removeListener('change', onChange);
+		
+		// TODO: Use `this.events.off` when targeting Node.js 10
+		return () => {
+			this.events.removeListener('change', onChange);
+		};
 	}
 
 	onDidChange(key, callback) {
