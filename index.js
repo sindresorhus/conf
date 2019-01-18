@@ -33,11 +33,12 @@ class Conf {
 
 		options = Object.assign({
 			configName: 'config',
-			fileExtension: 'json'
+			fileExtension: 'json',
+			projectSuffix: 'nodejs'
 		}, options);
 
 		if (!options.cwd) {
-			options.cwd = envPaths(options.projectName).config;
+			options.cwd = envPaths(options.projectName, {suffix: options.projectSuffix}).config;
 		}
 
 		this.events = new EventEmitter();

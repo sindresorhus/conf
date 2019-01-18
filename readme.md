@@ -107,6 +107,19 @@ Extension of the config file.
 
 You would usually not need this, but could be useful if you want to interact with a file with a custom file extension that can be associated with your app. These might be simple save/export/preference files that are intended to be shareable or saved outside of the app.
 
+#### projectSuffix
+
+Type: `string`<br>
+Default: `nodejs`
+
+**You most likely don't need this. Please don't use it unless you really have to.**
+
+Suffix appended to `projectName` during config file creation to avoid name conflicts with native apps.
+
+You can pass an empty string to remove the suffix.
+
+For example, on macOS, the config file will be stored in the `~/Library/Preferences/foo-nodejs` directory, where `foo` is the `projectName`.
+
 ### Instance
 
 You can use [dot-notation](https://github.com/sindresorhus/dot-prop) in a `key` to access nested properties.
