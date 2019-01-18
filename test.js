@@ -317,7 +317,6 @@ test('onDidChange()', t => {
 	conf.set('foo', fixture);
 });
 
-// See #45
 test('onDidAnyChange()', t => {
 	const {conf} = t.context;
 
