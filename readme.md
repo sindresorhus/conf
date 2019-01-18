@@ -74,46 +74,6 @@ Default: The `name` field in the package.json closest to where `conf` is importe
 
 You only need to specify this if you don't have a package.json file in your project.
 
-#### projectSuffix
-
-Type: `string`<br>
-Default: `nodejs`
-
-Suffix appended to `projectName` during config file creation to avoid name conflicts with native apps.
-
-You can pass an empty string in order to disable any suffixes at all.
-
-##### Examples
-
-Every example in this subsection is supposedly used in a project called `test-project`.
-
-###### Default option
-
-```js
-const conf = new Conf();
-```
-
-The config file will be placed in the following subtree:
-```
-$OS_SPECIFIC_PATH
-├─── test-project-nodejs
-|   └─── $OS_SPECIFIC_CONFIG
-```
-
-###### Empty string option
-
-```js
-const projectSuffix = '';
-const conf = new Conf({projectSuffix});
-```
-
-The config file will be placed in the following subtree:
-```
-$OS_SPECIFIC_PATH
-├─── test-project // <--- Here! No '-nodejs' suffix!
-|   └─── $OS_SPECIFIC_CONFIG
-```
-
 #### cwd
 
 Type: `string`<br>
@@ -146,6 +106,19 @@ Default: `json`
 Extension of the config file.
 
 You would usually not need this, but could be useful if you want to interact with a file with a custom file extension that can be associated with your app. These might be simple save/export/preference files that are intended to be shareable or saved outside of the app.
+
+#### projectSuffix
+
+Type: `string`<br>
+Default: `nodejs`
+
+**You most likely don't need this. Please don't use it unless you really have to.**
+
+Suffix appended to `projectName` during config file creation to avoid name conflicts with native apps.
+
+You can pass an empty string to remove the suffix.
+
+For example, on macOS, the config file will be stored in the `~/Library/Preferences/foo-nodejs` directory, where `foo` is the `projectName`.
 
 ### Instance
 
