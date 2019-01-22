@@ -31,6 +31,7 @@ test('.set() with object', t => {
 	t.context.conf.set({
 		foo1: 'bar1',
 		foo2: 'bar2',
+		foo3: undefined,
 		baz: {
 			boo: 'foo',
 			foo: {
@@ -44,6 +45,7 @@ test('.set() with object', t => {
 	t.is(t.context.conf.get('baz.boo'), 'foo');
 	t.deepEqual(t.context.conf.get('baz.foo'), {bar: 'baz'});
 	t.is(t.context.conf.get('baz.foo.bar'), 'baz');
+	t.is(t.context.conf.get('foo3'), undefined);
 });
 
 test('.set() with undefined', t => {

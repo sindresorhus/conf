@@ -69,6 +69,14 @@ class Conf {
 			throw new TypeError('Use `delete()` to clear values');
 		}
 
+		if (typeof value === 'object') {
+			for (const v in value) {
+				if (value[v] === undefined) {
+					throw new TypeError('Undefined not supported by JSON');
+				}
+			}
+		}
+
 		const {store} = this;
 
 		if (typeof key === 'object') {
