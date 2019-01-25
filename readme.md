@@ -1,4 +1,4 @@
-# conf [![Build Status: Linux and macOS](https://travis-ci.org/sindresorhus/conf.svg?branch=master)](https://travis-ci.org/sindresorhus/conf) [![Build status: Windows](https://ci.appveyor.com/api/projects/status/n88jwh3aju39i0p2/branch/master?svg=true)](https://ci.appveyor.com/project/sindresorhus/conf/branch/master)
+# conf [![Build Status](https://travis-ci.org/sindresorhus/conf.svg?branch=master)](https://travis-ci.org/sindresorhus/conf)
 
 > Simple config handling for your app or module
 
@@ -56,7 +56,7 @@ Returns a new instance.
 
 Type: `Object`
 
-Default config.
+Config used if there are no existing config.
 
 #### configName
 
@@ -115,6 +115,19 @@ Default: `false`
 Forces JSON validation of the config file.
 
 You would usually not need this, but could be useful if you do not have full control over the config file (e.g. when the file is created from a 3rd party library or application).
+
+#### projectSuffix
+
+Type: `string`<br>
+Default: `nodejs`
+
+**You most likely don't need this. Please don't use it unless you really have to.**
+
+Suffix appended to `projectName` during config file creation to avoid name conflicts with native apps.
+
+You can pass an empty string to remove the suffix.
+
+For example, on macOS, the config file will be stored in the `~/Library/Preferences/foo-nodejs` directory, where `foo` is the `projectName`.
 
 ### Instance
 
@@ -178,7 +191,7 @@ Get the path to the config file.
 
 ### How is this different from [`configstore`](https://github.com/yeoman/configstore)?
 
-I'm also the author of `configstore`. While it's pretty good, I did make some mistakes early on that are hard to change at this point. This module is the result of everything I learned from making `configstore`. Mainly where config is stored. In `configstore`, the config is stored in `~/.config` (which is mainly a Linux convention) on all systems, while `conf` stores config in the system default [user config directory](https://github.com/sindresorhus/env-paths#pathsconfig). The `~/.config` directory, it turns out, often have an incorrect permission on macOS and Windows, which has caused a lot of grief for users.
+I'm also the author of `configstore`. While it's pretty good, I did make some mistakes early on that are hard to change at this point. This module is the result of everything I learned from making `configstore`. Mainly where the config is stored. In `configstore`, the config is stored in `~/.config` (which is mainly a Linux convention) on all systems, while `conf` stores config in the system default [user config directory](https://github.com/sindresorhus/env-paths#pathsconfig). The `~/.config` directory, it turns out, often have an incorrect permission on macOS and Windows, which has caused a lot of grief for users.
 
 
 ## Related

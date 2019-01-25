@@ -126,6 +126,30 @@ test('`configName` option', t => {
 	t.is(path.basename(conf.path, '.json'), configName);
 });
 
+test('no `suffix` option', t => {
+	const conf = new Conf();
+	t.true(conf.path.includes('-nodejs'));
+});
+
+test('with `suffix` option set to empty string', t => {
+	const projectSuffix = '';
+	const projectName = 'conf-temp1-project';
+	const conf = new Conf({projectSuffix, projectName});
+	const configPathSegments = conf.path.split(path.sep);
+	const configRootIndex = configPathSegments.findIndex(segment => segment === projectName);
+	t.true(configRootIndex >= 0 && configRootIndex < configPathSegments.length);
+});
+
+test('with `projectSuffix` option set to non-empty string', t => {
+	const projectSuffix = 'new-projectSuffix';
+	const projectName = 'conf-temp2-project';
+	const conf = new Conf({projectSuffix, projectName});
+	const configPathSegments = conf.path.split(path.sep);
+	const expectedRootName = `${projectName}-${projectSuffix}`;
+	const configRootIndex = configPathSegments.findIndex(segment => segment === expectedRootName);
+	t.true(configRootIndex >= 0 && configRootIndex < configPathSegments.length);
+});
+
 test('`fileExtension` option', t => {
 	const fileExtension = 'alt-ext';
 	const conf = new Conf({
