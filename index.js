@@ -142,8 +142,12 @@ class Conf {
 			}
 
 			if (this._validate) {
-				const jsonData = JSON.parse(data);
-				return Object.assign(plainObject(), jsonData);
+				try {
+					const jsonData = JSON.parse(data);
+					return Object.assign(plainObject(), jsonData);
+				} catch (error) {
+					throw new Error('Invalid JSON data');
+				}
 			}
 
 			return Object.assign(plainObject(), JSON.parse(data));
