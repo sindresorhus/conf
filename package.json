@@ -38,6 +38,7 @@
 		"cache"
 	],
 	"dependencies": {
+		"ajv": "^6.7.0",
 		"dot-prop": "^4.1.0",
 		"env-paths": "^1.0.0",
 		"make-dir": "^2.0.0",

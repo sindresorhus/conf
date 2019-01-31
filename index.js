@@ -10,6 +10,7 @@ const makeDir = require('make-dir');
 const pkgUp = require('pkg-up');
 const envPaths = require('env-paths');
 const writeFileAtomic = require('write-file-atomic');
+const Ajv = require('ajv');
 
 const plainObject = () => Object.create(null);
 
@@ -62,6 +63,11 @@ module.exports = class Conf {
 
 		this._options = options;
 
+		if (options.schema && options.fileExtension === 'json') {
+			const ajv = new Ajv();
+			this.validator = ajv.compile(options.schema);
+		}
+
 		this.events = new EventEmitter();
 		this.encryptionKey = options.encryptionKey;
 		this.serialize = options.serialize;
@@ -76,6 +82,17 @@ module.exports = class Conf {
 			assert.deepEqual(fileStore, store);
 		} catch (_) {
 			this.store = store;
+		}
+	}
+
+	validate(data) {
+		if (this.validator) {
+			const valid = this.validator(data);
+			if (!valid) {
+				const errors = this.validator.errors.reduce((error, {dataPath, message}) =>
+					error + `${dataPath} ${message};`, '');
+				throw new Error('Config is not valid according to schema:' + errors);
+			}
 		}
 	}
 
@@ -168,6 +185,7 @@ module.exports = class Conf {
 				} catch (_) {}
 			}
 
+			this.validate(JSON.parse(data));
 			return Object.assign(plainObject(), this.deserialize(data));
 		} catch (error) {
 			if (error.code === 'ENOENT') {
@@ -188,6 +206,7 @@ module.exports = class Conf {
 		// Ensure the directory exists as it could have been deleted in the meantime
 		makeDir.sync(path.dirname(this.path));
 
+		this.validate(value);
 		let data = this.serialize(value);
 
 		if (this.encryptionKey) {
