@@ -17,6 +17,20 @@ const plainObject = () => Object.create(null);
 delete require.cache[__filename];
 const parentDir = path.dirname((module.parent && module.parent.filename) || '.');
 
+const checkValueType = (key, value) => {
+	const nonJsonTypes = [
+		'undefined',
+		'symbol',
+		'function'
+	];
+
+	const type = typeof value;
+
+	if (nonJsonTypes.includes(type)) {
+		throw new TypeError(`Setting a value of type \`${type}\` for key \`${key}\` is not allowed as it's not supported by JSON`);
+	}
+};
+
 class Conf {
 	constructor(options) {
 		const pkgPath = pkgUp.sync(parentDir);
@@ -71,12 +85,18 @@ class Conf {
 
 		const {store} = this;
 
+		const set = (key, value) => {
+			checkValueType(key, value);
+			dotProp.set(store, key, value);
+		};
+
 		if (typeof key === 'object') {
+			// TODO: Use `Object.entries()` when targeting Node.js 8
 			for (const k of Object.keys(key)) {
-				dotProp.set(store, k, key[k]);
+				set(k, key[k]);
 			}
 		} else {
-			dotProp.set(store, key, value);
+			set(key, value);
 		}
 
 		this.store = store;

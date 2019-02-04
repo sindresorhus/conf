@@ -27,7 +27,7 @@ test('.set()', t => {
 	t.is(t.context.conf.get('baz.boo'), fixture);
 });
 
-test('.set() with object', t => {
+test('.set() - with object', t => {
 	t.context.conf.set({
 		foo1: 'bar1',
 		foo2: 'bar2',
@@ -46,11 +46,39 @@ test('.set() with object', t => {
 	t.is(t.context.conf.get('baz.foo.bar'), 'baz');
 });
 
-test('.set() with undefined', t => {
+test('.set() - with undefined', t => {
 	t.throws(() => t.context.conf.set('foo', undefined), 'Use `delete()` to clear values');
 });
 
-test('.set() invalid key', t => {
+test('.set() - with unsupported values', t => {
+	t.throws(() => {
+		t.context.conf.set('a', () => {});
+	}, /not supported by JSON/);
+
+	t.throws(() => {
+		t.context.conf.set('a', Symbol('a'));
+	}, /not supported by JSON/);
+
+	t.throws(() => {
+		t.context.conf.set({
+			a: undefined
+		});
+	}, /not supported by JSON/);
+
+	t.throws(() => {
+		t.context.conf.set({
+			a: () => {}
+		});
+	}, /not supported by JSON/);
+
+	t.throws(() => {
+		t.context.conf.set({
+			a: Symbol('a')
+		});
+	}, /not supported by JSON/);
+});
+
+test('.set() - invalid key', t => {
 	t.throws(() => t.context.conf.set(1, 'unicorn'), 'Expected `key` to be of type `string` or `object`, got number');
 });
 

@@ -130,7 +130,7 @@ The instance is [`iterable`](https://developer.mozilla.org/en/docs/Web/JavaScrip
 
 Set an item.
 
-The `value` must be JSON serializable.
+The `value` must be JSON serializable. Trying to set the type `undefined`, `function`, or `symbol` will result in a TypeError.
 
 #### .set(object)
 
