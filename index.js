@@ -50,6 +50,8 @@ module.exports = class Conf {
 			configName: 'config',
 			fileExtension: 'json',
 			projectSuffix: 'nodejs',
+			serialize: value => JSON.stringify(value, null, '\t'),
+			deserialize: JSON.parse,
 			...options
 		};
 
@@ -59,6 +61,8 @@ module.exports = class Conf {
 
 		this.events = new EventEmitter();
 		this.encryptionKey = options.encryptionKey;
+		this.serialize = options.serialize;
+		this.deserialize = options.deserialize;
 
 		const fileExtension = options.fileExtension ? `.${options.fileExtension}` : '';
 		this.path = path.resolve(options.cwd, `${options.configName}${fileExtension}`);
@@ -161,7 +165,7 @@ module.exports = class Conf {
 				} catch (_) {}
 			}
 
-			return Object.assign(plainObject(), JSON.parse(data));
+			return Object.assign(plainObject(), this.deserialize(data));
 		} catch (error) {
 			if (error.code === 'ENOENT') {
 				// TODO: Use `fs.mkdirSync` `recursive` option when targeting Node.js 12
@@ -181,7 +185,7 @@ module.exports = class Conf {
 		// Ensure the directory exists as it could have been deleted in the meantime
 		makeDir.sync(path.dirname(this.path));
 
-		let data = JSON.stringify(value, null, '\t');
+		let data = this.serialize(value);
 
 		if (this.encryptionKey) {
 			const cipher = crypto.createCipher('aes-256-cbc', this.encryptionKey);

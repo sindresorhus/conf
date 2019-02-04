@@ -107,6 +107,24 @@ Extension of the config file.
 
 You would usually not need this, but could be useful if you want to interact with a file with a custom file extension that can be associated with your app. These might be simple save/export/preference files that are intended to be shareable or saved outside of the app.
 
+#### serialize
+
+type: `Function`<br>
+Default: `value => JSON.stringify(value, null '\t')`
+
+Function to serialize the config object to utf8 string when writing to the config file.
+
+You would usually not need this, but could be useful if you want to use a format other than JSON.
+
+#### deserialize
+
+type: `Function`<br>
+Default: `JSON.parse`
+
+Function to deserialize the config object from utf8 when reading the config file.
+
+You would usually not need this, but could be useful if you want to use a format other than JSON.
+
 #### projectSuffix
 
 Type: `string`<br>
@@ -184,6 +202,20 @@ Get the path to the config file.
 
 I'm also the author of `configstore`. While it's pretty good, I did make some mistakes early on that are hard to change at this point. This module is the result of everything I learned from making `configstore`. Mainly where the config is stored. In `configstore`, the config is stored in `~/.config` (which is mainly a Linux convention) on all systems, while `conf` stores config in the system default [user config directory](https://github.com/sindresorhus/env-paths#pathsconfig). The `~/.config` directory, it turns out, often have an incorrect permission on macOS and Windows, which has caused a lot of grief for users.
 
+### Can I use YAML or another serialization format?
+
+The `serialize` and `deserialize` options can be used to customize the format of the config file, as long as the representation is compatible with `utf8` encoding.
+
+Example using YAML:
+
+```js
+const yaml = require('js-yaml');
+const config = new Conf({
+	fileExtension: 'yaml',
+	serialize: yaml.safeDump,
+	deserialize: yaml.safeLoad
+});
+```
 
 ## Related
 
