@@ -47,7 +47,9 @@ test('.set() - with object', t => {
 });
 
 test('.set() - with undefined', t => {
-	t.throws(() => t.context.conf.set('foo', undefined), 'Use `delete()` to clear values');
+	t.throws(() => {
+		t.context.conf.set('foo', undefined);
+	}, 'Use `delete()` to clear values');
 });
 
 test('.set() - with unsupported values', t => {
@@ -79,7 +81,9 @@ test('.set() - with unsupported values', t => {
 });
 
 test('.set() - invalid key', t => {
-	t.throws(() => t.context.conf.set(1, 'unicorn'), 'Expected `key` to be of type `string` or `object`, got number');
+	t.throws(() => {
+		t.context.conf.set(1, 'unicorn');
+	}, 'Expected `key` to be of type `string` or `object`, got number');
 });
 
 test('.has()', t => {
@@ -213,8 +217,12 @@ test('`projectName` option', t => {
 test('ensure `.store` is always an object', t => {
 	const cwd = tempy.directory();
 	const conf = new Conf({cwd});
+
 	del.sync(cwd, {force: true});
-	t.notThrows(() => conf.get('foo'));
+
+	t.notThrows(() => {
+		conf.get('foo');
+	});
 });
 
 test('instance is iterable', t => {
@@ -222,7 +230,10 @@ test('instance is iterable', t => {
 		foo: fixture,
 		bar: fixture
 	});
-	t.deepEqual([...t.context.conf], [['foo', fixture], ['bar', fixture]]);
+	t.deepEqual(
+		[...t.context.conf],
+		[['foo', fixture], ['bar', fixture]]
+	);
 });
 
 test('automatic `projectName` inference', t => {
@@ -355,6 +366,7 @@ test('onDidChange()', t => {
 		t.is(oldValue, fixture);
 		t.is(newValue, undefined);
 	};
+
 	const checkSet = (newValue, oldValue) => {
 		t.is(oldValue, undefined);
 		t.is(newValue, '🐴');

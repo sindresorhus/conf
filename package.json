@@ -10,7 +10,7 @@
 		"url": "sindresorhus.com"
 	},
 	"engines": {
-		"node": ">=6"
+		"node": ">=8"
 	},
 	"scripts": {
 		"test": "xo && ava"
@@ -40,15 +40,15 @@
 	"dependencies": {
 		"dot-prop": "^4.1.0",
 		"env-paths": "^1.0.0",
-		"make-dir": "^1.0.0",
+		"make-dir": "^2.0.0",
 		"pkg-up": "^2.0.0",
-		"write-file-atomic": "^2.3.0"
+		"write-file-atomic": "^2.4.2"
 	},
 	"devDependencies": {
 		"ava": "^1.2.0",
 		"clear-module": "^3.0.0",
 		"del": "^3.0.0",
 		"tempy": "^0.2.1",
-		"xo": "^0.23.0"
+		"xo": "^0.24.0"
 	}
 }

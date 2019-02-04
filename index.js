@@ -31,25 +31,27 @@ const checkValueType = (key, value) => {
 	}
 };
 
-class Conf {
+module.exports = class Conf {
 	constructor(options) {
 		const pkgPath = pkgUp.sync(parentDir);
 
-		options = Object.assign({
+		options = {
 			// Can't use `require` because of Webpack being annoying:
 			// https://github.com/webpack/webpack/issues/196
-			projectName: pkgPath && JSON.parse(fs.readFileSync(pkgPath, 'utf8')).name
-		}, options);
+			projectName: pkgPath && JSON.parse(fs.readFileSync(pkgPath, 'utf8')).name,
+			...options
+		};
 
 		if (!options.projectName && !options.cwd) {
 			throw new Error('Project name could not be inferred. Please specify the `projectName` option.');
 		}
 
-		options = Object.assign({
+		options = {
 			configName: 'config',
 			fileExtension: 'json',
-			projectSuffix: 'nodejs'
-		}, options);
+			projectSuffix: 'nodejs',
+			...options
+		};
 
 		if (!options.cwd) {
 			options.cwd = envPaths(options.projectName, {suffix: options.projectSuffix}).config;
@@ -91,9 +93,9 @@ class Conf {
 		};
 
 		if (typeof key === 'object') {
-			// TODO: Use `Object.entries()` when targeting Node.js 8
-			for (const k of Object.keys(key)) {
-				set(k, key[k]);
+			const object = key;
+			for (const [key, value] of Object.entries(object)) {
+				set(key, value);
 			}
 		} else {
 			set(key, value);
@@ -162,6 +164,7 @@ class Conf {
 			return Object.assign(plainObject(), JSON.parse(data));
 		} catch (error) {
 			if (error.code === 'ENOENT') {
+				// TODO: Use `fs.mkdirSync` `recursive` option when targeting Node.js 12
 				makeDir.sync(path.dirname(this.path));
 				return plainObject();
 			}
@@ -189,14 +192,9 @@ class Conf {
 		this.events.emit('change');
 	}
 
-	// TODO: Use `Object.entries()` when targeting Node.js 8
 	* [Symbol.iterator]() {
-		const {store} = this;
-
-		for (const key of Object.keys(store)) {
-			yield [key, store[key]];
+		for (const [key, value] of Object.entries(this.store)) {
+			yield [key, value];
 		}
 	}
-}
-
-module.exports = Conf;
+};
