@@ -109,21 +109,21 @@ You would usually not need this, but could be useful if you want to interact wit
 
 #### serialize
 
-type: `Function`<br>
-Default: `value => JSON.stringify(value, null '\t')`
+Type: `Function`<br>
+Default: `value => JSON.stringify(value, null, '\t')`
 
-Function to serialize the config object to utf8 string when writing to the config file.
+Function to serialize the config object to a UTF-8 string when writing the config file.
 
-You would usually not need this, but could be useful if you want to use a format other than JSON.
+You would usually not need this, but it could be useful if you want to use a format other than JSON.
 
 #### deserialize
 
 type: `Function`<br>
 Default: `JSON.parse`
 
-Function to deserialize the config object from utf8 when reading the config file.
+Function to deserialize the config object from a UTF-8 string when reading the config file.
 
-You would usually not need this, but could be useful if you want to use a format other than JSON.
+You would usually not need this, but it could be useful if you want to use a format other than JSON.
 
 #### projectSuffix
 
