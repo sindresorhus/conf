@@ -204,6 +204,30 @@ test('`fileExtension` option = empty string', t => {
 	t.is(path.basename(conf.path), configName);
 });
 
+test('`serialize` and `deserialize` options', t => {
+	t.plan(4);
+	const serialized = `foo:${fixture}`;
+	const deserialized = {foo: fixture};
+	const serialize = value => {
+		t.is(value, deserialized);
+		return serialized;
+	};
+
+	const deserialize = value => {
+		t.is(value, serialized);
+		return deserialized;
+	};
+
+	const conf = new Conf({
+		cwd: tempy.directory(),
+		serialize,
+		deserialize
+	});
+	t.deepEqual(conf.store, {});
+	conf.store = deserialized;
+	t.deepEqual(conf.store, deserialized);
+});
+
 test('`projectName` option', t => {
 	const projectName = 'conf-fixture-project-name';
 	const conf = new Conf({projectName});
