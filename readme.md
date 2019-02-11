@@ -100,12 +100,19 @@ When specified, the store will be encrypted using the [`aes-256-cbc`](https://en
 
 #### fileExtension
 
-type: `string`<br>
+Type: `string`<br>
 Default: `json`
 
 Extension of the config file.
 
 You would usually not need this, but could be useful if you want to interact with a file with a custom file extension that can be associated with your app. These might be simple save/export/preference files that are intended to be shareable or saved outside of the app.
+
+#### clearInvalidConfig
+
+Type: `boolean`<br>
+Default: `true`
+
+The config is cleared if reading the config file causes a `SyntaxError`. This is a good default, as the config file is not intended to be hand-edited, so it usually means the config is corrupt and there's nothing the user can do about it anyway. However, if you let the user edit the config file directly, mistakes might happen and it could be more useful to throw an error when the config is invalid instead of clearing. Disabling this option will make it throw a `SyntaxError` on invalid config instead of clearing.
 
 #### serialize
 
@@ -118,7 +125,7 @@ You would usually not need this, but it could be useful if you want to use a for
 
 #### deserialize
 
-type: `Function`<br>
+Type: `Function`<br>
 Default: `JSON.parse`
 
 Function to deserialize the config object from a UTF-8 string when reading the config file.

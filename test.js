@@ -419,3 +419,18 @@ test('doesn\'t write to disk upon instanciation if and only if the store didn\'t
 	exists = fs.existsSync(conf.path);
 	t.is(exists, true);
 });
+
+test('`clearInvalidConfig` option - invalid data', t => {
+	const conf = new Conf({cwd: tempy.directory(), clearInvalidConfig: false});
+	fs.writeFileSync(conf.path, '🦄');
+
+	t.throws(() => {
+		conf.store; // eslint-disable-line no-unused-expressions
+	}, {instanceOf: SyntaxError});
+});
+
+test('`clearInvalidConfig` option - valid data', t => {
+	const conf = new Conf({cwd: tempy.directory(), clearInvalidConfig: false});
+	conf.set('foo', 'bar');
+	t.deepEqual(conf.store, {foo: 'bar'});
+});

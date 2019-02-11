@@ -50,6 +50,7 @@ module.exports = class Conf {
 			configName: 'config',
 			fileExtension: 'json',
 			projectSuffix: 'nodejs',
+			clearInvalidConfig: true,
 			serialize: value => JSON.stringify(value, null, '\t'),
 			deserialize: JSON.parse,
 			...options
@@ -58,6 +59,8 @@ module.exports = class Conf {
 		if (!options.cwd) {
 			options.cwd = envPaths(options.projectName, {suffix: options.projectSuffix}).config;
 		}
+
+		this._options = options;
 
 		this.events = new EventEmitter();
 		this.encryptionKey = options.encryptionKey;
@@ -173,7 +176,7 @@ module.exports = class Conf {
 				return plainObject();
 			}
 
-			if (error.name === 'SyntaxError') {
+			if (this._options.clearInvalidConfig && error.name === 'SyntaxError') {
 				return plainObject();
 			}
 
