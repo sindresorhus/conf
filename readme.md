@@ -210,12 +210,14 @@ Example using YAML:
 
 ```js
 const yaml = require('js-yaml');
+
 const config = new Conf({
 	fileExtension: 'yaml',
 	serialize: yaml.safeDump,
 	deserialize: yaml.safeLoad
 });
 ```
+
 
 ## Related
 
