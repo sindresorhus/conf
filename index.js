@@ -63,9 +63,9 @@ module.exports = class Conf {
 
 		this._options = options;
 
-		if (options.schema && options.fileExtension === 'json') {
+		if (options.schema) {
 			const ajv = new Ajv();
-			this.validator = ajv.compile(options.schema);
+			this._validator = ajv.compile(options.schema);
 		}
 
 		this.events = new EventEmitter();
@@ -85,14 +85,16 @@ module.exports = class Conf {
 		}
 	}
 
-	validate(data) {
-		if (this.validator) {
-			const valid = this.validator(data);
-			if (!valid) {
-				const errors = this.validator.errors.reduce((error, {dataPath, message}) =>
-					error + `${dataPath} ${message};`, '');
-				throw new Error('Config is not valid according to schema:' + errors);
-			}
+	_validate(data) {
+		if (!this._validator) {
+			return true;
+		}
+
+		const valid = this._validator(data);
+		if (!valid) {
+			const errors = this._validator.errors.reduce((error, {dataPath, message}) =>
+				error + `${dataPath} ${message};`, '');
+			throw new Error('Config is not valid according to schema: ' + errors);
 		}
 	}
 
@@ -185,7 +187,7 @@ module.exports = class Conf {
 				} catch (_) {}
 			}
 
-			this.validate(JSON.parse(data));
+			this._validate(data);
 			return Object.assign(plainObject(), this.deserialize(data));
 		} catch (error) {
 			if (error.code === 'ENOENT') {
@@ -206,7 +208,7 @@ module.exports = class Conf {
 		// Ensure the directory exists as it could have been deleted in the meantime
 		makeDir.sync(path.dirname(this.path));
 
-		this.validate(value);
+		this._validate(value);
 		let data = this.serialize(value);
 
 		if (this.encryptionKey) {
