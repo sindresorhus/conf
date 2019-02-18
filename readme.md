@@ -144,6 +144,7 @@ Suffix appended to `projectName` during config file creation to avoid name confl
 You can pass an empty string to remove the suffix.
 
 For example, on macOS, the config file will be stored in the `~/Library/Preferences/foo-nodejs` directory, where `foo` is the `projectName`.
+
 #### watch
 
 type: `Boolean`<br>

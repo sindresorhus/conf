@@ -218,7 +218,6 @@ module.exports = class Conf {
 			.on('change', () => this.events.emit('change'));
 	}
 
-	// TODO: Use `Object.entries()` when targeting Node.js 8
 	* [Symbol.iterator]() {
 		for (const [key, value] of Object.entries(this.store)) {
 			yield [key, value];
