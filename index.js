@@ -42,6 +42,10 @@ module.exports = class Conf {
 			...options
 		};
 
+		if (!options.projectName && !options.cwd) {
+			throw new Error('Project name could not be inferred. Please specify the `projectName` option.');
+		}
+
 		options = {
 			configName: 'config',
 			fileExtension: 'json',
@@ -51,8 +55,6 @@ module.exports = class Conf {
 			deserialize: JSON.parse,
 			...options
 		};
-		options = {configName: 'config',
-			fileExtension: 'json', ...options};
 
 		if (!options.cwd) {
 			options.cwd = envPaths(options.projectName, {suffix: options.projectSuffix}).config;
