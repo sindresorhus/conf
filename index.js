@@ -10,7 +10,7 @@ const makeDir = require('make-dir');
 const pkgUp = require('pkg-up');
 const envPaths = require('env-paths');
 const writeFileAtomic = require('write-file-atomic');
-const chokidar = require('chokidar');
+const debounceFn = require('debounce-fn');
 
 const plainObject = () => Object.create(null);
 
@@ -78,6 +78,7 @@ module.exports = class Conf {
 		} catch (_) {
 			this.store = store;
 		}
+
 		if (options.watch) {
 			this._watch();
 		}
@@ -213,9 +214,12 @@ module.exports = class Conf {
 		if (!fs.existsSync(this.path)) {
 			writeFileAtomic.sync(this.path, JSON.stringify({}, null, '\t'));
 		}
-		chokidar.watch(this.path)
-			.on('add', () => this.events.emit('change'))
-			.on('change', () => this.events.emit('change'));
+
+		fs.watch(this.path, debounceFn(eventType => {
+			if (eventType === 'change') {
+				this.events.emit('change');
+			}
+		}, {wait: 100}));
 	}
 
 	* [Symbol.iterator]() {
