@@ -435,35 +435,32 @@ test('`clearInvalidConfig` option - valid data', t => {
 	t.deepEqual(conf.store, {foo: 'bar'});
 });
 
+test('schema - should be an object', t => {
+	const schema = 'object';
+	t.throws(() => new Conf({cwd: tempy.directory(), schema}), 'Schema option must be an object.');
+});
+
 test('schema - invalid set', t => {
 	const schema = {
-		$schema: 'http://json-schema.org/draft-07/schema#',
-		type: 'object',
-		properties: {
-			foo: {
-				type: 'string'
-			}
+		foo: {
+			type: 'string'
 		}
 	};
 	const conf = new Conf({cwd: tempy.directory(), schema});
 	conf.set('foo', fixture);
 	t.is(conf.get('foo'), fixture);
-	t.throws(() => conf.set('foo', 1), 'Config is not valid according to schema:.foo should be string;');
+	t.throws(() => conf.set('foo', 1), 'Config is not valid according to schema: .foo should be string;');
 });
 
 test('schema - invalid write to config file', t => {
 	const schema = {
-		$schema: 'http://json-schema.org/draft-07/schema#',
-		type: 'object',
-		properties: {
-			foo: {
-				type: 'string'
-			}
+		foo: {
+			type: 'string'
 		}
 	};
 	const cwd = tempy.directory();
 
 	const conf = new Conf({cwd, schema});
 	fs.writeFileSync(path.join(cwd, 'config.json'), JSON.stringify({foo: 1}));
-	t.throws(() => conf.get('foo'), 'Config is not valid according to schema:.foo should be string;');
+	t.throws(() => conf.get('foo'), 'Config is not valid according to schema: .foo should be string;');
 });

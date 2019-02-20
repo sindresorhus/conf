@@ -64,8 +64,22 @@ module.exports = class Conf {
 		this._options = options;
 
 		if (options.schema) {
-			const ajv = new Ajv();
-			this._validator = ajv.compile(options.schema);
+			if (typeof options.schema !== 'object') {
+				throw new TypeError('Schema option must be an object.');
+			}
+
+			const ajv = new Ajv({
+				allErrors: true,
+				format: 'full',
+				useDefaults: true,
+				errorDataPath: 'property'
+			});
+			const schema = {
+				type: 'object',
+				properties: options.schema
+			};
+			console.log(schema);
+			this._validator = ajv.compile(schema);
 		}
 
 		this.events = new EventEmitter();
@@ -187,8 +201,9 @@ module.exports = class Conf {
 				} catch (_) {}
 			}
 
+			data = this.deserialize(data);
 			this._validate(data);
-			return Object.assign(plainObject(), this.deserialize(data));
+			return Object.assign(plainObject(), data);
 		} catch (error) {
 			if (error.code === 'ENOENT') {
 				// TODO: Use `fs.mkdirSync` `recursive` option when targeting Node.js 12
