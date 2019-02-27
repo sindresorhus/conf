@@ -496,6 +496,31 @@ test('schema - multiple violations', t => {
 	}, 'Config schema violation: `foo.bar` should be number; `foo.foobar` should be <= 100');
 });
 
+test('schema - complex schema', t => {
+	const schema = {
+		foo: {
+			type: 'string',
+			maxLength: 3,
+			pattern: '[def]+'
+		},
+		bar: {
+			type: 'array',
+			uniqueItems: true,
+			maxItems: 3,
+			items: {
+				type: 'integer'
+			}
+		}
+	};
+	const conf = new Conf({cwd: tempy.directory(), schema});
+	t.throws(() => {
+		conf.set('foo', 'abca');
+	}, 'Config schema violation: `foo` should NOT be longer than 3 characters; `foo` should match pattern "[def]+"');
+	t.throws(() => {
+		conf.set('bar', [1, 1, 2, 'a']);
+	}, 'Config schema violation: `bar` should NOT have more than 3 items; `bar[3]` should be integer; `bar` should NOT have duplicate items (items ## 1 and 0 are identical)');
+});
+
 test('schema - invalid write to config file', t => {
 	const schema = {
 		foo: {
@@ -540,4 +565,21 @@ test('schema - Conf defaults overwrites schema default', t => {
 		schema
 	});
 	t.is(conf.get('foo'), 'foo');
+});
+
+test('schema - validate Conf default', t => {
+	const schema = {
+		foo: {
+			type: 'string'
+		}
+	};
+	t.throws(() => {
+		new Conf({ // eslint-disable-line no-new
+			cwd: tempy.directory(),
+			defaults: {
+				foo: 1
+			},
+			schema
+		});
+	}, 'Config schema violation: `foo` should be string');
 });
