@@ -58,7 +58,7 @@ Type: `Object`
 
 Config used if there are no existing config.
 
-**If you use the `schema` option, you can just set the `default` key there for values instead of using this option.**
+**Please note the values in `defaults` will overwrite the `default` key in `schema` option.**
 
 #### configName
 
@@ -176,6 +176,8 @@ const schema = {
 
 const config = new Conf({schema});
 ```
+
+**Please note the `default` value will be overwritten by `defaults` option if set.**
 
 ### Instance
 

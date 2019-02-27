@@ -91,6 +91,7 @@ module.exports = class Conf {
 
 		const fileStore = this.store;
 		const store = Object.assign(plainObject(), options.defaults, fileStore);
+		this._validate(store);
 		try {
 			assert.deepEqual(fileStore, store);
 		} catch (_) {
@@ -100,14 +101,14 @@ module.exports = class Conf {
 
 	_validate(data) {
 		if (!this._validator) {
-			return true;
+			return;
 		}
 
 		const valid = this._validator(data);
 		if (!valid) {
 			const errors = this._validator.errors.reduce((error, {dataPath, message}) =>
-				error + `${dataPath} ${message};`, '');
-			throw new Error('Config is not valid according to schema: ' + errors);
+				error + ` \`${dataPath.slice(1)}\` ${message};`, '');
+			throw new Error('Config schema violation:' + errors.slice(0, -1));
 		}
 	}
 

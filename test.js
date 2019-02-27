@@ -437,19 +437,63 @@ test('`clearInvalidConfig` option - valid data', t => {
 
 test('schema - should be an object', t => {
 	const schema = 'object';
-	t.throws(() => new Conf({cwd: tempy.directory(), schema}), 'Schema option must be an object.');
+	t.throws(() => {
+		new Conf({cwd: tempy.directory(), schema}); // eslint-disable-line no-new
+	}, 'The `schema` option must be an object.');
 });
 
-test('schema - invalid set', t => {
+test('schema - valid set', t => {
+	const schema = {
+		foo: {
+			type: 'object',
+			properties: {
+				bar: {
+					type: 'number'
+				},
+				foobar: {
+					type: 'number',
+					maximum: 100
+				}
+			}
+		}
+	};
+	const conf = new Conf({cwd: tempy.directory(), schema});
+	t.notThrows(() => {
+		conf.set('foo', {bar: 1, foobar: 2});
+	});
+});
+
+test('schema - one violation', t => {
 	const schema = {
 		foo: {
 			type: 'string'
 		}
 	};
 	const conf = new Conf({cwd: tempy.directory(), schema});
-	conf.set('foo', fixture);
-	t.is(conf.get('foo'), fixture);
-	t.throws(() => conf.set('foo', 1), 'Config is not valid according to schema: .foo should be string;');
+	t.throws(() => {
+		conf.set('foo', 1);
+	}, 'Config schema violation: `foo` should be string');
+});
+
+test('schema - multiple violations', t => {
+	const schema = {
+		foo: {
+			type: 'object',
+			properties: {
+				bar: {
+					type: 'number'
+				},
+				foobar: {
+					type: 'number',
+					maximum: 100
+				}
+			}
+		}
+	};
+	const conf = new Conf({cwd: tempy.directory(), schema});
+	t.throws(() => {
+		conf.set('foo', {bar: '1', foobar: 101});
+	}, 'Config schema violation: `foo.bar` should be number; `foo.foobar` should be <= 100');
 });
 
 test('schema - invalid write to config file', t => {
@@ -462,5 +506,38 @@ test('schema - invalid write to config file', t => {
 
 	const conf = new Conf({cwd, schema});
 	fs.writeFileSync(path.join(cwd, 'config.json'), JSON.stringify({foo: 1}));
-	t.throws(() => conf.get('foo'), 'Config is not valid according to schema: .foo should be string;');
+	t.throws(() => {
+		conf.get('foo');
+	}, 'Config schema violation: `foo` should be string');
+});
+
+test('schema - default', t => {
+	const schema = {
+		foo: {
+			type: 'string',
+			default: 'bar'
+		}
+	};
+	const conf = new Conf({
+		cwd: tempy.directory(),
+		schema
+	});
+	t.is(conf.get('foo'), 'bar');
+});
+
+test('schema - Conf defaults overwrites schema default', t => {
+	const schema = {
+		foo: {
+			type: 'string',
+			default: 'bar'
+		}
+	};
+	const conf = new Conf({
+		cwd: tempy.directory(),
+		defaults: {
+			foo: 'foo'
+		},
+		schema
+	});
+	t.is(conf.get('foo'), 'foo');
 });
