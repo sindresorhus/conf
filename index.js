@@ -65,7 +65,7 @@ module.exports = class Conf {
 
 		if (options.schema) {
 			if (typeof options.schema !== 'object') {
-				throw new TypeError('Schema option must be an object.');
+				throw new TypeError('The `schema` option must be an object.');
 			}
 
 			const ajv = new Ajv({
