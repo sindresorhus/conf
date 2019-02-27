@@ -78,7 +78,6 @@ module.exports = class Conf {
 				type: 'object',
 				properties: options.schema
 			};
-			console.log(schema);
 			this._validator = ajv.compile(schema);
 		}
 

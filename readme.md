@@ -58,6 +58,8 @@ Type: `Object`
 
 Config used if there are no existing config.
 
+**If you use the `schema` option, you can just set the `default` key there for values instead of using this option.**
+
 #### configName
 
 Type: `string`<br>
@@ -152,6 +154,29 @@ Default: `undefined`
 
 [JSON Schema](https://json-schema.org) to validate your config data.
 
+Under the hood, JSON Schema validator [ajv](https://github.com/epoberezkin/ajv) is used to validate your config. We use [JSON Schema draft-07](http://json-schema.org/latest/json-schema-validation.html) and support all [validation keywords](https://github.com/epoberezkin/ajv/blob/master/KEYWORDS.md) and [formats](https://github.com/epoberezkin/ajv#formats).
+
+You should define your schema as an object where each key is the name of your data's property and each value is a JSON schema used to validate that property. See more [here](https://json-schema.org/understanding-json-schema/reference/object.html#properties).
+
+Example:
+
+```js
+const schema = {
+	foo: {
+		type: 'number',
+		maximum: 100,
+		minimum: 1,
+		default: 50
+	},
+	bar: {
+		type: 'string',
+		format: 'url'
+	}
+};
+
+const config = new Conf({schema});
+```
+
 ### Instance
 
 You can use [dot-notation](https://github.com/sindresorhus/dot-prop) in a `key` to access nested properties.
@@ -231,34 +256,6 @@ const config = new Conf({
 	deserialize: yaml.safeLoad
 });
 ```
-
-### How can I use `schema` option to validate my config?
-
-Under the hood, JSON Schema validator [ajv](https://github.com/epoberezkin/ajv) is used to validate your config. We use
-[JSON Schema draft-07](http://json-schema.org/latest/json-schema-validation.html) and support all [validation keywords](https://github.com/epoberezkin/ajv/blob/master/KEYWORDS.md) and [formats](https://github.com/epoberezkin/ajv#formats).
-
-You should define your schema as an object where each key is the name of your data's property and each value is a JSON schema used to validate that property. See more [here](https://json-schema.org/understanding-json-schema/reference/object.html#properties).
-
-Example:
-
-```js
-const schema = {
-	'foo': {
-		type: 'number',
-		maximum: '100',
-		minimum: '1',
-		default: 50
-	},
-	'bar': {
-		type: 'string',
-		format: 'url'
-	}
-};
-
-const config = new Conf({schema});
-```
-
-**Please be aware that your schema `default` will overwrite the corresponding property specified in `defaults` option in Conf.**
 
 ## Related
 
