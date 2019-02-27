@@ -147,7 +147,7 @@ For example, on macOS, the config file will be stored in the `~/Library/Preferen
 
 #### watch
 
-type: `Boolean`<br>
+type: `boolean`<br>
 Default: `false`
 
 Sets a file watcher.
