@@ -150,7 +150,7 @@ For example, on macOS, the config file will be stored in the `~/Library/Preferen
 type: `Object`<br>
 Default: `undefined`
 
-[JSON Schema](https://json-schema.org/) to validate your config data.
+[JSON Schema](https://json-schema.org) to validate your config data.
 
 ### Instance
 
