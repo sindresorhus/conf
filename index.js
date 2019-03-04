@@ -31,7 +31,7 @@ const checkValueType = (key, value) => {
 	}
 };
 
-module.exports = class Conf {
+class Conf {
 	constructor(options) {
 		const pkgPath = pkgUp.sync(parentDir);
 
@@ -204,4 +204,7 @@ module.exports = class Conf {
 			yield [key, value];
 		}
 	}
-};
+}
+
+module.exports = Conf;
+module.exports.default = Conf;
