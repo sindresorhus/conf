@@ -52,6 +52,8 @@ Returns a new instance.
 
 ### options
 
+Type: `Object`
+
 #### defaults
 
 Type: `Object`
@@ -216,6 +218,7 @@ The `serialize` and `deserialize` options can be used to customize the format of
 Example using YAML:
 
 ```js
+const Conf = require('conf');
 const yaml = require('js-yaml');
 
 const config = new Conf({
