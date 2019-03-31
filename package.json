@@ -13,7 +13,7 @@
 		"node": ">=8"
 	},
 	"scripts": {
-		"test": "xo && ava && tsd-check"
+		"test": "xo && ava && tsd"
 	},
 	"files": [
 		"index.js",
@@ -39,19 +39,19 @@
 		"cache"
 	],
 	"dependencies": {
-		"dot-prop": "^4.1.0",
-		"env-paths": "^1.0.0",
-		"make-dir": "^2.0.0",
-		"pkg-up": "^2.0.0",
+		"dot-prop": "^4.2.0",
+		"env-paths": "^2.1.0",
+		"make-dir": "^2.1.0",
+		"pkg-up": "^3.0.1",
 		"write-file-atomic": "^2.4.2"
 	},
 	"devDependencies": {
-		"@types/node": "^11.10.4",
-		"ava": "^1.2.0",
-		"clear-module": "^3.0.0",
+		"@types/node": "^11.12.2",
+		"ava": "^1.4.0",
+		"clear-module": "^3.1.0",
 		"del": "^4.0.0",
 		"tempy": "^0.2.1",
-		"tsd-check": "^0.3.0",
+		"tsd": "^0.7.1",
 		"xo": "^0.24.0"
 	}
 }
