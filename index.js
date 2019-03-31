@@ -139,10 +139,14 @@ class Conf {
 		const onChange = () => {
 			const oldValue = currentValue;
 			const newValue = this.get(key);
+			const nodeVersion = process.version.slice(1)
 
 			try {
-				// TODO: Use `util.isDeepStrictEqual` when targeting Node.js 10
-				assert.deepEqual(newValue, oldValue);
+				if (parseInt(nodeVersion, 10) >= 10) {
+					util.isDeepStrictEqual(newValue, oldValue)
+				} else {
+					assert.deepEqual(newValue, oldValue);
+				}
 			} catch (_) {
 				currentValue = newValue;
 				callback.call(this, newValue, oldValue);
@@ -171,8 +175,12 @@ class Conf {
 			return Object.assign(plainObject(), this.deserialize(data));
 		} catch (error) {
 			if (error.code === 'ENOENT') {
-				// TODO: Use `fs.mkdirSync` `recursive` option when targeting Node.js 12
-				makeDir.sync(path.dirname(this.path));
+				const nodeVersion = process.version.slice(1)
+				if (parseInt(nodeVersion) >= 10) { 
+					fs.mkdirSync(path.dirname(this.path), { recursive: true })
+				} else {
+					makeDir.sync(path.dirname(this.path));
+				}
 				return plainObject();
 			}
 
