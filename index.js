@@ -33,19 +33,6 @@ const checkValueType = (key, value) => {
 
 class Conf {
 	constructor(options) {
-		const pkgPath = pkgUp.sync(parentDir);
-
-		options = {
-			// Can't use `require` because of Webpack being annoying:
-			// https://github.com/webpack/webpack/issues/196
-			projectName: pkgPath && JSON.parse(fs.readFileSync(pkgPath, 'utf8')).name,
-			...options
-		};
-
-		if (!options.projectName && !options.cwd) {
-			throw new Error('Project name could not be inferred. Please specify the `projectName` option.');
-		}
-
 		options = {
 			configName: 'config',
 			fileExtension: 'json',
@@ -57,6 +44,17 @@ class Conf {
 		};
 
 		if (!options.cwd) {
+			if (!options.projectName) {
+				const pkgPath = pkgUp.sync(parentDir);
+				// Can't use `require` because of Webpack being annoying:
+				// https://github.com/webpack/webpack/issues/196
+				options.projectName = pkgPath && JSON.parse(fs.readFileSync(pkgPath, 'utf8')).name;
+			}
+
+			if (!options.projectName) {
+				throw new Error('Project name could not be inferred. Please specify the `projectName` option.');
+			}
+
 			options.cwd = envPaths(options.projectName, {suffix: options.projectSuffix}).config;
 		}
 
