@@ -1,6 +1,6 @@
 {
 	"name": "conf",
-	"version": "2.2.0",
+	"version": "3.0.0",
 	"description": "Simple config handling for your app or module",
 	"license": "MIT",
 	"repository": "sindresorhus/conf",
@@ -13,10 +13,11 @@
 		"node": ">=8"
 	},
 	"scripts": {
-		"test": "xo && ava"
+		"test": "xo && ava && tsd"
 	},
 	"files": [
-		"index.js"
+		"index.js",
+		"index.d.ts"
 	],
 	"keywords": [
 		"config",
@@ -38,18 +39,19 @@
 		"cache"
 	],
 	"dependencies": {
-		"ajv": "^6.7.0",
-		"dot-prop": "^4.1.0",
-		"env-paths": "^1.0.0",
-		"make-dir": "^2.0.0",
-		"pkg-up": "^2.0.0",
+		"dot-prop": "^4.2.0",
+		"env-paths": "^2.1.0",
+		"make-dir": "^2.1.0",
+		"pkg-up": "^3.0.1",
 		"write-file-atomic": "^2.4.2"
 	},
 	"devDependencies": {
-		"ava": "^1.2.0",
-		"clear-module": "^3.0.0",
-		"del": "^3.0.0",
+		"@types/node": "^11.12.2",
+		"ava": "^1.4.0",
+		"clear-module": "^3.1.0",
+		"del": "^4.0.0",
 		"tempy": "^0.2.1",
+		"tsd": "^0.7.1",
 		"xo": "^0.24.0"
 	}
 }
