@@ -1,5 +1,5 @@
-import {expectType} from 'tsd-check';
-import Conf from '.';
+import {expectType} from 'tsd';
+import Conf = require('.');
 
 const conf = new Conf<string | number | boolean>();
 new Conf<string>({

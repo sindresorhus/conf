@@ -207,4 +207,3 @@ class Conf {
 }
 
 module.exports = Conf;
-module.exports.default = Conf;
