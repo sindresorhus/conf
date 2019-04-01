@@ -177,6 +177,8 @@ const schema = {
 };
 
 const config = new Conf({schema});
+
+config.set('foo', '1'); // This will throw Error: Config schema violation: `foo` should be number
 ```
 
 **Please note the `default` value will be overwritten by `defaults` option if set.**
@@ -261,6 +263,7 @@ const config = new Conf({
 	deserialize: yaml.safeLoad
 });
 ```
+
 
 ## Related
 
