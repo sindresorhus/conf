@@ -1,4 +1,4 @@
-import {expectType} from 'tsd';
+import {expectType, expectError} from 'tsd';
 import Conf = require('.');
 
 const conf = new Conf<string | number | boolean>();
@@ -20,7 +20,9 @@ new Conf<string>({clearInvalidConfig: false});
 new Conf<string>({serialize: value => 'foo'});
 new Conf<string>({deserialize: string => ({})});
 new Conf<string>({projectSuffix: 'foo'});
+
 new Conf<string>({schema: {foo: {type: 'string'}}});
+expectError(new Conf<string>({schema: {foo: {type: 'nope'}}}));
 
 conf.set('foo', 'bar');
 conf.set('hello', 1);

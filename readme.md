@@ -60,7 +60,46 @@ Type: `Object`
 
 Config used if there are no existing config.
 
-**Please note the values in `defaults` will overwrite the `default` key in `schema` option.**
+**Note:** The values in `defaults` will overwrite the `default` key in the `schema` option.
+
+#### schema
+
+type: `Object`
+
+[JSON Schema](https://json-schema.org) to validate your config data.
+
+Under the hood, the JSON Schema validator [ajv](https://github.com/epoberezkin/ajv) is used to validate your config. We use [JSON Schema draft-07](http://json-schema.org/latest/json-schema-validation.html) and support all [validation keywords](https://github.com/epoberezkin/ajv/blob/master/KEYWORDS.md) and [formats](https://github.com/epoberezkin/ajv#formats).
+
+You should define your schema as an object where each key is the name of your data's property and each value is a JSON schema used to validate that property. See more [here](https://json-schema.org/understanding-json-schema/reference/object.html#properties).
+
+Example:
+
+```js
+const Conf = require('conf');
+
+const schema = {
+	foo: {
+		type: 'number',
+		maximum: 100,
+		minimum: 1,
+		default: 50
+	},
+	bar: {
+		type: 'string',
+		format: 'url'
+	}
+};
+
+const config = new Conf({schema});
+
+console.log(config.get('foo'));
+//=> 50
+
+config.set('foo', '1');
+// [Error: Config schema violation: `foo` should be number]
+```
+
+**Note:** The `default` value will be overwritten by `defaults` option if set.
 
 #### configName
 
@@ -148,43 +187,6 @@ Suffix appended to `projectName` during config file creation to avoid name confl
 You can pass an empty string to remove the suffix.
 
 For example, on macOS, the config file will be stored in the `~/Library/Preferences/foo-nodejs` directory, where `foo` is the `projectName`.
-
-#### schema
-
-type: `Object`<br>
-Default: `undefined`
-
-[JSON Schema](https://json-schema.org) to validate your config data.
-
-Under the hood, JSON Schema validator [ajv](https://github.com/epoberezkin/ajv) is used to validate your config. We use [JSON Schema draft-07](http://json-schema.org/latest/json-schema-validation.html) and support all [validation keywords](https://github.com/epoberezkin/ajv/blob/master/KEYWORDS.md) and [formats](https://github.com/epoberezkin/ajv#formats).
-
-You should define your schema as an object where each key is the name of your data's property and each value is a JSON schema used to validate that property. See more [here](https://json-schema.org/understanding-json-schema/reference/object.html#properties).
-
-Example:
-
-```js
-const Conf = require('conf');
-
-const schema = {
-	foo: {
-		type: 'number',
-		maximum: 100,
-		minimum: 1,
-		default: 50
-	},
-	bar: {
-		type: 'string',
-		format: 'url'
-	}
-};
-
-const config = new Conf({schema});
-
-config.set('foo', '1');
-// [Error: Config schema violation: `foo` should be number]
-```
-
-**Please note the `default` value will be overwritten by `defaults` option if set.**
 
 ### Instance
 
