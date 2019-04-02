@@ -85,6 +85,40 @@ declare namespace Conf {
 		@default 'nodejs'
 		*/
 		readonly projectSuffix?: string;
+
+		/**
+		[JSON Schema](https://json-schema.org) to validate your config data.
+
+		Under the hood, the JSON Schema validator [ajv](https://github.com/epoberezkin/ajv) is used to validate your config. We use [JSON Schema draft-07](http://json-schema.org/latest/json-schema-validation.html) and support all [validation keywords](https://github.com/epoberezkin/ajv/blob/master/KEYWORDS.md) and [formats](https://github.com/epoberezkin/ajv#formats).
+
+		You should define your schema as an object where each key is the name of your data's property and each value is a JSON schema used to validate that property. See more [here](https://json-schema.org/understanding-json-schema/reference/object.html#properties).
+
+		@example
+		```
+		import Conf = require('conf');
+
+		const schema = {
+			foo: {
+				type: 'number',
+				maximum: 100,
+				minimum: 1,
+				default: 50
+			},
+			bar: {
+				type: 'string',
+				format: 'url'
+			}
+		};
+
+		const config = new Conf({schema});
+
+		config.set('foo', '1');
+		// [Error: Config schema violation: `foo` should be number]
+		```
+
+		__Please note the `default` value will be overwritten by `defaults` option if set.__
+		*/
+		readonly schema?: {[key: string]: unknown};
 	}
 }
 

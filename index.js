@@ -10,6 +10,7 @@ const makeDir = require('make-dir');
 const pkgUp = require('pkg-up');
 const envPaths = require('env-paths');
 const writeFileAtomic = require('write-file-atomic');
+const Ajv = require('ajv');
 
 const plainObject = () => Object.create(null);
 
@@ -60,6 +61,24 @@ class Conf {
 
 		this._options = options;
 
+		if (options.schema) {
+			if (typeof options.schema !== 'object') {
+				throw new TypeError('The `schema` option must be an object.');
+			}
+
+			const ajv = new Ajv({
+				allErrors: true,
+				format: 'full',
+				useDefaults: true,
+				errorDataPath: 'property'
+			});
+			const schema = {
+				type: 'object',
+				properties: options.schema
+			};
+			this._validator = ajv.compile(schema);
+		}
+
 		this.events = new EventEmitter();
 		this.encryptionKey = options.encryptionKey;
 		this.serialize = options.serialize;
@@ -70,10 +89,24 @@ class Conf {
 
 		const fileStore = this.store;
 		const store = Object.assign(plainObject(), options.defaults, fileStore);
+		this._validate(store);
 		try {
 			assert.deepEqual(fileStore, store);
 		} catch (_) {
 			this.store = store;
+		}
+	}
+
+	_validate(data) {
+		if (!this._validator) {
+			return;
+		}
+
+		const valid = this._validator(data);
+		if (!valid) {
+			const errors = this._validator.errors.reduce((error, {dataPath, message}) =>
+				error + ` \`${dataPath.slice(1)}\` ${message};`, '');
+			throw new Error('Config schema violation:' + errors.slice(0, -1));
 		}
 	}
 
@@ -166,7 +199,9 @@ class Conf {
 				} catch (_) {}
 			}
 
-			return Object.assign(plainObject(), this.deserialize(data));
+			data = this.deserialize(data);
+			this._validate(data);
+			return Object.assign(plainObject(), data);
 		} catch (error) {
 			if (error.code === 'ENOENT') {
 				// TODO: Use `fs.mkdirSync` `recursive` option when targeting Node.js 12
@@ -186,6 +221,7 @@ class Conf {
 		// Ensure the directory exists as it could have been deleted in the meantime
 		makeDir.sync(path.dirname(this.path));
 
+		this._validate(value);
 		let data = this.serialize(value);
 
 		if (this.encryptionKey) {

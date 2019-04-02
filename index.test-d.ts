@@ -20,6 +20,7 @@ new Conf<string>({clearInvalidConfig: false});
 new Conf<string>({serialize: value => 'foo'});
 new Conf<string>({deserialize: string => ({})});
 new Conf<string>({projectSuffix: 'foo'});
+new Conf<string>({schema: {foo: {type: 'string'}}});
 
 conf.set('foo', 'bar');
 conf.set('hello', 1);
