@@ -43,7 +43,7 @@ declare namespace Conf {
 		// [Error: Config schema violation: `foo` should be number]
 		```
 
-		**Note:** The `default` value will be overwritten by `defaults` option if set.
+		**Note:** The `default` value will be overwritten by the `defaults` option if set.
 		*/
 		readonly schema?: {[key: string]: JSONSchema};
 

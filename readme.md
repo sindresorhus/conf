@@ -58,13 +58,13 @@ Type: `Object`
 
 Type: `Object`
 
-Config used if there are no existing config.
+Default values for the config items.
 
 **Note:** The values in `defaults` will overwrite the `default` key in the `schema` option.
 
 #### schema
 
-type: `Object`
+Type: `Object`
 
 [JSON Schema](https://json-schema.org) to validate your config data.
 
@@ -99,7 +99,7 @@ config.set('foo', '1');
 // [Error: Config schema violation: `foo` should be number]
 ```
 
-**Note:** The `default` value will be overwritten by `defaults` option if set.
+**Note:** The `default` value will be overwritten by the `defaults` option if set.
 
 #### configName
 
