@@ -163,6 +163,8 @@ You should define your schema as an object where each key is the name of your da
 Example:
 
 ```js
+const Conf = require('conf');
+
 const schema = {
 	foo: {
 		type: 'number',
@@ -178,7 +180,8 @@ const schema = {
 
 const config = new Conf({schema});
 
-config.set('foo', '1'); // This will throw Error: Config schema violation: `foo` should be number
+config.set('foo', '1');
+// [Error: Config schema violation: `foo` should be number]
 ```
 
 **Please note the `default` value will be overwritten by `defaults` option if set.**
