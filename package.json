@@ -40,20 +40,20 @@
 	],
 	"dependencies": {
 		"ajv": "^6.10.0",
-		"dot-prop": "^4.2.0",
-		"env-paths": "^2.1.0",
+		"dot-prop": "^5.0.0",
+		"env-paths": "^2.2.0",
 		"json-schema-typed": "^7.0.0",
 		"make-dir": "^3.0.0",
 		"pkg-up": "^3.0.1",
 		"write-file-atomic": "^2.4.2"
 	},
 	"devDependencies": {
-		"@types/node": "^11.12.2",
-		"ava": "^1.4.0",
-		"clear-module": "^3.1.0",
+		"@types/node": "^11.13.4",
+		"ava": "^1.4.1",
+		"clear-module": "^3.2.0",
 		"del": "^4.1.0",
 		"tempy": "^0.2.1",
-		"tsd": "^0.7.1",
+		"tsd": "^0.7.2",
 		"xo": "^0.24.0"
 	}
 }
