@@ -33,10 +33,13 @@ expectType<string | number | boolean>(conf.get('foo', 'bar'));
 conf.delete('foo');
 expectType<boolean>(conf.has('foo'));
 conf.clear();
-conf.onDidChange('foo', (oldValue, newValue) => {
+const off = conf.onDidChange('foo', (oldValue, newValue) => {
 	expectType<string | number | boolean | undefined>(oldValue);
 	expectType<string | number | boolean | undefined>(newValue);
 });
+
+expectType<() => void>(off);
+off();
 
 conf.store = {
 	foo: 'bar',
