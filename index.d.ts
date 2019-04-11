@@ -212,6 +212,15 @@ declare class Conf<T = unknown> implements Iterable<[string, T]> {
 		callback: (oldValue: T | undefined, newValue: T | undefined) => void
 	): () => void;
 
+	/**
+	Watches the whole config object, calling `callback` on any changes.
+
+	@param callback - A callback function that is called on any changes. When a `key` is first set `oldValue` will be `undefined`, and when a key is deleted `newValue` will be `undefined`.
+	*/
+	onDidAnyChange(
+		callback: (oldValue: {[key: string]: T} | undefined, newValue: {[key: string]: T} | undefined) => void
+	): () => void;
+
 	[Symbol.iterator](): IterableIterator<[string, T]>;
 }
 

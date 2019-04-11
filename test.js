@@ -405,6 +405,70 @@ test('onDidChange()', t => {
 	conf.set('foo', fixture);
 });
 
+test('onDidAnyChange()', t => {
+	const {conf} = t.context;
+
+	t.plan(8);
+
+	const checkFoo = (newValue, oldValue) => {
+		t.deepEqual(newValue, {foo: '🐴'});
+		t.deepEqual(oldValue, {foo: fixture});
+	};
+
+	const checkBaz = (newValue, oldValue) => {
+		t.deepEqual(newValue, {
+			foo: fixture,
+			baz: {boo: '🐴'}
+		});
+		t.deepEqual(oldValue, {
+			foo: fixture,
+			baz: {boo: fixture}
+		});
+	};
+
+	conf.set('foo', fixture);
+	let unsubscribe = conf.onDidAnyChange(checkFoo);
+	conf.set('foo', '🐴');
+	unsubscribe();
+	conf.set('foo', fixture);
+
+	conf.set('baz.boo', fixture);
+	unsubscribe = conf.onDidAnyChange(checkBaz);
+	conf.set('baz.boo', '🐴');
+	unsubscribe();
+	conf.set('baz.boo', fixture);
+
+	const checkUndefined = (newValue, oldValue) => {
+		t.deepEqual(oldValue, {
+			foo: '🦄',
+			baz: {boo: '🦄'}
+		});
+
+		t.deepEqual(newValue, {
+			baz: {boo: fixture}
+		});
+	};
+
+	const checkSet = (newValue, oldValue) => {
+		t.deepEqual(oldValue, {
+			baz: {boo: fixture}
+		});
+
+		t.deepEqual(newValue, {
+			baz: {boo: '🦄'},
+			foo: '🐴'
+		});
+	};
+
+	unsubscribe = conf.onDidAnyChange(checkUndefined);
+	conf.delete('foo');
+	unsubscribe();
+	unsubscribe = conf.onDidAnyChange(checkSet);
+	conf.set('foo', '🐴');
+	unsubscribe();
+	conf.set('foo', fixture);
+});
+
 // See #32
 test('doesn\'t write to disk upon instanciation if and only if the store didn\'t change', t => {
 	let exists = fs.existsSync(t.context.conf.path);
