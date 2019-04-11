@@ -110,8 +110,14 @@ class Conf {
 		}
 	}
 
+	_getkey(key) {
+		const escapeDot = value => value.replace(/\./g, '\\\\.');
+
+		return this._options.disableDotNotation ? escapeDot(key) : key;
+	}
+
 	get(key, defaultValue) {
-		return dotProp.get(this.store, key, defaultValue);
+		return dotProp.get(this.store, this._getkey(key), defaultValue);
 	}
 
 	set(key, value) {
@@ -127,7 +133,7 @@ class Conf {
 
 		const set = (key, value) => {
 			checkValueType(key, value);
-			dotProp.set(store, key, value);
+			dotProp.set(store, this._getkey(key), value);
 		};
 
 		if (typeof key === 'object') {
@@ -143,12 +149,12 @@ class Conf {
 	}
 
 	has(key) {
-		return dotProp.has(this.store, key);
+		return dotProp.has(this.store, this._getkey(key));
 	}
 
 	delete(key) {
 		const {store} = this;
-		dotProp.delete(store, key);
+		dotProp.delete(store, this._getkey(key));
 		this.store = store;
 	}
 

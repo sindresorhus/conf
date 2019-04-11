@@ -125,6 +125,15 @@ declare namespace Conf {
 		@default 'nodejs'
 		*/
 		readonly projectSuffix?: string;
+
+		/**
+		Disable dot-notation for accessing nested properties, treat the whole string as one key.
+
+		@default 'false'
+		*/
+
+		readonly disableDotNotation?: boolean;
+
 	}
 }
 

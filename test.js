@@ -583,3 +583,12 @@ test('schema - validate Conf default', t => {
 		});
 	}, 'Config schema violation: `foo` should be string');
 });
+
+test('disable not dotation', t => {
+	const conf = new Conf({disableDotNotation: true});
+	conf.set('foo.bar.foobar', 1);
+
+	t.is(conf.has('foo'), false);
+	t.is(conf.has('foo.bar'), false);
+	t.is(conf.get('foo.bar.foobar'), 1);
+});

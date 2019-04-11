@@ -188,6 +188,13 @@ You can pass an empty string to remove the suffix.
 
 For example, on macOS, the config file will be stored in the `~/Library/Preferences/foo-nodejs` directory, where `foo` is the `projectName`.
 
+#### disableDotNotation
+
+Type: `boolean`<br>
+Default: `false`
+
+Disable dot-notation for accessing nested properties, treat the whole string as one key.
+
 ### Instance
 
 You can use [dot-notation](https://github.com/sindresorhus/dot-prop) in a `key` to access nested properties.
