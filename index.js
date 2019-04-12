@@ -13,7 +13,7 @@ const writeFileAtomic = require('write-file-atomic');
 const Ajv = require('ajv');
 
 const plainObject = () => Object.create(null);
-const algorithm = 'aes-256-cbc';
+const encryptionAlgorithm = 'aes-256-cbc';
 
 // Prevent caching of this module so module.parent is always accurate
 delete require.cache[__filename];
@@ -195,7 +195,7 @@ class Conf {
 
 			if (this.encryptionKey) {
 				try {
-					const decipher = crypto.createDecipher(algorithm, this.encryptionKey);
+					const decipher = crypto.createDecipher(encryptionAlgorithm, this.encryptionKey);
 					data = Buffer.concat([decipher.update(data), decipher.final()]);
 				} catch (_) {}
 			}
@@ -226,7 +226,7 @@ class Conf {
 		let data = this.serialize(value);
 
 		if (this.encryptionKey) {
-			const cipher = crypto.createCipher(algorithm, this.encryptionKey);
+			const cipher = crypto.createCipher(encryptionAlgorithm, this.encryptionKey);
 			data = Buffer.concat([cipher.update(Buffer.from(data)), cipher.final()]);
 		}
 
