@@ -27,7 +27,7 @@ test('.set()', t => {
 	t.is(t.context.conf.get('baz.boo'), fixture);
 });
 
-test('.set() with object', t => {
+test('.set() - with object', t => {
 	t.context.conf.set({
 		foo1: 'bar1',
 		foo2: 'bar2',
@@ -46,12 +46,44 @@ test('.set() with object', t => {
 	t.is(t.context.conf.get('baz.foo.bar'), 'baz');
 });
 
-test('.set() with undefined', t => {
-	t.throws(() => t.context.conf.set('foo', undefined), 'Use `delete()` to clear values');
+test('.set() - with undefined', t => {
+	t.throws(() => {
+		t.context.conf.set('foo', undefined);
+	}, 'Use `delete()` to clear values');
 });
 
-test('.set() invalid key', t => {
-	t.throws(() => t.context.conf.set(1, 'unicorn'), 'Expected `key` to be of type `string` or `object`, got number');
+test('.set() - with unsupported values', t => {
+	t.throws(() => {
+		t.context.conf.set('a', () => {});
+	}, /not supported by JSON/);
+
+	t.throws(() => {
+		t.context.conf.set('a', Symbol('a'));
+	}, /not supported by JSON/);
+
+	t.throws(() => {
+		t.context.conf.set({
+			a: undefined
+		});
+	}, /not supported by JSON/);
+
+	t.throws(() => {
+		t.context.conf.set({
+			a: () => {}
+		});
+	}, /not supported by JSON/);
+
+	t.throws(() => {
+		t.context.conf.set({
+			a: Symbol('a')
+		});
+	}, /not supported by JSON/);
+});
+
+test('.set() - invalid key', t => {
+	t.throws(() => {
+		t.context.conf.set(1, 'unicorn');
+	}, 'Expected `key` to be of type `string` or `object`, got number');
 });
 
 test('.has()', t => {
@@ -126,6 +158,30 @@ test('`configName` option', t => {
 	t.is(path.basename(conf.path, '.json'), configName);
 });
 
+test('no `suffix` option', t => {
+	const conf = new Conf();
+	t.true(conf.path.includes('-nodejs'));
+});
+
+test('with `suffix` option set to empty string', t => {
+	const projectSuffix = '';
+	const projectName = 'conf-temp1-project';
+	const conf = new Conf({projectSuffix, projectName});
+	const configPathSegments = conf.path.split(path.sep);
+	const configRootIndex = configPathSegments.findIndex(segment => segment === projectName);
+	t.true(configRootIndex >= 0 && configRootIndex < configPathSegments.length);
+});
+
+test('with `projectSuffix` option set to non-empty string', t => {
+	const projectSuffix = 'new-projectSuffix';
+	const projectName = 'conf-temp2-project';
+	const conf = new Conf({projectSuffix, projectName});
+	const configPathSegments = conf.path.split(path.sep);
+	const expectedRootName = `${projectName}-${projectSuffix}`;
+	const configRootIndex = configPathSegments.findIndex(segment => segment === expectedRootName);
+	t.true(configRootIndex >= 0 && configRootIndex < configPathSegments.length);
+});
+
 test('`fileExtension` option', t => {
 	const fileExtension = 'alt-ext';
 	const conf = new Conf({
@@ -148,6 +204,30 @@ test('`fileExtension` option = empty string', t => {
 	t.is(path.basename(conf.path), configName);
 });
 
+test('`serialize` and `deserialize` options', t => {
+	t.plan(4);
+	const serialized = `foo:${fixture}`;
+	const deserialized = {foo: fixture};
+	const serialize = value => {
+		t.is(value, deserialized);
+		return serialized;
+	};
+
+	const deserialize = value => {
+		t.is(value, serialized);
+		return deserialized;
+	};
+
+	const conf = new Conf({
+		cwd: tempy.directory(),
+		serialize,
+		deserialize
+	});
+	t.deepEqual(conf.store, {});
+	conf.store = deserialized;
+	t.deepEqual(conf.store, deserialized);
+});
+
 test('`projectName` option', t => {
 	const projectName = 'conf-fixture-project-name';
 	const conf = new Conf({projectName});
@@ -161,8 +241,12 @@ test('`projectName` option', t => {
 test('ensure `.store` is always an object', t => {
 	const cwd = tempy.directory();
 	const conf = new Conf({cwd});
+
 	del.sync(cwd, {force: true});
-	t.notThrows(() => conf.get('foo'));
+
+	t.notThrows(() => {
+		conf.get('foo');
+	});
 });
 
 test('instance is iterable', t => {
@@ -170,7 +254,10 @@ test('instance is iterable', t => {
 		foo: fixture,
 		bar: fixture
 	});
-	t.deepEqual([...t.context.conf], [['foo', fixture], ['bar', fixture]]);
+	t.deepEqual(
+		[...t.context.conf],
+		[['foo', fixture], ['bar', fixture]]
+	);
 });
 
 test('automatic `projectName` inference', t => {
@@ -303,6 +390,7 @@ test('onDidChange()', t => {
 		t.is(oldValue, fixture);
 		t.is(newValue, undefined);
 	};
+
 	const checkSet = (newValue, oldValue) => {
 		t.is(oldValue, undefined);
 		t.is(newValue, '🐴');
@@ -330,6 +418,170 @@ test('doesn\'t write to disk upon instanciation if and only if the store didn\'t
 	});
 	exists = fs.existsSync(conf.path);
 	t.is(exists, true);
+});
+
+test('`clearInvalidConfig` option - invalid data', t => {
+	const conf = new Conf({cwd: tempy.directory(), clearInvalidConfig: false});
+	fs.writeFileSync(conf.path, '🦄');
+
+	t.throws(() => {
+		conf.store; // eslint-disable-line no-unused-expressions
+	}, {instanceOf: SyntaxError});
+});
+
+test('`clearInvalidConfig` option - valid data', t => {
+	const conf = new Conf({cwd: tempy.directory(), clearInvalidConfig: false});
+	conf.set('foo', 'bar');
+	t.deepEqual(conf.store, {foo: 'bar'});
+});
+
+test('schema - should be an object', t => {
+	const schema = 'object';
+	t.throws(() => {
+		new Conf({cwd: tempy.directory(), schema}); // eslint-disable-line no-new
+	}, 'The `schema` option must be an object.');
+});
+
+test('schema - valid set', t => {
+	const schema = {
+		foo: {
+			type: 'object',
+			properties: {
+				bar: {
+					type: 'number'
+				},
+				foobar: {
+					type: 'number',
+					maximum: 100
+				}
+			}
+		}
+	};
+	const conf = new Conf({cwd: tempy.directory(), schema});
+	t.notThrows(() => {
+		conf.set('foo', {bar: 1, foobar: 2});
+	});
+});
+
+test('schema - one violation', t => {
+	const schema = {
+		foo: {
+			type: 'string'
+		}
+	};
+	const conf = new Conf({cwd: tempy.directory(), schema});
+	t.throws(() => {
+		conf.set('foo', 1);
+	}, 'Config schema violation: `foo` should be string');
+});
+
+test('schema - multiple violations', t => {
+	const schema = {
+		foo: {
+			type: 'object',
+			properties: {
+				bar: {
+					type: 'number'
+				},
+				foobar: {
+					type: 'number',
+					maximum: 100
+				}
+			}
+		}
+	};
+	const conf = new Conf({cwd: tempy.directory(), schema});
+	t.throws(() => {
+		conf.set('foo', {bar: '1', foobar: 101});
+	}, 'Config schema violation: `foo.bar` should be number; `foo.foobar` should be <= 100');
+});
+
+test('schema - complex schema', t => {
+	const schema = {
+		foo: {
+			type: 'string',
+			maxLength: 3,
+			pattern: '[def]+'
+		},
+		bar: {
+			type: 'array',
+			uniqueItems: true,
+			maxItems: 3,
+			items: {
+				type: 'integer'
+			}
+		}
+	};
+	const conf = new Conf({cwd: tempy.directory(), schema});
+	t.throws(() => {
+		conf.set('foo', 'abca');
+	}, 'Config schema violation: `foo` should NOT be longer than 3 characters; `foo` should match pattern "[def]+"');
+	t.throws(() => {
+		conf.set('bar', [1, 1, 2, 'a']);
+	}, 'Config schema violation: `bar` should NOT have more than 3 items; `bar[3]` should be integer; `bar` should NOT have duplicate items (items ## 1 and 0 are identical)');
+});
+
+test('schema - invalid write to config file', t => {
+	const schema = {
+		foo: {
+			type: 'string'
+		}
+	};
+	const cwd = tempy.directory();
+
+	const conf = new Conf({cwd, schema});
+	fs.writeFileSync(path.join(cwd, 'config.json'), JSON.stringify({foo: 1}));
+	t.throws(() => {
+		conf.get('foo');
+	}, 'Config schema violation: `foo` should be string');
+});
+
+test('schema - default', t => {
+	const schema = {
+		foo: {
+			type: 'string',
+			default: 'bar'
+		}
+	};
+	const conf = new Conf({
+		cwd: tempy.directory(),
+		schema
+	});
+	t.is(conf.get('foo'), 'bar');
+});
+
+test('schema - Conf defaults overwrites schema default', t => {
+	const schema = {
+		foo: {
+			type: 'string',
+			default: 'bar'
+		}
+	};
+	const conf = new Conf({
+		cwd: tempy.directory(),
+		defaults: {
+			foo: 'foo'
+		},
+		schema
+	});
+	t.is(conf.get('foo'), 'foo');
+});
+
+test('schema - validate Conf default', t => {
+	const schema = {
+		foo: {
+			type: 'string'
+		}
+	};
+	t.throws(() => {
+		new Conf({ // eslint-disable-line no-new
+			cwd: tempy.directory(),
+			defaults: {
+				foo: 1
+			},
+			schema
+		});
+	}, 'Config schema violation: `foo` should be string');
 });
 
 test('migrates to the next version', t => {

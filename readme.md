@@ -1,4 +1,4 @@
-# conf [![Build Status: Linux and macOS](https://travis-ci.org/sindresorhus/conf.svg?branch=master)](https://travis-ci.org/sindresorhus/conf) [![Build status: Windows](https://ci.appveyor.com/api/projects/status/n88jwh3aju39i0p2/branch/master?svg=true)](https://ci.appveyor.com/project/sindresorhus/conf/branch/master)
+# conf [![Build Status](https://travis-ci.org/sindresorhus/conf.svg?branch=master)](https://travis-ci.org/sindresorhus/conf)
 
 > Simple config handling for your app or module
 
@@ -52,11 +52,54 @@ Returns a new instance.
 
 ### options
 
+Type: `Object`
+
 #### defaults
 
 Type: `Object`
 
-Default config.
+Default values for the config items.
+
+**Note:** The values in `defaults` will overwrite the `default` key in the `schema` option.
+
+#### schema
+
+Type: `Object`
+
+[JSON Schema](https://json-schema.org) to validate your config data.
+
+Under the hood, the JSON Schema validator [ajv](https://github.com/epoberezkin/ajv) is used to validate your config. We use [JSON Schema draft-07](http://json-schema.org/latest/json-schema-validation.html) and support all [validation keywords](https://github.com/epoberezkin/ajv/blob/master/KEYWORDS.md) and [formats](https://github.com/epoberezkin/ajv#formats).
+
+You should define your schema as an object where each key is the name of your data's property and each value is a JSON schema used to validate that property. See more [here](https://json-schema.org/understanding-json-schema/reference/object.html#properties).
+
+Example:
+
+```js
+const Conf = require('conf');
+
+const schema = {
+	foo: {
+		type: 'number',
+		maximum: 100,
+		minimum: 1,
+		default: 50
+	},
+	bar: {
+		type: 'string',
+		format: 'url'
+	}
+};
+
+const config = new Conf({schema});
+
+console.log(config.get('foo'));
+//=> 50
+
+config.set('foo', '1');
+// [Error: Config schema violation: `foo` should be number]
+```
+
+**Note:** The `default` value will be overwritten by the `defaults` option if set.
 
 #### configName
 
@@ -107,12 +150,50 @@ When specified, the store will be encrypted using the [`aes-256-cbc`](https://en
 
 #### fileExtension
 
-type: `string`<br>
+Type: `string`<br>
 Default: `json`
 
 Extension of the config file.
 
 You would usually not need this, but could be useful if you want to interact with a file with a custom file extension that can be associated with your app. These might be simple save/export/preference files that are intended to be shareable or saved outside of the app.
+
+#### clearInvalidConfig
+
+Type: `boolean`<br>
+Default: `true`
+
+The config is cleared if reading the config file causes a `SyntaxError`. This is a good default, as the config file is not intended to be hand-edited, so it usually means the config is corrupt and there's nothing the user can do about it anyway. However, if you let the user edit the config file directly, mistakes might happen and it could be more useful to throw an error when the config is invalid instead of clearing. Disabling this option will make it throw a `SyntaxError` on invalid config instead of clearing.
+
+#### serialize
+
+Type: `Function`<br>
+Default: `value => JSON.stringify(value, null, '\t')`
+
+Function to serialize the config object to a UTF-8 string when writing the config file.
+
+You would usually not need this, but it could be useful if you want to use a format other than JSON.
+
+#### deserialize
+
+Type: `Function`<br>
+Default: `JSON.parse`
+
+Function to deserialize the config object from a UTF-8 string when reading the config file.
+
+You would usually not need this, but it could be useful if you want to use a format other than JSON.
+
+#### projectSuffix
+
+Type: `string`<br>
+Default: `nodejs`
+
+**You most likely don't need this. Please don't use it unless you really have to.**
+
+Suffix appended to `projectName` during config file creation to avoid name conflicts with native apps.
+
+You can pass an empty string to remove the suffix.
+
+For example, on macOS, the config file will be stored in the `~/Library/Preferences/foo-nodejs` directory, where `foo` is the `projectName`.
 
 #### migrations
 
@@ -153,7 +234,7 @@ The instance is [`iterable`](https://developer.mozilla.org/en/docs/Web/JavaScrip
 
 Set an item.
 
-The `value` must be JSON serializable.
+The `value` must be JSON serializable. Trying to set the type `undefined`, `function`, or `symbol` will result in a TypeError.
 
 #### .set(object)
 
@@ -205,7 +286,24 @@ Get the path to the config file.
 
 ### How is this different from [`configstore`](https://github.com/yeoman/configstore)?
 
-I'm also the author of `configstore`. While it's pretty good, I did make some mistakes early on that are hard to change at this point. This module is the result of everything I learned from making `configstore`. Mainly where config is stored. In `configstore`, the config is stored in `~/.config` (which is mainly a Linux convention) on all systems, while `conf` stores config in the system default [user config directory](https://github.com/sindresorhus/env-paths#pathsconfig). The `~/.config` directory, it turns out, often have an incorrect permission on macOS and Windows, which has caused a lot of grief for users.
+I'm also the author of `configstore`. While it's pretty good, I did make some mistakes early on that are hard to change at this point. This module is the result of everything I learned from making `configstore`. Mainly where the config is stored. In `configstore`, the config is stored in `~/.config` (which is mainly a Linux convention) on all systems, while `conf` stores config in the system default [user config directory](https://github.com/sindresorhus/env-paths#pathsconfig). The `~/.config` directory, it turns out, often have an incorrect permission on macOS and Windows, which has caused a lot of grief for users.
+
+### Can I use YAML or another serialization format?
+
+The `serialize` and `deserialize` options can be used to customize the format of the config file, as long as the representation is compatible with `utf8` encoding.
+
+Example using YAML:
+
+```js
+const Conf = require('conf');
+const yaml = require('js-yaml');
+
+const config = new Conf({
+	fileExtension: 'yaml',
+	serialize: yaml.safeDump,
+	deserialize: yaml.safeLoad
+});
+```
 
 
 ## Related

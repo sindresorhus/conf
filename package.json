@@ -1,6 +1,6 @@
 {
 	"name": "conf",
-	"version": "2.1.0",
+	"version": "4.0.1",
 	"description": "Simple config handling for your app or module",
 	"license": "MIT",
 	"repository": "sindresorhus/conf",
@@ -10,13 +10,14 @@
 		"url": "sindresorhus.com"
 	},
 	"engines": {
-		"node": ">=6"
+		"node": ">=8"
 	},
 	"scripts": {
-		"test": "xo && ava"
+		"test": "xo && ava && tsd"
 	},
 	"files": [
-		"index.js"
+		"index.js",
+		"index.d.ts"
 	],
 	"keywords": [
 		"config",
@@ -38,18 +39,22 @@
 		"cache"
 	],
 	"dependencies": {
-		"dot-prop": "^4.1.0",
-		"env-paths": "^1.0.0",
-		"make-dir": "^1.0.0",
-		"pkg-up": "^2.0.0",
+		"ajv": "^6.10.0",
+		"dot-prop": "^5.0.0",
+		"env-paths": "^2.2.0",
+		"json-schema-typed": "^7.0.0",
+		"make-dir": "^3.0.0",
+		"pkg-up": "^3.0.1",
 		"semver": "^5.6.0",
-		"write-file-atomic": "^2.3.0"
+		"write-file-atomic": "^2.4.2"
 	},
 	"devDependencies": {
-		"ava": "^0.25.0",
-		"clear-module": "^3.0.0",
-		"del": "^3.0.0",
+		"@types/node": "^11.13.4",
+		"ava": "^1.4.1",
+		"clear-module": "^3.2.0",
+		"del": "^4.1.0",
 		"tempy": "^0.2.1",
-		"xo": "^0.23.0"
+		"tsd": "^0.7.2",
+		"xo": "^0.24.0"
 	}
 }

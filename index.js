@@ -10,46 +10,90 @@ const makeDir = require('make-dir');
 const pkgUp = require('pkg-up');
 const envPaths = require('env-paths');
 const writeFileAtomic = require('write-file-atomic');
+const Ajv = require('ajv');
 const semver = require('semver');
 
 const plainObject = () => Object.create(null);
+const encryptionAlgorithm = 'aes-256-cbc';
 
 // Prevent caching of this module so module.parent is always accurate
 delete require.cache[__filename];
 const parentDir = path.dirname((module.parent && module.parent.filename) || '.');
 
+const checkValueType = (key, value) => {
+	const nonJsonTypes = [
+		'undefined',
+		'symbol',
+		'function'
+	];
+
+	const type = typeof value;
+
+	if (nonJsonTypes.includes(type)) {
+		throw new TypeError(`Setting a value of type \`${type}\` for key \`${key}\` is not allowed as it's not supported by JSON`);
+	}
+};
+
 class Conf {
 	constructor(options) {
-		const pkgPath = pkgUp.sync(parentDir);
-		const pkg = pkgPath && JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
-
-		options = Object.assign({
-			// Can't use `require` because of Webpack being annoying:
-			// https://github.com/webpack/webpack/issues/196
-			projectName: pkg && pkg.name, projectVersion: pkg && pkg.version
-		}, options);
-
-		if (!options.projectName && !options.cwd) {
-			throw new Error('Project name could not be inferred. Please specify the `projectName` option.');
-		}
-
-		options = Object.assign({
+		options = {
 			configName: 'config',
-			fileExtension: 'json'
-		}, options);
+			fileExtension: 'json',
+			projectSuffix: 'nodejs',
+			clearInvalidConfig: true,
+			serialize: value => JSON.stringify(value, null, '\t'),
+			deserialize: JSON.parse,
+			...options
+		};
 
 		if (!options.cwd) {
-			options.cwd = envPaths(options.projectName).config;
+			if (!options.projectName) {
+				const pkgPath = pkgUp.sync(parentDir);
+				const pkg = pkgPath && JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+				// Can't use `require` because of Webpack being annoying:
+				// https://github.com/webpack/webpack/issues/196
+				options.projectName = pkg && pkg.name;
+				options.projectVersion = pkg && pkg.version;
+			}
+
+			if (!options.projectName) {
+				throw new Error('Project name could not be inferred. Please specify the `projectName` option.');
+			}
+
+			options.cwd = envPaths(options.projectName, {suffix: options.projectSuffix}).config;
+		}
+
+		this._options = options;
+
+		if (options.schema) {
+			if (typeof options.schema !== 'object') {
+				throw new TypeError('The `schema` option must be an object.');
+			}
+
+			const ajv = new Ajv({
+				allErrors: true,
+				format: 'full',
+				useDefaults: true,
+				errorDataPath: 'property'
+			});
+			const schema = {
+				type: 'object',
+				properties: options.schema
+			};
+			this._validator = ajv.compile(schema);
 		}
 
 		this.events = new EventEmitter();
 		this.encryptionKey = options.encryptionKey;
+		this.serialize = options.serialize;
+		this.deserialize = options.deserialize;
 
 		const fileExtension = options.fileExtension ? `.${options.fileExtension}` : '';
 		this.path = path.resolve(options.cwd, `${options.configName}${fileExtension}`);
 
 		const fileStore = this.store;
 		const store = Object.assign(plainObject(), options.defaults, fileStore);
+		this._validate(store);
 		try {
 			assert.deepEqual(fileStore, store);
 		} catch (_) {
@@ -58,6 +102,19 @@ class Conf {
 
 		if (options.migrations) {
 			this._migrate(options);
+		}
+	}
+
+	_validate(data) {
+		if (!this._validator) {
+			return;
+		}
+
+		const valid = this._validator(data);
+		if (!valid) {
+			const errors = this._validator.errors.reduce((error, {dataPath, message}) =>
+				error + ` \`${dataPath.slice(1)}\` ${message};`, '');
+			throw new Error('Config schema violation:' + errors.slice(0, -1));
 		}
 	}
 
@@ -76,12 +133,18 @@ class Conf {
 
 		const {store} = this;
 
+		const set = (key, value) => {
+			checkValueType(key, value);
+			dotProp.set(store, key, value);
+		};
+
 		if (typeof key === 'object') {
-			for (const k of Object.keys(key)) {
-				dotProp.set(store, k, key[k]);
+			const object = key;
+			for (const [key, value] of Object.entries(object)) {
+				set(key, value);
 			}
 		} else {
-			dotProp.set(store, key, value);
+			set(key, value);
 		}
 
 		this.store = store;
@@ -160,19 +223,22 @@ class Conf {
 
 			if (this.encryptionKey) {
 				try {
-					const decipher = crypto.createDecipher('aes-256-cbc', this.encryptionKey);
+					const decipher = crypto.createDecipher(encryptionAlgorithm, this.encryptionKey);
 					data = Buffer.concat([decipher.update(data), decipher.final()]);
 				} catch (_) {}
 			}
 
-			return Object.assign(plainObject(), JSON.parse(data));
+			data = this.deserialize(data);
+			this._validate(data);
+			return Object.assign(plainObject(), data);
 		} catch (error) {
 			if (error.code === 'ENOENT') {
+				// TODO: Use `fs.mkdirSync` `recursive` option when targeting Node.js 12
 				makeDir.sync(path.dirname(this.path));
 				return plainObject();
 			}
 
-			if (error.name === 'SyntaxError') {
+			if (this._options.clearInvalidConfig && error.name === 'SyntaxError') {
 				return plainObject();
 			}
 
@@ -184,10 +250,11 @@ class Conf {
 		// Ensure the directory exists as it could have been deleted in the meantime
 		makeDir.sync(path.dirname(this.path));
 
-		let data = JSON.stringify(value, null, '\t');
+		this._validate(value);
+		let data = this.serialize(value);
 
 		if (this.encryptionKey) {
-			const cipher = crypto.createCipher('aes-256-cbc', this.encryptionKey);
+			const cipher = crypto.createCipher(encryptionAlgorithm, this.encryptionKey);
 			data = Buffer.concat([cipher.update(Buffer.from(data)), cipher.final()]);
 		}
 
@@ -195,12 +262,9 @@ class Conf {
 		this.events.emit('change');
 	}
 
-	// TODO: Use `Object.entries()` when targeting Node.js 8
 	* [Symbol.iterator]() {
-		const {store} = this;
-
-		for (const key of Object.keys(store)) {
-			yield [key, store[key]];
+		for (const [key, value] of Object.entries(this.store)) {
+			yield [key, value];
 		}
 	}
 }
