@@ -36,6 +36,9 @@ const checkValueType = (key, value) => {
 
 class Conf {
 	constructor(options) {
+		const pkgPath = pkgUp.sync(parentDir);
+		const pkg = pkgPath && JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+
 		options = {
 			configName: 'config',
 			fileExtension: 'json',
@@ -43,17 +46,15 @@ class Conf {
 			clearInvalidConfig: true,
 			serialize: value => JSON.stringify(value, null, '\t'),
 			deserialize: JSON.parse,
+			projectVersion: pkg && pkg.version,
 			...options
 		};
 
 		if (!options.cwd) {
 			if (!options.projectName) {
-				const pkgPath = pkgUp.sync(parentDir);
-				const pkg = pkgPath && JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
 				// Can't use `require` because of Webpack being annoying:
 				// https://github.com/webpack/webpack/issues/196
 				options.projectName = pkg && pkg.name;
-				options.projectVersion = pkg && pkg.version;
 			}
 
 			if (!options.projectName) {
