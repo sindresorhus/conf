@@ -123,10 +123,10 @@ You would usually not need this, but could be useful if you want to interact wit
 
  Useful for transitioning conf changes between application versions. Ex:
  ```js
- // version is set to 0.0.1, the current app version is 2.0.8, old is set to 1
+ // version is set to 0.0.2, the current app version is 2.0.8, old is set to 1
  const store = new Conf({
  	migrations: {
- 		'0.0.0': store => {
+ 		'0.0.1': store => {
  			store.set('bad key', 2);
  		},
  		'1.0.0': store => {
@@ -140,7 +140,7 @@ You would usually not need this, but could be useful if you want to interact wit
  	}
  });
  console.log(store.store);
- // { version: '2.0.8', new: 1, 'a new key': 't' }
+ // { __packageVersion__: '2.0.8', new: 1, 'a new key': 't' }
  ```
 
 ### Instance
