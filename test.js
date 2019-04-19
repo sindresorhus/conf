@@ -606,7 +606,7 @@ test('migrates to the next version', t => {
 			'1.9.9': store => {
 				store.set('2', 1);
 			},
-			'4.0.0': store => {
+			'20.0.0': store => {
 				store.set('4', 1);
 			}
 		}
