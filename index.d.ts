@@ -209,7 +209,7 @@ declare class Conf<T = unknown> implements Iterable<[string, T]> {
 	*/
 	onDidChange(
 		key: string,
-		callback: (oldValue: T | undefined, newValue: T | undefined) => void
+		callback: (newValue: T | undefined, oldValue: T | undefined) => void
 	): () => void;
 
 	[Symbol.iterator](): IterableIterator<[string, T]>;
