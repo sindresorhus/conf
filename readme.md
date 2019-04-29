@@ -188,12 +188,40 @@ You can pass an empty string to remove the suffix.
 
 For example, on macOS, the config file will be stored in the `~/Library/Preferences/foo-nodejs` directory, where `foo` is the `projectName`.
 
-#### disableDotNotation
+#### accessPropertiesByDotNotation
 
 Type: `boolean`<br>
-Default: `false`
+Default: `true`
 
-Disable dot-notation for accessing nested properties, treat the whole string as one key.
+Accessing nested properties by dot nonation. For example:
+
+```javascript
+const config = new Conf();
+
+config.set({
+	foo: {
+		bar: {
+			foobar: '🦄'
+		}
+	}
+});
+
+console.log(config.get('foo.bar.foobar'));
+//=> '🦄'
+```
+
+Alternatively, you can set this option to `false` so the whole string would be treated as one key.
+
+```javascript
+const config = new Conf({accessPropertiesByDotNotation: false});
+
+config.set({
+	`foo.bar.foobar`: '🦄'
+});
+
+console.log(config.get('foo.bar.foobar'));
+//=> '🦄'
+```
 
 ### Instance
 

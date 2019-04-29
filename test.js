@@ -11,6 +11,7 @@ const fixture = '🦄';
 
 test.beforeEach(t => {
 	t.context.conf = new Conf({cwd: tempy.directory()});
+	t.context.config = new Conf({cwd: tempy.directory(), accessPropertiesByDotNotation: false});
 });
 
 test('.get()', t => {
@@ -584,11 +585,59 @@ test('schema - validate Conf default', t => {
 	}, 'Config schema violation: `foo` should be string');
 });
 
-test('disable not dotation', t => {
-	const conf = new Conf({disableDotNotation: true});
-	conf.set('foo.bar.foobar', 1);
+test('.get() - without dot notation', t => {
+	t.is(t.context.config.get('foo'), undefined);
+	t.is(t.context.config.get('foo', '🐴'), '🐴');
+	t.context.config.set('foo', fixture);
+	t.is(t.context.config.get('foo'), fixture);
+});
 
-	t.is(conf.has('foo'), false);
-	t.is(conf.has('foo.bar'), false);
-	t.is(conf.get('foo.bar.foobar'), 1);
+test('.set() - without dot notation', t => {
+	t.context.config.set('foo', fixture);
+	t.context.config.set('baz.boo', fixture);
+	t.is(t.context.config.get('foo'), fixture);
+	t.is(t.context.config.get('baz.boo'), fixture);
+});
+
+test('.set() - with object - without dot notation', t => {
+	t.context.config.set({
+		foo1: 'bar1',
+		foo2: 'bar2',
+		baz: {
+			boo: 'foo',
+			foo: {
+				bar: 'baz'
+			}
+		}
+	});
+	t.is(t.context.config.get('foo1'), 'bar1');
+	t.is(t.context.config.get('foo2'), 'bar2');
+	t.deepEqual(t.context.config.get('baz'), {boo: 'foo', foo: {bar: 'baz'}});
+	t.is(t.context.config.get('baz.boo'), undefined);
+	t.is(t.context.config.get('baz.foo.bar'), undefined);
+});
+
+test('.has() - without dot notation', t => {
+	t.context.config.set('foo', fixture);
+	t.context.config.set('baz.boo', fixture);
+	t.true(t.context.config.has('foo'));
+	t.true(t.context.config.has('baz.boo'));
+	t.false(t.context.config.has('missing'));
+});
+
+test('.delete() - without dot notation', t => {
+	const {config} = t.context;
+	config.set('foo', 'bar');
+	config.set('baz.boo', true);
+	config.set('baz.foo.bar', 'baz');
+	config.delete('foo');
+	t.is(config.get('foo'), undefined);
+	config.delete('baz.boo');
+	t.not(config.get('baz.boo'), true);
+	config.delete('baz.foo');
+	t.not(config.get('baz.foo'), {bar: 'baz'});
+	config.set('foo.bar.baz', {awesome: 'icecream'});
+	config.set('foo.bar.zoo', {awesome: 'redpanda'});
+	config.delete('foo.bar.baz');
+	t.deepEqual(config.get('foo.bar.zoo'), {awesome: 'redpanda'});
 });
