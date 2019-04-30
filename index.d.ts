@@ -159,7 +159,7 @@ declare namespace Conf {
 		//=> '🦄'
 		```
 
-		@default 'true'
+		@default true
 		*/
 
 		readonly accessPropertiesByDotNotation?: boolean;
