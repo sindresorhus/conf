@@ -197,14 +197,15 @@ For example, on macOS, the config file will be stored in the `~/Library/Preferen
 
 #### migrations
 
- type: `Object`<br>
+ type: `object`<br>
  Default: `undefined`
 
  Migrations to be run between versions.
 
- Useful for transitioning conf changes between application versions. Ex:
+ Useful for transitioning store changes between app versions:
+ 
  ```js
- // version is set to 0.0.2, the current app version is 2.0.8, old is set to 1
+ // Version is set to 0.0.2, the current app version is 2.0.8, old is set to 1
  const store = new Conf({
  	migrations: {
  		'0.0.1': store => {
@@ -220,8 +221,9 @@ For example, on macOS, the config file will be stored in the `~/Library/Preferen
  		}
  	}
  });
+ 
  console.log(store.store);
- // { __packageVersion__: '2.0.8', new: 1, 'a new key': 't' }
+ // {__packageVersion__: '2.0.8', new: 1, 'a new key': 't'}
  ```
 
 ### Instance
