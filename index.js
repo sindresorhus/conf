@@ -166,11 +166,27 @@ class Conf {
 			throw new TypeError(`Expected \`callback\` to be of type \`function\`, got ${typeof callback}`);
 		}
 
-		let currentValue = this.get(key);
+		const getter = () => this.get(key);
+
+		return this.handleChange(getter, callback);
+	}
+
+	onDidAnyChange(callback) {
+		if (typeof callback !== 'function') {
+			throw new TypeError(`Expected \`callback\` to be of type \`function\`, got ${typeof callback}`);
+		}
+
+		const getter = () => this.store;
+
+		return this.handleChange(getter, callback);
+	}
+
+	handleChange(getter, callback) {
+		let currentValue = getter();
 
 		const onChange = () => {
 			const oldValue = currentValue;
-			const newValue = this.get(key);
+			const newValue = getter();
 
 			try {
 				// TODO: Use `util.isDeepStrictEqual` when targeting Node.js 10
