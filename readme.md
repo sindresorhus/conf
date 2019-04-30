@@ -193,7 +193,7 @@ For example, on macOS, the config file will be stored in the `~/Library/Preferen
 Type: `boolean`<br>
 Default: `true`
 
-Accessing nested properties by dot nonation. For example:
+Accessing nested properties by dot notation. For example:
 
 ```javascript
 const config = new Conf();
