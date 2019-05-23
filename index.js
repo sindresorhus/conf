@@ -211,7 +211,10 @@ class Conf {
 
 			if (this.encryptionKey) {
 				try {
-					const decipher = crypto.createDecipher(encryptionAlgorithm, this.encryptionKey);
+					const iv = Buffer.alloc(16);
+					const key = crypto.pbkdf2Sync(this.encryptionKey, iv.toString(), 10000, 32, 'sha512');
+
+					const decipher = crypto.createDecipheriv(encryptionAlgorithm, key, iv);
 					data = Buffer.concat([decipher.update(data), decipher.final()]);
 				} catch (_) {}
 			}
@@ -242,7 +245,10 @@ class Conf {
 		let data = this.serialize(value);
 
 		if (this.encryptionKey) {
-			const cipher = crypto.createCipher(encryptionAlgorithm, this.encryptionKey);
+			const iv = Buffer.alloc(16);
+			const key = crypto.pbkdf2Sync(this.encryptionKey, iv.toString(), 10000, 32, 'sha512');
+
+			const cipher = crypto.createCipheriv(encryptionAlgorithm, key, iv);
 			data = Buffer.concat([cipher.update(Buffer.from(data)), cipher.final()]);
 		}
 
