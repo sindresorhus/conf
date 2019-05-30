@@ -129,6 +129,8 @@ declare namespace Conf {
 		/**
 		Access nested properties by dot notation.
 
+		@default true
+
 		@example
 		```
 		const config = new Conf();
@@ -159,7 +161,6 @@ declare namespace Conf {
 		//=> '🦄'
 		```
 
-		@default true
 		*/
 		readonly accessPropertiesByDotNotation?: boolean;
 	}

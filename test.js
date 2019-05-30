@@ -11,7 +11,7 @@ const fixture = '🦄';
 
 test.beforeEach(t => {
 	t.context.conf = new Conf({cwd: tempy.directory()});
-	t.context.config = new Conf({cwd: tempy.directory(), accessPropertiesByDotNotation: false});
+	t.context.confWithoutDotNotation = new Conf({cwd: tempy.directory(), accessPropertiesByDotNotation: false});
 });
 
 test('.get()', t => {
@@ -586,21 +586,21 @@ test('schema - validate Conf default', t => {
 });
 
 test('.get() - without dot notation', t => {
-	t.is(t.context.config.get('foo'), undefined);
-	t.is(t.context.config.get('foo', '🐴'), '🐴');
-	t.context.config.set('foo', fixture);
-	t.is(t.context.config.get('foo'), fixture);
+	t.is(t.context.confWithoutDotNotation.get('foo'), undefined);
+	t.is(t.context.confWithoutDotNotation.get('foo', '🐴'), '🐴');
+	t.context.confWithoutDotNotation.set('foo', fixture);
+	t.is(t.context.confWithoutDotNotation.get('foo'), fixture);
 });
 
 test('.set() - without dot notation', t => {
-	t.context.config.set('foo', fixture);
-	t.context.config.set('baz.boo', fixture);
-	t.is(t.context.config.get('foo'), fixture);
-	t.is(t.context.config.get('baz.boo'), fixture);
+	t.context.confWithoutDotNotation.set('foo', fixture);
+	t.context.confWithoutDotNotation.set('baz.boo', fixture);
+	t.is(t.context.confWithoutDotNotation.get('foo'), fixture);
+	t.is(t.context.confWithoutDotNotation.get('baz.boo'), fixture);
 });
 
 test('.set() - with object - without dot notation', t => {
-	t.context.config.set({
+	t.context.confWithoutDotNotation.set({
 		foo1: 'bar1',
 		foo2: 'bar2',
 		baz: {
@@ -610,34 +610,34 @@ test('.set() - with object - without dot notation', t => {
 			}
 		}
 	});
-	t.is(t.context.config.get('foo1'), 'bar1');
-	t.is(t.context.config.get('foo2'), 'bar2');
-	t.deepEqual(t.context.config.get('baz'), {boo: 'foo', foo: {bar: 'baz'}});
-	t.is(t.context.config.get('baz.boo'), undefined);
-	t.is(t.context.config.get('baz.foo.bar'), undefined);
+	t.is(t.context.confWithoutDotNotation.get('foo1'), 'bar1');
+	t.is(t.context.confWithoutDotNotation.get('foo2'), 'bar2');
+	t.deepEqual(t.context.confWithoutDotNotation.get('baz'), {boo: 'foo', foo: {bar: 'baz'}});
+	t.is(t.context.confWithoutDotNotation.get('baz.boo'), undefined);
+	t.is(t.context.confWithoutDotNotation.get('baz.foo.bar'), undefined);
 });
 
 test('.has() - without dot notation', t => {
-	t.context.config.set('foo', fixture);
-	t.context.config.set('baz.boo', fixture);
-	t.true(t.context.config.has('foo'));
-	t.true(t.context.config.has('baz.boo'));
-	t.false(t.context.config.has('missing'));
+	t.context.confWithoutDotNotation.set('foo', fixture);
+	t.context.confWithoutDotNotation.set('baz.boo', fixture);
+	t.true(t.context.confWithoutDotNotation.has('foo'));
+	t.true(t.context.confWithoutDotNotation.has('baz.boo'));
+	t.false(t.context.confWithoutDotNotation.has('missing'));
 });
 
 test('.delete() - without dot notation', t => {
-	const {config} = t.context;
-	config.set('foo', 'bar');
-	config.set('baz.boo', true);
-	config.set('baz.foo.bar', 'baz');
-	config.delete('foo');
-	t.is(config.get('foo'), undefined);
-	config.delete('baz.boo');
-	t.not(config.get('baz.boo'), true);
-	config.delete('baz.foo');
-	t.not(config.get('baz.foo'), {bar: 'baz'});
-	config.set('foo.bar.baz', {awesome: 'icecream'});
-	config.set('foo.bar.zoo', {awesome: 'redpanda'});
-	config.delete('foo.bar.baz');
-	t.deepEqual(config.get('foo.bar.zoo'), {awesome: 'redpanda'});
+	const {confWithoutDotNotation} = t.context;
+	confWithoutDotNotation.set('foo', 'bar');
+	confWithoutDotNotation.set('baz.boo', true);
+	confWithoutDotNotation.set('baz.foo.bar', 'baz');
+	confWithoutDotNotation.delete('foo');
+	t.is(confWithoutDotNotation.get('foo'), undefined);
+	confWithoutDotNotation.delete('baz.boo');
+	t.not(confWithoutDotNotation.get('baz.boo'), true);
+	confWithoutDotNotation.delete('baz.foo');
+	t.not(confWithoutDotNotation.get('baz.foo'), {bar: 'baz'});
+	confWithoutDotNotation.set('foo.bar.baz', {awesome: 'icecream'});
+	confWithoutDotNotation.set('foo.bar.zoo', {awesome: 'redpanda'});
+	confWithoutDotNotation.delete('foo.bar.baz');
+	t.deepEqual(confWithoutDotNotation.get('foo.bar.zoo'), {awesome: 'redpanda'});
 });
