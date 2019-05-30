@@ -127,7 +127,7 @@ declare namespace Conf {
 		readonly projectSuffix?: string;
 
 		/**
-		Accessing nested properties by dot notation. For example:
+		Access nested properties by dot notation.
 
 		@example
 		```
