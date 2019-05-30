@@ -163,7 +163,6 @@ declare namespace Conf {
 		*/
 
 		readonly accessPropertiesByDotNotation?: boolean;
-
 	}
 }
 
