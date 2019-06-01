@@ -10,26 +10,26 @@ import Conf from '.';
 const fixture = '🦄';
 
 test.beforeEach(t => {
-	t.context.conf = new Conf({cwd: tempy.directory()});
-	t.context.confWithoutDotNotation = new Conf({cwd: tempy.directory(), accessPropertiesByDotNotation: false});
+	t.context.config = new Conf({cwd: tempy.directory()});
+	t.context.configWithoutDotNotation = new Conf({cwd: tempy.directory(), accessPropertiesByDotNotation: false});
 });
 
 test('.get()', t => {
-	t.is(t.context.conf.get('foo'), undefined);
-	t.is(t.context.conf.get('foo', '🐴'), '🐴');
-	t.context.conf.set('foo', fixture);
-	t.is(t.context.conf.get('foo'), fixture);
+	t.is(t.context.config.get('foo'), undefined);
+	t.is(t.context.config.get('foo', '🐴'), '🐴');
+	t.context.config.set('foo', fixture);
+	t.is(t.context.config.get('foo'), fixture);
 });
 
 test('.set()', t => {
-	t.context.conf.set('foo', fixture);
-	t.context.conf.set('baz.boo', fixture);
-	t.is(t.context.conf.get('foo'), fixture);
-	t.is(t.context.conf.get('baz.boo'), fixture);
+	t.context.config.set('foo', fixture);
+	t.context.config.set('baz.boo', fixture);
+	t.is(t.context.config.get('foo'), fixture);
+	t.is(t.context.config.get('baz.boo'), fixture);
 });
 
 test('.set() - with object', t => {
-	t.context.conf.set({
+	t.context.config.set({
 		foo1: 'bar1',
 		foo2: 'bar2',
 		baz: {
@@ -39,43 +39,43 @@ test('.set() - with object', t => {
 			}
 		}
 	});
-	t.is(t.context.conf.get('foo1'), 'bar1');
-	t.is(t.context.conf.get('foo2'), 'bar2');
-	t.deepEqual(t.context.conf.get('baz'), {boo: 'foo', foo: {bar: 'baz'}});
-	t.is(t.context.conf.get('baz.boo'), 'foo');
-	t.deepEqual(t.context.conf.get('baz.foo'), {bar: 'baz'});
-	t.is(t.context.conf.get('baz.foo.bar'), 'baz');
+	t.is(t.context.config.get('foo1'), 'bar1');
+	t.is(t.context.config.get('foo2'), 'bar2');
+	t.deepEqual(t.context.config.get('baz'), {boo: 'foo', foo: {bar: 'baz'}});
+	t.is(t.context.config.get('baz.boo'), 'foo');
+	t.deepEqual(t.context.config.get('baz.foo'), {bar: 'baz'});
+	t.is(t.context.config.get('baz.foo.bar'), 'baz');
 });
 
 test('.set() - with undefined', t => {
 	t.throws(() => {
-		t.context.conf.set('foo', undefined);
+		t.context.config.set('foo', undefined);
 	}, 'Use `delete()` to clear values');
 });
 
 test('.set() - with unsupported values', t => {
 	t.throws(() => {
-		t.context.conf.set('a', () => {});
+		t.context.config.set('a', () => {});
 	}, /not supported by JSON/);
 
 	t.throws(() => {
-		t.context.conf.set('a', Symbol('a'));
+		t.context.config.set('a', Symbol('a'));
 	}, /not supported by JSON/);
 
 	t.throws(() => {
-		t.context.conf.set({
+		t.context.config.set({
 			a: undefined
 		});
 	}, /not supported by JSON/);
 
 	t.throws(() => {
-		t.context.conf.set({
+		t.context.config.set({
 			a: () => {}
 		});
 	}, /not supported by JSON/);
 
 	t.throws(() => {
-		t.context.conf.set({
+		t.context.config.set({
 			a: Symbol('a')
 		});
 	}, /not supported by JSON/);
@@ -83,52 +83,52 @@ test('.set() - with unsupported values', t => {
 
 test('.set() - invalid key', t => {
 	t.throws(() => {
-		t.context.conf.set(1, 'unicorn');
+		t.context.config.set(1, 'unicorn');
 	}, 'Expected `key` to be of type `string` or `object`, got number');
 });
 
 test('.has()', t => {
-	t.context.conf.set('foo', fixture);
-	t.context.conf.set('baz.boo', fixture);
-	t.true(t.context.conf.has('foo'));
-	t.true(t.context.conf.has('baz.boo'));
-	t.false(t.context.conf.has('missing'));
+	t.context.config.set('foo', fixture);
+	t.context.config.set('baz.boo', fixture);
+	t.true(t.context.config.has('foo'));
+	t.true(t.context.config.has('baz.boo'));
+	t.false(t.context.config.has('missing'));
 });
 
 test('.delete()', t => {
-	const {conf} = t.context;
-	conf.set('foo', 'bar');
-	conf.set('baz.boo', true);
-	conf.set('baz.foo.bar', 'baz');
-	conf.delete('foo');
-	t.is(conf.get('foo'), undefined);
-	conf.delete('baz.boo');
-	t.not(conf.get('baz.boo'), true);
-	conf.delete('baz.foo');
-	t.not(conf.get('baz.foo'), {bar: 'baz'});
-	conf.set('foo.bar.baz', {awesome: 'icecream'});
-	conf.set('foo.bar.zoo', {awesome: 'redpanda'});
-	conf.delete('foo.bar.baz');
-	t.is(conf.get('foo.bar.zoo.awesome'), 'redpanda');
+	const {config} = t.context;
+	config.set('foo', 'bar');
+	config.set('baz.boo', true);
+	config.set('baz.foo.bar', 'baz');
+	config.delete('foo');
+	t.is(config.get('foo'), undefined);
+	config.delete('baz.boo');
+	t.not(config.get('baz.boo'), true);
+	config.delete('baz.foo');
+	t.not(config.get('baz.foo'), {bar: 'baz'});
+	config.set('foo.bar.baz', {awesome: 'icecream'});
+	config.set('foo.bar.zoo', {awesome: 'redpanda'});
+	config.delete('foo.bar.baz');
+	t.is(config.get('foo.bar.zoo.awesome'), 'redpanda');
 });
 
 test('.clear()', t => {
-	t.context.conf.set('foo', 'bar');
-	t.context.conf.set('foo1', 'bar1');
-	t.context.conf.set('baz.boo', true);
-	t.context.conf.clear();
-	t.is(t.context.conf.size, 0);
+	t.context.config.set('foo', 'bar');
+	t.context.config.set('foo1', 'bar1');
+	t.context.config.set('baz.boo', true);
+	t.context.config.clear();
+	t.is(t.context.config.size, 0);
 });
 
 test('.size', t => {
-	t.context.conf.set('foo', 'bar');
-	t.is(t.context.conf.size, 1);
+	t.context.config.set('foo', 'bar');
+	t.is(t.context.config.size, 1);
 });
 
 test('.store', t => {
-	t.context.conf.set('foo', 'bar');
-	t.context.conf.set('baz.boo', true);
-	t.deepEqual(t.context.conf.store, {
+	t.context.config.set('foo', 'bar');
+	t.context.config.set('baz.boo', true);
+	t.deepEqual(t.context.config.store, {
 		foo: 'bar',
 		baz: {
 			boo: true
@@ -137,38 +137,38 @@ test('.store', t => {
 });
 
 test('`defaults` option', t => {
-	const conf = new Conf({
+	const config = new Conf({
 		cwd: tempy.directory(),
 		defaults: {
 			foo: 'bar'
 		}
 	});
 
-	t.is(conf.get('foo'), 'bar');
+	t.is(config.get('foo'), 'bar');
 });
 
 test('`configName` option', t => {
 	const configName = 'alt-config';
-	const conf = new Conf({
+	const config = new Conf({
 		cwd: tempy.directory(),
 		configName
 	});
-	t.is(conf.get('foo'), undefined);
-	conf.set('foo', fixture);
-	t.is(conf.get('foo'), fixture);
-	t.is(path.basename(conf.path, '.json'), configName);
+	t.is(config.get('foo'), undefined);
+	config.set('foo', fixture);
+	t.is(config.get('foo'), fixture);
+	t.is(path.basename(config.path, '.json'), configName);
 });
 
 test('no `suffix` option', t => {
-	const conf = new Conf();
-	t.true(conf.path.includes('-nodejs'));
+	const config = new Conf();
+	t.true(config.path.includes('-nodejs'));
 });
 
 test('with `suffix` option set to empty string', t => {
 	const projectSuffix = '';
 	const projectName = 'conf-temp1-project';
-	const conf = new Conf({projectSuffix, projectName});
-	const configPathSegments = conf.path.split(path.sep);
+	const config = new Conf({projectSuffix, projectName});
+	const configPathSegments = config.path.split(path.sep);
 	const configRootIndex = configPathSegments.findIndex(segment => segment === projectName);
 	t.true(configRootIndex >= 0 && configRootIndex < configPathSegments.length);
 });
@@ -176,8 +176,8 @@ test('with `suffix` option set to empty string', t => {
 test('with `projectSuffix` option set to non-empty string', t => {
 	const projectSuffix = 'new-projectSuffix';
 	const projectName = 'conf-temp2-project';
-	const conf = new Conf({projectSuffix, projectName});
-	const configPathSegments = conf.path.split(path.sep);
+	const config = new Conf({projectSuffix, projectName});
+	const configPathSegments = config.path.split(path.sep);
 	const expectedRootName = `${projectName}-${projectSuffix}`;
 	const configRootIndex = configPathSegments.findIndex(segment => segment === expectedRootName);
 	t.true(configRootIndex >= 0 && configRootIndex < configPathSegments.length);
@@ -185,24 +185,24 @@ test('with `projectSuffix` option set to non-empty string', t => {
 
 test('`fileExtension` option', t => {
 	const fileExtension = 'alt-ext';
-	const conf = new Conf({
+	const config = new Conf({
 		cwd: tempy.directory(),
 		fileExtension
 	});
-	t.is(conf.get('foo'), undefined);
-	conf.set('foo', fixture);
-	t.is(conf.get('foo'), fixture);
-	t.is(path.extname(conf.path), `.${fileExtension}`);
+	t.is(config.get('foo'), undefined);
+	config.set('foo', fixture);
+	t.is(config.get('foo'), fixture);
+	t.is(path.extname(config.path), `.${fileExtension}`);
 });
 
 test('`fileExtension` option = empty string', t => {
 	const configName = 'unicorn';
-	const conf = new Conf({
+	const config = new Conf({
 		cwd: tempy.directory(),
 		fileExtension: '',
 		configName
 	});
-	t.is(path.basename(conf.path), configName);
+	t.is(path.basename(config.path), configName);
 });
 
 test('`serialize` and `deserialize` options', t => {
@@ -219,81 +219,81 @@ test('`serialize` and `deserialize` options', t => {
 		return deserialized;
 	};
 
-	const conf = new Conf({
+	const config = new Conf({
 		cwd: tempy.directory(),
 		serialize,
 		deserialize
 	});
-	t.deepEqual(conf.store, {});
-	conf.store = deserialized;
-	t.deepEqual(conf.store, deserialized);
+	t.deepEqual(config.store, {});
+	config.store = deserialized;
+	t.deepEqual(config.store, deserialized);
 });
 
 test('`projectName` option', t => {
 	const projectName = 'conf-fixture-project-name';
-	const conf = new Conf({projectName});
-	t.is(conf.get('foo'), undefined);
-	conf.set('foo', fixture);
-	t.is(conf.get('foo'), fixture);
-	t.true(conf.path.includes(projectName));
-	del.sync(conf.path, {force: true});
+	const config = new Conf({projectName});
+	t.is(config.get('foo'), undefined);
+	config.set('foo', fixture);
+	t.is(config.get('foo'), fixture);
+	t.true(config.path.includes(projectName));
+	del.sync(config.path, {force: true});
 });
 
 test('ensure `.store` is always an object', t => {
 	const cwd = tempy.directory();
-	const conf = new Conf({cwd});
+	const config = new Conf({cwd});
 
 	del.sync(cwd, {force: true});
 
 	t.notThrows(() => {
-		conf.get('foo');
+		config.get('foo');
 	});
 });
 
 test('instance is iterable', t => {
-	t.context.conf.set({
+	t.context.config.set({
 		foo: fixture,
 		bar: fixture
 	});
 	t.deepEqual(
-		[...t.context.conf],
+		[...t.context.config],
 		[['foo', fixture], ['bar', fixture]]
 	);
 });
 
 test('automatic `projectName` inference', t => {
-	const conf = new Conf();
-	conf.set('foo', fixture);
-	t.is(conf.get('foo'), fixture);
-	t.true(conf.path.includes('conf'));
-	del.sync(conf.path, {force: true});
+	const config = new Conf();
+	config.set('foo', fixture);
+	t.is(config.get('foo'), fixture);
+	t.true(config.path.includes('conf'));
+	del.sync(config.path, {force: true});
 });
 
 test('`cwd` option overrides `projectName` option', t => {
 	const cwd = tempy.directory();
 
-	let conf;
+	let config;
 	t.notThrows(() => {
-		conf = new Conf({cwd, projectName: ''});
+		config = new Conf({cwd, projectName: ''});
 	});
 
-	t.true(conf.path.startsWith(cwd));
-	t.is(conf.get('foo'), undefined);
-	conf.set('foo', fixture);
-	t.is(conf.get('foo'), fixture);
-	del.sync(conf.path, {force: true});
+	t.true(config.path.startsWith(cwd));
+	t.is(config.get('foo'), undefined);
+	config.set('foo', fixture);
+	t.is(config.get('foo'), fixture);
+	del.sync(config.path, {force: true});
 });
 
 test('safely handle missing package.json', t => {
 	const pkgUpSyncOrig = pkgUp.sync;
 	pkgUp.sync = () => null;
 
-	let conf;
+	let config;
 	t.notThrows(() => {
-		conf = new Conf({projectName: 'conf-fixture-project-name'});
+		config = new Conf({projectName: 'conf-fixture-project-name'});
 	});
 
-	del.sync(conf.path, {force: true});
+	del.sync(config.path, {force: true});
 	pkgUp.sync = pkgUpSyncOrig;
 });
 
@@ -301,12 +301,12 @@ test('handle `cwd` being set and `projectName` not being set', t => {
 	const pkgUpSyncOrig = pkgUp.sync;
 	pkgUp.sync = () => null;
 
-	let conf;
+	let config;
 	t.notThrows(() => {
-		conf = new Conf({cwd: 'conf-fixture-cwd'});
+		config = new Conf({cwd: 'conf-fixture-cwd'});
 	});
 
-	del.sync(path.dirname(conf.path));
+	del.sync(path.dirname(config.path));
 	pkgUp.sync = pkgUpSyncOrig;
 });
 
@@ -316,24 +316,24 @@ test('fallback to cwd if `module.filename` is `null`', t => {
 	module.filename = null;
 	clearModule('.');
 
-	let conf;
+	let config;
 	t.notThrows(() => {
 		const Conf = require('.');
-		conf = new Conf({cwd: 'conf-fixture-fallback-module-filename-null'});
+		config = new Conf({cwd: 'conf-fixture-fallback-module-filename-null'});
 	});
 
 	module.filename = preservedFilename;
-	del.sync(path.dirname(conf.path));
+	del.sync(path.dirname(config.path));
 });
 
 test('encryption', t => {
-	const conf = new Conf({cwd: tempy.directory(), encryptionKey: 'abc123'});
-	t.is(conf.get('foo'), undefined);
-	t.is(conf.get('foo', '🐴'), '🐴');
-	conf.set('foo', fixture);
-	conf.set('baz.boo', fixture);
-	t.is(conf.get('foo'), fixture);
-	t.is(conf.get('baz.boo'), fixture);
+	const config = new Conf({cwd: tempy.directory(), encryptionKey: 'abc123'});
+	t.is(config.get('foo'), undefined);
+	t.is(config.get('foo', '🐴'), '🐴');
+	config.set('foo', fixture);
+	config.set('baz.boo', fixture);
+	t.is(config.get('foo'), fixture);
+	t.is(config.get('baz.boo'), fixture);
 });
 
 test('encryption - upgrade', t => {
@@ -361,7 +361,7 @@ test('encryption - corrupt file', t => {
 });
 
 test('onDidChange()', t => {
-	const {conf} = t.context;
+	const {config} = t.context;
 
 	t.plan(8);
 
@@ -375,17 +375,17 @@ test('onDidChange()', t => {
 		t.is(oldValue, fixture);
 	};
 
-	conf.set('foo', fixture);
-	let unsubscribe = conf.onDidChange('foo', checkFoo);
-	conf.set('foo', '🐴');
+	config.set('foo', fixture);
+	let unsubscribe = config.onDidChange('foo', checkFoo);
+	config.set('foo', '🐴');
 	unsubscribe();
-	conf.set('foo', fixture);
+	config.set('foo', fixture);
 
-	conf.set('baz.boo', fixture);
-	unsubscribe = conf.onDidChange('baz.boo', checkBaz);
-	conf.set('baz.boo', '🐴');
+	config.set('baz.boo', fixture);
+	unsubscribe = config.onDidChange('baz.boo', checkBaz);
+	config.set('baz.boo', '🐴');
 	unsubscribe();
-	conf.set('baz.boo', fixture);
+	config.set('baz.boo', fixture);
 
 	const checkUndefined = (newValue, oldValue) => {
 		t.is(oldValue, fixture);
@@ -397,17 +397,17 @@ test('onDidChange()', t => {
 		t.is(newValue, '🐴');
 	};
 
-	unsubscribe = conf.onDidChange('foo', checkUndefined);
-	conf.delete('foo');
+	unsubscribe = config.onDidChange('foo', checkUndefined);
+	config.delete('foo');
 	unsubscribe();
-	unsubscribe = conf.onDidChange('foo', checkSet);
-	conf.set('foo', '🐴');
+	unsubscribe = config.onDidChange('foo', checkSet);
+	config.set('foo', '🐴');
 	unsubscribe();
-	conf.set('foo', fixture);
+	config.set('foo', fixture);
 });
 
 test('onDidAnyChange()', t => {
-	const {conf} = t.context;
+	const {config} = t.context;
 
 	t.plan(8);
 
@@ -427,17 +427,17 @@ test('onDidAnyChange()', t => {
 		});
 	};
 
-	conf.set('foo', fixture);
-	let unsubscribe = conf.onDidAnyChange(checkFoo);
-	conf.set('foo', '🐴');
+	config.set('foo', fixture);
+	let unsubscribe = config.onDidAnyChange(checkFoo);
+	config.set('foo', '🐴');
 	unsubscribe();
-	conf.set('foo', fixture);
+	config.set('foo', fixture);
 
-	conf.set('baz.boo', fixture);
-	unsubscribe = conf.onDidAnyChange(checkBaz);
-	conf.set('baz.boo', '🐴');
+	config.set('baz.boo', fixture);
+	unsubscribe = config.onDidAnyChange(checkBaz);
+	config.set('baz.boo', '🐴');
 	unsubscribe();
-	conf.set('baz.boo', fixture);
+	config.set('baz.boo', fixture);
 
 	const checkUndefined = (newValue, oldValue) => {
 		t.deepEqual(oldValue, {
@@ -461,18 +461,18 @@ test('onDidAnyChange()', t => {
 		});
 	};
 
-	unsubscribe = conf.onDidAnyChange(checkUndefined);
-	conf.delete('foo');
+	unsubscribe = config.onDidAnyChange(checkUndefined);
+	config.delete('foo');
 	unsubscribe();
-	unsubscribe = conf.onDidAnyChange(checkSet);
-	conf.set('foo', '🐴');
+	unsubscribe = config.onDidAnyChange(checkSet);
+	config.set('foo', '🐴');
 	unsubscribe();
-	conf.set('foo', fixture);
+	config.set('foo', fixture);
 });
 
 // See #32
 test('doesn\'t write to disk upon instanciation if and only if the store didn\'t change', t => {
-	let exists = fs.existsSync(t.context.conf.path);
+	let exists = fs.existsSync(t.context.config.path);
 	t.is(exists, false);
 
 	const conf = new Conf({
@@ -486,18 +486,18 @@ test('doesn\'t write to disk upon instanciation if and only if the store didn\'t
 });
 
 test('`clearInvalidConfig` option - invalid data', t => {
-	const conf = new Conf({cwd: tempy.directory(), clearInvalidConfig: false});
-	fs.writeFileSync(conf.path, '🦄');
+	const config = new Conf({cwd: tempy.directory(), clearInvalidConfig: false});
+	fs.writeFileSync(config.path, '🦄');
 
 	t.throws(() => {
-		conf.store; // eslint-disable-line no-unused-expressions
+		config.store; // eslint-disable-line no-unused-expressions
 	}, {instanceOf: SyntaxError});
 });
 
 test('`clearInvalidConfig` option - valid data', t => {
-	const conf = new Conf({cwd: tempy.directory(), clearInvalidConfig: false});
-	conf.set('foo', 'bar');
-	t.deepEqual(conf.store, {foo: 'bar'});
+	const config = new Conf({cwd: tempy.directory(), clearInvalidConfig: false});
+	config.set('foo', 'bar');
+	t.deepEqual(config.store, {foo: 'bar'});
 });
 
 test('schema - should be an object', t => {
@@ -522,9 +522,9 @@ test('schema - valid set', t => {
 			}
 		}
 	};
-	const conf = new Conf({cwd: tempy.directory(), schema});
+	const config = new Conf({cwd: tempy.directory(), schema});
 	t.notThrows(() => {
-		conf.set('foo', {bar: 1, foobar: 2});
+		config.set('foo', {bar: 1, foobar: 2});
 	});
 });
 
@@ -534,9 +534,9 @@ test('schema - one violation', t => {
 			type: 'string'
 		}
 	};
-	const conf = new Conf({cwd: tempy.directory(), schema});
+	const config = new Conf({cwd: tempy.directory(), schema});
 	t.throws(() => {
-		conf.set('foo', 1);
+		config.set('foo', 1);
 	}, 'Config schema violation: `foo` should be string');
 });
 
@@ -555,9 +555,9 @@ test('schema - multiple violations', t => {
 			}
 		}
 	};
-	const conf = new Conf({cwd: tempy.directory(), schema});
+	const config = new Conf({cwd: tempy.directory(), schema});
 	t.throws(() => {
-		conf.set('foo', {bar: '1', foobar: 101});
+		config.set('foo', {bar: '1', foobar: 101});
 	}, 'Config schema violation: `foo.bar` should be number; `foo.foobar` should be <= 100');
 });
 
@@ -577,12 +577,12 @@ test('schema - complex schema', t => {
 			}
 		}
 	};
-	const conf = new Conf({cwd: tempy.directory(), schema});
+	const config = new Conf({cwd: tempy.directory(), schema});
 	t.throws(() => {
-		conf.set('foo', 'abca');
+		config.set('foo', 'abca');
 	}, 'Config schema violation: `foo` should NOT be longer than 3 characters; `foo` should match pattern "[def]+"');
 	t.throws(() => {
-		conf.set('bar', [1, 1, 2, 'a']);
+		config.set('bar', [1, 1, 2, 'a']);
 	}, 'Config schema violation: `bar` should NOT have more than 3 items; `bar[3]` should be integer; `bar` should NOT have duplicate items (items ## 1 and 0 are identical)');
 });
 
@@ -594,10 +594,10 @@ test('schema - invalid write to config file', t => {
 	};
 	const cwd = tempy.directory();
 
-	const conf = new Conf({cwd, schema});
+	const config = new Conf({cwd, schema});
 	fs.writeFileSync(path.join(cwd, 'config.json'), JSON.stringify({foo: 1}));
 	t.throws(() => {
-		conf.get('foo');
+		config.get('foo');
 	}, 'Config schema violation: `foo` should be string');
 });
 
@@ -608,11 +608,11 @@ test('schema - default', t => {
 			default: 'bar'
 		}
 	};
-	const conf = new Conf({
+	const config = new Conf({
 		cwd: tempy.directory(),
 		schema
 	});
-	t.is(conf.get('foo'), 'bar');
+	t.is(config.get('foo'), 'bar');
 });
 
 test('schema - Conf defaults overwrites schema default', t => {
@@ -622,14 +622,14 @@ test('schema - Conf defaults overwrites schema default', t => {
 			default: 'bar'
 		}
 	};
-	const conf = new Conf({
+	const config = new Conf({
 		cwd: tempy.directory(),
 		defaults: {
 			foo: 'foo'
 		},
 		schema
 	});
-	t.is(conf.get('foo'), 'foo');
+	t.is(config.get('foo'), 'foo');
 });
 
 test('schema - validate Conf default', t => {
@@ -650,21 +650,21 @@ test('schema - validate Conf default', t => {
 });
 
 test('.get() - without dot notation', t => {
-	t.is(t.context.confWithoutDotNotation.get('foo'), undefined);
-	t.is(t.context.confWithoutDotNotation.get('foo', '🐴'), '🐴');
-	t.context.confWithoutDotNotation.set('foo', fixture);
-	t.is(t.context.confWithoutDotNotation.get('foo'), fixture);
+	t.is(t.context.configWithoutDotNotation.get('foo'), undefined);
+	t.is(t.context.configWithoutDotNotation.get('foo', '🐴'), '🐴');
+	t.context.configWithoutDotNotation.set('foo', fixture);
+	t.is(t.context.configWithoutDotNotation.get('foo'), fixture);
 });
 
 test('.set() - without dot notation', t => {
-	t.context.confWithoutDotNotation.set('foo', fixture);
-	t.context.confWithoutDotNotation.set('baz.boo', fixture);
-	t.is(t.context.confWithoutDotNotation.get('foo'), fixture);
-	t.is(t.context.confWithoutDotNotation.get('baz.boo'), fixture);
+	t.context.configWithoutDotNotation.set('foo', fixture);
+	t.context.configWithoutDotNotation.set('baz.boo', fixture);
+	t.is(t.context.configWithoutDotNotation.get('foo'), fixture);
+	t.is(t.context.configWithoutDotNotation.get('baz.boo'), fixture);
 });
 
 test('.set() - with object - without dot notation', t => {
-	t.context.confWithoutDotNotation.set({
+	t.context.configWithoutDotNotation.set({
 		foo1: 'bar1',
 		foo2: 'bar2',
 		baz: {
@@ -674,34 +674,34 @@ test('.set() - with object - without dot notation', t => {
 			}
 		}
 	});
-	t.is(t.context.confWithoutDotNotation.get('foo1'), 'bar1');
-	t.is(t.context.confWithoutDotNotation.get('foo2'), 'bar2');
-	t.deepEqual(t.context.confWithoutDotNotation.get('baz'), {boo: 'foo', foo: {bar: 'baz'}});
-	t.is(t.context.confWithoutDotNotation.get('baz.boo'), undefined);
-	t.is(t.context.confWithoutDotNotation.get('baz.foo.bar'), undefined);
+	t.is(t.context.configWithoutDotNotation.get('foo1'), 'bar1');
+	t.is(t.context.configWithoutDotNotation.get('foo2'), 'bar2');
+	t.deepEqual(t.context.configWithoutDotNotation.get('baz'), {boo: 'foo', foo: {bar: 'baz'}});
+	t.is(t.context.configWithoutDotNotation.get('baz.boo'), undefined);
+	t.is(t.context.configWithoutDotNotation.get('baz.foo.bar'), undefined);
 });
 
 test('.has() - without dot notation', t => {
-	t.context.confWithoutDotNotation.set('foo', fixture);
-	t.context.confWithoutDotNotation.set('baz.boo', fixture);
-	t.true(t.context.confWithoutDotNotation.has('foo'));
-	t.true(t.context.confWithoutDotNotation.has('baz.boo'));
-	t.false(t.context.confWithoutDotNotation.has('missing'));
+	t.context.configWithoutDotNotation.set('foo', fixture);
+	t.context.configWithoutDotNotation.set('baz.boo', fixture);
+	t.true(t.context.configWithoutDotNotation.has('foo'));
+	t.true(t.context.configWithoutDotNotation.has('baz.boo'));
+	t.false(t.context.configWithoutDotNotation.has('missing'));
 });
 
 test('.delete() - without dot notation', t => {
-	const {confWithoutDotNotation} = t.context;
-	confWithoutDotNotation.set('foo', 'bar');
-	confWithoutDotNotation.set('baz.boo', true);
-	confWithoutDotNotation.set('baz.foo.bar', 'baz');
-	confWithoutDotNotation.delete('foo');
-	t.is(confWithoutDotNotation.get('foo'), undefined);
-	confWithoutDotNotation.delete('baz.boo');
-	t.not(confWithoutDotNotation.get('baz.boo'), true);
-	confWithoutDotNotation.delete('baz.foo');
-	t.not(confWithoutDotNotation.get('baz.foo'), {bar: 'baz'});
-	confWithoutDotNotation.set('foo.bar.baz', {awesome: 'icecream'});
-	confWithoutDotNotation.set('foo.bar.zoo', {awesome: 'redpanda'});
-	confWithoutDotNotation.delete('foo.bar.baz');
-	t.deepEqual(confWithoutDotNotation.get('foo.bar.zoo'), {awesome: 'redpanda'});
+	const {configWithoutDotNotation} = t.context;
+	configWithoutDotNotation.set('foo', 'bar');
+	configWithoutDotNotation.set('baz.boo', true);
+	configWithoutDotNotation.set('baz.foo.bar', 'baz');
+	configWithoutDotNotation.delete('foo');
+	t.is(configWithoutDotNotation.get('foo'), undefined);
+	configWithoutDotNotation.delete('baz.boo');
+	t.not(configWithoutDotNotation.get('baz.boo'), true);
+	configWithoutDotNotation.delete('baz.foo');
+	t.not(configWithoutDotNotation.get('baz.foo'), {bar: 'baz'});
+	configWithoutDotNotation.set('foo.bar.baz', {awesome: 'icecream'});
+	configWithoutDotNotation.set('foo.bar.zoo', {awesome: 'redpanda'});
+	configWithoutDotNotation.delete('foo.bar.baz');
+	t.deepEqual(configWithoutDotNotation.get('foo.bar.zoo'), {awesome: 'redpanda'});
 });
