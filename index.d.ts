@@ -125,6 +125,44 @@ declare namespace Conf {
 		@default 'nodejs'
 		*/
 		readonly projectSuffix?: string;
+
+		/**
+		Access nested properties by dot notation.
+
+		@default true
+
+		@example
+		```
+		const config = new Conf();
+
+		config.set({
+			foo: {
+				bar: {
+					foobar: '🦄'
+				}
+			}
+		});
+
+		console.log(config.get('foo.bar.foobar'));
+		//=> '🦄'
+		```
+
+		Alternatively, you can set this option to `false` so the whole string would be treated as one key.
+
+		@example
+		```
+		const config = new Conf({accessPropertiesByDotNotation: false});
+
+		config.set({
+			`foo.bar.foobar`: '🦄'
+		});
+
+		console.log(config.get('foo.bar.foobar'));
+		//=> '🦄'
+		```
+
+		*/
+		readonly accessPropertiesByDotNotation?: boolean;
 	}
 }
 

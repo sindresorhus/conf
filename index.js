@@ -42,6 +42,7 @@ class Conf {
 			clearInvalidConfig: true,
 			serialize: value => JSON.stringify(value, null, '\t'),
 			deserialize: JSON.parse,
+			accessPropertiesByDotNotation: true,
 			...options
 		};
 
@@ -112,7 +113,11 @@ class Conf {
 	}
 
 	get(key, defaultValue) {
-		return dotProp.get(this.store, key, defaultValue);
+		if (this._options.accessPropertiesByDotNotation) {
+			return dotProp.get(this.store, key, defaultValue);
+		}
+
+		return key in this.store ? this.store[key] : defaultValue;
 	}
 
 	set(key, value) {
@@ -128,7 +133,11 @@ class Conf {
 
 		const set = (key, value) => {
 			checkValueType(key, value);
-			dotProp.set(store, key, value);
+			if (this._options.accessPropertiesByDotNotation) {
+				dotProp.set(store, key, value);
+			} else {
+				store[key] = value;
+			}
 		};
 
 		if (typeof key === 'object') {
@@ -144,12 +153,21 @@ class Conf {
 	}
 
 	has(key) {
-		return dotProp.has(this.store, key);
+		if (this._options.accessPropertiesByDotNotation) {
+			return dotProp.has(this.store, key);
+		}
+
+		return key in this.store;
 	}
 
 	delete(key) {
 		const {store} = this;
-		dotProp.delete(store, key);
+		if (this._options.accessPropertiesByDotNotation) {
+			dotProp.delete(store, key);
+		} else {
+			delete store[key];
+		}
+
 		this.store = store;
 	}
 
