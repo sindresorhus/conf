@@ -54,8 +54,8 @@ conf.delete("foo");
 expectType<boolean>(conf.has("foo"));
 conf.clear();
 const off = conf.onDidChange("foo", (oldValue, newValue) => {
-	expectType<string | number | boolean | undefined>(oldValue);
-	expectType<string | number | boolean | undefined>(newValue);
+	expectType<UnicornFoo[keyof UnicornFoo]>(oldValue);
+	expectType<UnicornFoo[keyof UnicornFoo]>(newValue);
 });
 
 expectType<() => void>(off);
