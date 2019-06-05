@@ -1,5 +1,5 @@
 /// <reference types="node"/>
-import {JSONSchema} from 'json-schema-typed';
+import { JSONSchema } from "json-schema-typed";
 
 declare namespace Conf {
 	interface Options<T> {
@@ -8,7 +8,7 @@ declare namespace Conf {
 
 		**Note:** The values in `defaults` will overwrite the `default` key in the `schema` option.
 		*/
-		readonly defaults?: {[key: string]: T};
+		readonly defaults?: Readonly<T>;
 
 		/**
 		[JSON Schema](https://json-schema.org) to validate your config data.
@@ -45,7 +45,7 @@ declare namespace Conf {
 
 		**Note:** The `default` value will be overwritten by the `defaults` option if set.
 		*/
-		readonly schema?: {[key: string]: JSONSchema};
+		readonly schema?: { [P in keyof T]: JSONSchema };
 
 		/**
 		Name of the config file (without extension).
@@ -102,7 +102,7 @@ declare namespace Conf {
 
 		@default value => JSON.stringify(value, null, '\t')
 		*/
-		readonly serialize?: (value: {[key: string]: T}) => string;
+		readonly serialize?: (value: Partial<T>) => string;
 
 		/**
 		Function to deserialize the config object from a UTF-8 string when reading the config file.
@@ -111,7 +111,7 @@ declare namespace Conf {
 
 		@default JSON.parse
 		*/
-		readonly deserialize?: (text: string) => {[key: string]: T};
+		readonly deserialize?: (text: string) => Partial<T>;
 
 		/**
 		__You most likely don't need this. Please don't use it unless you really have to.__
@@ -169,8 +169,8 @@ declare namespace Conf {
 /**
 Simple config handling for your app or module.
 */
-declare class Conf<T = unknown> implements Iterable<[string, T]> {
-	store: {[key: string]: T};
+declare class Conf<T = unknown> implements Iterable<[keyof T, T[keyof T]]> {
+	store: Partial<T>;
 	readonly path: string;
 	readonly size: number;
 
@@ -203,14 +203,14 @@ declare class Conf<T = unknown> implements Iterable<[string, T]> {
 	@param key - You can use [dot-notation](https://github.com/sindresorhus/dot-prop) in a key to access nested properties.
 	@param value - Must be JSON serializable. Trying to set the type `undefined`, `function`, or `symbol` will result in a `TypeError`.
 	*/
-	set(key: string, value: T): void;
+	set<K extends keyof T>(key: K, value: T[K]): void;
 
 	/**
 	Set multiple items at once.
 
 	@param object - A hashmap of items to set at once.
 	*/
-	set(object: {[key: string]: T}): void;
+	set(object: Partial<T>): void;
 
 	/**
 	Get an item.
@@ -218,21 +218,21 @@ declare class Conf<T = unknown> implements Iterable<[string, T]> {
 	@param key - The key of the item to get.
 	@param defaultValue - The default value if the item does not exist.
 	*/
-	get(key: string, defaultValue?: T): T;
+	get<K extends keyof T>(key: K, defaultValue?: T[K]): T[K];
 
 	/**
 	Check if an item exists.
 
 	@param key - The key of the item to check.
 	*/
-	has(key: string): boolean;
+	has<K extends keyof T>(key: K): boolean;
 
 	/**
 	Delete an item.
 
 	@param key - The key of the item to delete.
 	*/
-	delete(key: string): void;
+	delete<K extends keyof T>(key: K): void;
 
 	/**
 	Delete all items.
@@ -245,9 +245,9 @@ declare class Conf<T = unknown> implements Iterable<[string, T]> {
 	@param key - The key wo watch.
 	@param callback - A callback function that is called on any changes. When a `key` is first set `oldValue` will be `undefined`, and when a key is deleted `newValue` will be `undefined`.
 	*/
-	onDidChange(
-		key: string,
-		callback: (newValue: T | undefined, oldValue: T | undefined) => void
+	onDidChange<K extends keyof T>(
+		key: K,
+		callback: (newValue: T[K] | undefined, oldValue: T[K] | undefined) => void
 	): () => void;
 
 	/**
@@ -256,10 +256,13 @@ declare class Conf<T = unknown> implements Iterable<[string, T]> {
 	@param callback - A callback function that is called on any changes. When a `key` is first set `oldValue` will be `undefined`, and when a key is deleted `newValue` will be `undefined`.
 	*/
 	onDidAnyChange(
-		callback: (oldValue: {[key: string]: T} | undefined, newValue: {[key: string]: T} | undefined) => void
+		callback: (
+			oldValue: Readonly<T> | undefined,
+			newValue: Readonly<T> | undefined
+		) => void
 	): () => void;
 
-	[Symbol.iterator](): IterableIterator<[string, T]>;
+	[Symbol.iterator](): IterableIterator<[keyof T, T[keyof T]]>;
 }
 
 export = Conf;
