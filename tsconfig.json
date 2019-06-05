@@ -1,0 +1,10 @@
+{
+	"compilerOptions": {
+		"module": "commonjs",
+		"strict": true,
+		"downlevelIteration": true
+	},
+	"exclude": [
+		"node_modules"
+	]
+}
