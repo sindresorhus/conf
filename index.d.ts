@@ -247,7 +247,7 @@ declare class Conf<T = unknown> implements Iterable<[keyof T, T[keyof T]]> {
 	*/
 	onDidChange<K extends keyof T>(
 		key: K,
-		callback: (newValue: T[K] | undefined, oldValue: T[K] | undefined) => void
+		callback: (newValue?: T[K], oldValue?: T[K]) => void
 	): () => void;
 
 	/**
@@ -256,10 +256,7 @@ declare class Conf<T = unknown> implements Iterable<[keyof T, T[keyof T]]> {
 	@param callback - A callback function that is called on any changes. When a `key` is first set `oldValue` will be `undefined`, and when a key is deleted `newValue` will be `undefined`.
 	*/
 	onDidAnyChange(
-		callback: (
-			oldValue: Readonly<T> | undefined,
-			newValue: Readonly<T> | undefined
-		) => void
+		callback: (oldValue?: Readonly<T>, newValue?: Readonly<T>) => void
 	): () => void;
 
 	[Symbol.iterator](): IterableIterator<[keyof T, T[keyof T]]>;
