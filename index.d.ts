@@ -169,7 +169,7 @@ declare namespace Conf {
 /**
 Simple config handling for your app or module.
 */
-declare class Conf<T = unknown> implements Iterable<[string, T]> {
+declare class Conf<T> implements Iterable<[string, T]> {
 	store: {[key: string]: T};
 	readonly path: string;
 	readonly size: number;
