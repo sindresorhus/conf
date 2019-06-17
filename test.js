@@ -5,6 +5,8 @@ import tempy from 'tempy';
 import del from 'del';
 import pkgUp from 'pkg-up';
 import clearModule from 'clear-module';
+import pEvent from 'p-event';
+import delay from 'delay';
 import Conf from '.';
 
 const fixture = '🦄';
@@ -715,4 +717,51 @@ test('.delete() - without dot notation', t => {
 	configWithoutDotNotation.set('foo.bar.zoo', {awesome: 'redpanda'});
 	configWithoutDotNotation.delete('foo.bar.baz');
 	t.deepEqual(configWithoutDotNotation.get('foo.bar.zoo'), {awesome: 'redpanda'});
+});
+
+test.only('`watch` option watches for config file changes by another process', async t => {
+	const cwd = tempy.directory();
+	const conf1 = new Conf({cwd, watch: true});
+	const conf2 = new Conf({cwd});
+	conf1.set('foo', '👾');
+
+	t.plan(4);
+
+	const checkFoo = (newValue, oldValue) => {
+		t.is(newValue, '🐴');
+		t.is(oldValue, '👾');
+	};
+
+	t.is(conf2.get('foo'), '👾');
+	t.is(conf1.path, conf2.path);
+	conf1.onDidChange('foo', checkFoo);
+
+	(async () => {
+		await delay(50);
+		conf2.set('foo', '🐴');
+	})();
+
+	await pEvent(conf1.events, 'change');
+});
+
+test('`watch` option watches for config file changes by file write', async t => {
+	const cwd = tempy.directory();
+	const conf = new Conf({cwd, watch: true});
+	conf.set('foo', '🐴');
+
+	t.plan(2);
+
+	const checkFoo = (newValue, oldValue) => {
+		t.is(newValue, '🦄');
+		t.is(oldValue, '🐴');
+	};
+
+	conf.onDidChange('foo', checkFoo);
+
+	(async () => {
+		await delay(50);
+		fs.writeFileSync(path.join(cwd, 'config.json'), JSON.stringify({foo: '🦄'}));
+	})();
+
+	await pEvent(conf.events, 'change');
 });

@@ -163,6 +163,13 @@ declare namespace Conf {
 
 		*/
 		readonly accessPropertiesByDotNotation?: boolean;
+
+		/**
+		Watch for any changes in the config file and call the callback for `onDidChange` if set. This is useful if there are multiple processes changing the same config file.
+
+		@default true
+		*/
+		readonly watch?: boolean;
 	}
 }
 
