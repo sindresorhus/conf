@@ -10,8 +10,8 @@ import Conf from '.';
 
 const fixture = '🦄';
 
-const encryptionIv = Buffer.from(crypto.randomBytes(16)).toString('hex').slice(0, 16);
-const encryptionKey = Buffer.from(crypto.randomBytes(16)).toString().slice(0, 16);
+const encryptionIv = crypto.randomBytes(16);
+const encryptionKey = crypto.randomBytes(32);
 
 test.beforeEach(t => {
 	t.context.config = new Conf({cwd: tempy.directory()});

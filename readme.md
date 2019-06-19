@@ -137,7 +137,7 @@ It also has the added bonus of ensuring the config file's integrity. If the file
 
 When specified, the store will be encrypted using the [`aes-256-cbc`](https://en.wikipedia.org/wiki/Block_cipher_mode_of_operation) encryption algorithm.
 
-It has to be a length of 16, 24 or 32 bytes.
+It has to be a length of 32 bytes.
 
 #### encryptionIv
 
@@ -157,7 +157,7 @@ The length is always 16 bytes for `aes-256-cbc` encryption.
 [wikipedia Initialization_vector](https://en.wikipedia.org/wiki/Initialization_vector)
 [crypto.createcipheriv](https://nodejs.org/api/crypto.html#crypto_crypto_createcipheriv_algorithm_key_iv_options)
 
-It has to be a length of 16, 24 or 32 byte
+It has to be a length of 16 bytes.
 
 #### fileExtension
 
