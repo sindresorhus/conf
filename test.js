@@ -360,6 +360,12 @@ test('encryption - corrupt file', t => {
 	t.is(after.get('foo'), undefined);
 });
 
+test('decription migration to IV', t => {
+	// The encrypted_config.json contain '{'unicorn', '🦄'}' encrypted with conf@4.1.0 and password 'abcd1234'
+	const config = new Conf({cwd: './test', encryptionKey: 'abcd1234', configName: 'encrypted_config'});
+	t.deepEqual(config.store, {unicorn: '🦄'});
+});
+
 test('onDidChange()', t => {
 	const {config} = t.context;
 
