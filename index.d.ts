@@ -1,5 +1,6 @@
 /// <reference types="node"/>
 import {JSONSchema} from 'json-schema-typed';
+import { KeyObject } from 'crypto';
 
 declare namespace Conf {
 	interface Options<T> {
@@ -76,8 +77,18 @@ declare namespace Conf {
 		It also has the added bonus of ensuring the config file's integrity. If the file is changed in any way, the decryption will not work, in which case the store will just reset back to its default state.
 
 		When specified, the store will be encrypted using the [`aes-256-cbc`](https://en.wikipedia.org/wiki/Block_cipher_mode_of_operation) encryption algorithm.
+
+		It is an aes key, so the length has to be: 16, 24 or 32 bytes
 		*/
-		readonly encryptionKey?: string | Buffer | NodeJS.TypedArray | DataView;
+		readonly encryptionKey?: string | Buffer | NodeJS.TypedArray | DataView | KeyObject;
+
+		/**
+		Initialization vectors should be unpredictable and unique; ideally, they will be cryptographically random. They do not have to be secret: IVs are typically just added to ciphertext messages unencrypted. It may sound contradictory that something has to be unpredictable and unique, but does not have to be secret; it is important to remember that an attacker must not be able to predict ahead of time what a given IV will be.
+		The length is always 16 bytes
+		https://en.wikipedia.org/wiki/Initialization_vector
+		https://nodejs.org/api/crypto.html#crypto_crypto_createcipheriv_algorithm_key_iv_options
+		*/
+		readonly encryptionIv?: null | string | Buffer | NodeJS.TypedArray | DataView;
 
 		/**
 		Extension of the config file.

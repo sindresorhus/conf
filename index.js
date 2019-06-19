@@ -83,6 +83,7 @@ class Conf {
 
 		this.events = new EventEmitter();
 		this.encryptionKey = options.encryptionKey;
+		this.encryptionIv = options.encryptionIv || null;
 		this.serialize = options.serialize;
 		this.deserialize = options.deserialize;
 
@@ -229,7 +230,7 @@ class Conf {
 
 			if (this.encryptionKey) {
 				try {
-					const decipher = crypto.createDecipher(encryptionAlgorithm, this.encryptionKey);
+					const decipher = crypto.createDecipheriv(encryptionAlgorithm, this.encryptionKey, this.encryptionIv);
 					data = Buffer.concat([decipher.update(data), decipher.final()]);
 				} catch (_) {}
 			}
@@ -260,7 +261,7 @@ class Conf {
 		let data = this.serialize(value);
 
 		if (this.encryptionKey) {
-			const cipher = crypto.createCipher(encryptionAlgorithm, this.encryptionKey);
+			const cipher = crypto.createCipheriv(encryptionAlgorithm, this.encryptionKey, this.encryptionIv);
 			data = Buffer.concat([cipher.update(Buffer.from(data)), cipher.final()]);
 		}
 

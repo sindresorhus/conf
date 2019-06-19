@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
 import {serial as test} from 'ava';
@@ -8,6 +9,9 @@ import clearModule from 'clear-module';
 import Conf from '.';
 
 const fixture = '🦄';
+
+const encryptionIv = Buffer.from(crypto.randomBytes(16)).toString('hex').slice(0, 16);
+const encryptionKey = Buffer.from(crypto.randomBytes(16)).toString().slice(0, 16);
 
 test.beforeEach(t => {
 	t.context.config = new Conf({cwd: tempy.directory()});
@@ -327,7 +331,7 @@ test('fallback to cwd if `module.filename` is `null`', t => {
 });
 
 test('encryption', t => {
-	const config = new Conf({cwd: tempy.directory(), encryptionKey: 'abc123'});
+	const config = new Conf({cwd: tempy.directory(), encryptionKey, encryptionIv});
 	t.is(config.get('foo'), undefined);
 	t.is(config.get('foo', '🐴'), '🐴');
 	config.set('foo', fixture);
@@ -343,20 +347,20 @@ test('encryption - upgrade', t => {
 	before.set('foo', fixture);
 	t.is(before.get('foo'), fixture);
 
-	const after = new Conf({cwd, encryptionKey: 'abc123'});
+	const after = new Conf({cwd, encryptionKey, encryptionIv});
 	t.is(after.get('foo'), fixture);
 });
 
 test('encryption - corrupt file', t => {
 	const cwd = tempy.directory();
 
-	const before = new Conf({cwd, encryptionKey: 'abc123'});
+	const before = new Conf({cwd, encryptionKey, encryptionIv});
 	before.set('foo', fixture);
 	t.is(before.get('foo'), fixture);
 
 	fs.appendFileSync(path.join(cwd, 'config.json'), 'corrupt file');
 
-	const after = new Conf({cwd, encryptionKey: 'abc123'});
+	const after = new Conf({cwd, encryptionKey, encryptionIv});
 	t.is(after.get('foo'), undefined);
 });
 
