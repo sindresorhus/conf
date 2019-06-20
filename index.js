@@ -229,7 +229,7 @@ class Conf {
 
 			if (this.encryptionKey) {
 				try {
-					// Check if an initializationVector has been used to encrypt the data
+					// Check if an initialization vector has been used to encrypt the data
 					if (data.slice(16, 17).toString() === ':') {
 						const initializationVector = data.slice(0, 16);
 						const password = crypto.pbkdf2Sync(this.encryptionKey, initializationVector.toString(), 10000, 32, 'sha512');
