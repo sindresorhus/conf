@@ -360,9 +360,9 @@ test('encryption - corrupt file', t => {
 	t.is(after.get('foo'), undefined);
 });
 
-test('decription migration to IV', t => {
-	// The encrypted_config.json contain '{'unicorn', '🦄'}' encrypted with conf@4.1.0 and password 'abcd1234'
-	const config = new Conf({cwd: './test', encryptionKey: 'abcd1234', configName: 'encrypted_config'});
+test('decryption - migration to initializationVector', t => {
+	// The test/config-encrypted-with-conf-4-1-0.json contain the {"unicorn": "🦄"} JSON data which is encrypted with conf@4.1.0 and password 'abcd1234'
+	const config = new Conf({cwd: './test', encryptionKey: 'abcd1234', configName: 'config-encrypted-with-conf-4-1-0'});
 	t.deepEqual(config.store, {unicorn: '🦄'});
 });
 

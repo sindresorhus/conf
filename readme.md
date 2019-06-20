@@ -129,7 +129,10 @@ The only use-case I can think of is having the config located in the app directo
 Type: `string` `Buffer` `TypedArray` `DataView`<br>
 Default: `undefined`
 
-This can be used to secure sensitive data **if** the encryption key is stored in a secure manner (not plain-text) in the Node.js app.
+This can be used to secure sensitive data **if** the encryption key is stored in a secure manner (not plain-text) in the Node.js app side. For example, this can be address by:
+- using [`node-keytar`](https://github.com/atom/node-keytar) to store the encryption key securely
+- asking the encryption key to the user (a password) and then storing it in a variable
+
 
 In addition to security, this could be used for obscurity. If a user looks through the config directory and finds the config file, since it's just a JSON file, they may be tempted to modify it. By providing an encryption key, the file will be obfuscated, which should hopefully deter any users from doing so.
 

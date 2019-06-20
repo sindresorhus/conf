@@ -229,11 +229,11 @@ class Conf {
 
 			if (this.encryptionKey) {
 				try {
-					// Check if an IV has been used to encrypt the data
+					// Check if an initializationVector has been used to encrypt the data
 					if (data.slice(16, 17).toString() === ':') {
-						const iv = data.slice(0, 16);
-						const pass = crypto.pbkdf2Sync(this.encryptionKey, iv.toString(), 10000, 32, 'sha512');
-						const decipher = crypto.createDecipheriv(encryptionAlgorithm, pass, iv);
+						const initializationVector = data.slice(0, 16);
+						const password = crypto.pbkdf2Sync(this.encryptionKey, initializationVector.toString(), 10000, 32, 'sha512');
+						const decipher = crypto.createDecipheriv(encryptionAlgorithm, password, initializationVector);
 						data = Buffer.concat([decipher.update(data.slice(17)), decipher.final()]);
 					} else {
 						const decipher = crypto.createDecipher(encryptionAlgorithm, this.encryptionKey);
@@ -268,10 +268,10 @@ class Conf {
 		let data = this.serialize(value);
 
 		if (this.encryptionKey) {
-			const iv = crypto.randomBytes(16);
-			const pass = crypto.pbkdf2Sync(this.encryptionKey, iv.toString(), 10000, 32, 'sha512');
-			const cipher = crypto.createCipheriv(encryptionAlgorithm, pass, iv);
-			data = Buffer.concat([iv, Buffer.from(':'), cipher.update(Buffer.from(data)), cipher.final()]);
+			const initializationVector = crypto.randomBytes(16);
+			const password = crypto.pbkdf2Sync(this.encryptionKey, initializationVector.toString(), 10000, 32, 'sha512');
+			const cipher = crypto.createCipheriv(encryptionAlgorithm, password, initializationVector);
+			data = Buffer.concat([initializationVector, Buffer.from(':'), cipher.update(Buffer.from(data)), cipher.final()]);
 		}
 
 		writeFileAtomic.sync(this.path, data);
