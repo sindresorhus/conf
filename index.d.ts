@@ -256,7 +256,7 @@ declare class Conf<T> implements Iterable<[string, T]> {
 	@param callback - A callback function that is called on any changes. When a `key` is first set `oldValue` will be `undefined`, and when a key is deleted `newValue` will be `undefined`.
 	*/
 	onDidAnyChange(
-		callback: (oldValue: {[key: string]: T} | undefined, newValue: {[key: string]: T} | undefined) => void
+		callback: (newValue: {[key: string]: T} | undefined, oldValue: {[key: string]: T} | undefined) => void
 	): () => void;
 
 	[Symbol.iterator](): IterableIterator<[string, T]>;
