@@ -45,6 +45,7 @@
 		"json-schema-typed": "^7.0.0",
 		"make-dir": "^3.0.0",
 		"pkg-up": "^3.0.1",
+		"semver": "^6.2.0",
 		"write-file-atomic": "^3.0.0"
 	},
 	"devDependencies": {
