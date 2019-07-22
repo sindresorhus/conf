@@ -127,11 +127,11 @@ class Conf {
 
 		const previousMigratedVersion = this.get(MIGRATION_KEY, '0.0.0');
 
-		const olderVersionsWithMigrations = Object.keys(migrations)
+		const newerVersions = Object.keys(migrations)
 			.filter(version => this._shouldVersionPerformMigration(version, previousMigratedVersion, versionToMigrate))
 			.sort(semver.compare);
 
-		const migrationsToRun = olderVersionsWithMigrations.map(version => migrations[version]);
+		const migrationsToRun = newerVersions.map(version => migrations[version]);
 
 		migrationsToRun.forEach(migration => migration(this));
 
