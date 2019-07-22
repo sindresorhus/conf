@@ -716,3 +716,83 @@ test('.delete() - without dot notation', t => {
 	configWithoutDotNotation.delete('foo.bar.baz');
 	t.deepEqual(configWithoutDotNotation.get('foo.bar.zoo'), {awesome: 'redpanda'});
 });
+
+test('migrations - should save the project version as the initial migrated version', t => {
+	const cwd = tempy.directory();
+	
+	const conf = new Conf({ cwd, projectVersion: '0.0.2', migrations: {} });
+	
+	t.is(conf.get('__conf-migrated-version__'), '0.0.2');
+});
+
+test('migrations - should save the project version when a migration occurs', t => {
+	const cwd = tempy.directory();
+	
+	const migrations = {
+		'0.0.3': store => {
+			store.set('foo', 'cool stuff');
+		}
+	};
+	
+	const conf = new Conf({ cwd, projectVersion: '0.0.2', migrations });
+
+	t.is(conf.get('__conf-migrated-version__'), '0.0.2');
+
+	const conf2 = new Conf({ cwd, projectVersion: '0.0.4', migrations });
+
+	t.is(conf2.get('__conf-migrated-version__'), '0.0.4');
+	t.is(conf2.get('foo'), 'cool stuff');
+});
+
+test("migrations - should NOT run the migration when the version doesn't change", t => {
+	const cwd = tempy.directory();
+
+	const migrations = {
+		'1.0.0': store => {
+			store.set('foo', 'cool stuff');
+		}
+	};
+	
+	const conf = new Conf({ cwd, projectVersion: '0.0.2', migrations });
+	t.is(conf.get('__conf-migrated-version__'), '0.0.2');
+	t.false(conf.has('foo'));
+
+	const conf2 = new Conf({ cwd, projectVersion: '0.0.2', migrations });
+
+	t.is(conf2.get('__conf-migrated-version__'), '0.0.2');
+	t.false(conf2.has('foo'));
+});
+
+test("migrations - should run the migration when the version changes", t => {
+	const cwd = tempy.directory();
+
+	const migrations = {
+		'1.0.0': store => {
+			store.set('foo', 'cool stuff');
+		}
+	};
+	
+	const conf = new Conf({ cwd, projectVersion: '0.0.2', migrations });
+	t.is(conf.get('__conf-migrated-version__'), '0.0.2');
+	t.false(conf.has('foo'));
+
+	const conf2 = new Conf({ cwd, projectVersion: '1.1.0', migrations });
+
+	t.is(conf2.get('__conf-migrated-version__'), '1.1.0');
+	t.true(conf2.has('foo'));
+	t.is(conf2.get('foo'), 'cool stuff');
+});
+
+test("migrations - should previous migration version as 0.0.0 when project version is unspecified", t => {
+	const cwd = tempy.directory();
+	
+	const conf = new Conf({ cwd, migrations: {} });
+	t.is(conf.get('__conf-migrated-version__'), '0.0.0');
+});
+
+test("migrations - should not create the previous migration key if the migrations aren't needed", t => {
+	const cwd = tempy.directory();
+	
+	const conf = new Conf({ cwd });
+	t.false(conf.has('__conf-migrated-version__'));
+});
