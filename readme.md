@@ -1,5 +1,4 @@
 # conf [![Build Status](https://travis-ci.org/sindresorhus/conf.svg?branch=master)](https://travis-ci.org/sindresorhus/conf)
-
 > Simple config handling for your app or module
 
 All you have to care about is what to persist. This module will handle all the dull details like where and how.
@@ -96,6 +95,33 @@ config.set('foo', '1');
 ```
 
 **Note:** The `default` value will be overwritten by the `defaults` option if set.
+
+### migrations
+
+Type: `Object`
+
+You can use migrations to perform operations to the store whenever a version is switched.
+
+The `migrations` object should be consisted of a key-value pair of `version`: `handler`.
+
+Example:
+
+```js
+const store = new Conf({
+    migrations: {
+       '0.0.1': store => {
+            store.set('debug phase', true);
+       },
+       '1.0.0': store => {
+            store.delete('debug phase');
+            store.set('phase', '1.0');
+       },
+       '1.0.2': store => {
+            store.set('phase', '>1.0');
+       }
+    }
+});
+```
 
 #### configName
 
