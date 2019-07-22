@@ -11,6 +11,7 @@ const pkgUp = require('pkg-up');
 const envPaths = require('env-paths');
 const writeFileAtomic = require('write-file-atomic');
 const Ajv = require('ajv');
+const semver = require('semver');
 
 const plainObject = () => Object.create(null);
 const encryptionAlgorithm = 'aes-256-cbc';
@@ -51,7 +52,12 @@ class Conf {
 				const pkgPath = pkgUp.sync(parentDir);
 				// Can't use `require` because of Webpack being annoying:
 				// https://github.com/webpack/webpack/issues/196
-				options.projectName = pkgPath && JSON.parse(fs.readFileSync(pkgPath, 'utf8')).name;
+				const pkg = pkgPath && JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+
+				if (pkg) {
+					options.projectName = pkg.name;
+					options.projectVersion = pkg.version;
+				}
 			}
 
 			if (!options.projectName) {
@@ -97,6 +103,10 @@ class Conf {
 		} catch (_) {
 			this.store = store;
 		}
+
+		if (options.migrations) {
+			this._migrate(options.migrations, options.projectVersion);
+		}
 	}
 
 	_validate(data) {
@@ -110,6 +120,43 @@ class Conf {
 				error + ` \`${dataPath.slice(1)}\` ${message};`, '');
 			throw new Error('Config schema violation:' + errors.slice(0, -1));
 		}
+	}
+
+	_migrate(migrations = {}, versionToMigrate = '0.0.0') {
+		const MIGRATION_KEY = '__conf-migrated-version__';
+
+		const previousMigratedVersion = this.get(MIGRATION_KEY, '0.0.0');
+
+		const olderVersionsWithMigrations = Object.keys(migrations)
+			.filter(version => this._shouldVersionPerformMigration(version, previousMigratedVersion, versionToMigrate))
+			.sort(semver.compare);
+
+		const migrationsToRun = olderVersionsWithMigrations.map(version => migrations[version]);
+
+		migrationsToRun.forEach(migration => migration(this));
+
+		this.set(MIGRATION_KEY, versionToMigrate);
+	}
+
+	/**
+	 * Specifies if a version is suitable to run its migrations.
+	 * To be suitable, a version should be comprehended between the previous migrated version and the version desired to migrate.
+	 *
+	 * @param {string} version The version that's being tested to be suitable or not.
+	 * @param {string} previousMigratedVersion The version matching the last migration that ocurred.
+	 * @param {string} versionToMigrate The version that specifies what to migrate to (a.k.a the current version).
+	 * @returns {boolean} If the version is suitable or not.
+	 */
+	_shouldVersionPerformMigration(version, previousMigratedVersion, versionToMigrate) {
+		if (semver.lte(version, previousMigratedVersion)) {
+			return false;
+		}
+
+		if (semver.gt(version, versionToMigrate)) {
+			return false;
+		}
+
+		return true;
 	}
 
 	get(key, defaultValue) {
