@@ -128,7 +128,7 @@ class Conf {
 		const previousMigratedVersion = this.get(MIGRATION_KEY, '0.0.0');
 
 		const newerVersions = Object.keys(migrations)
-			.filter(version => this._shouldPerformMigration(version, previousMigratedVersion, versionToMigrate))
+			.filter(candidateVersion => this._shouldPerformMigration(candidateVersion, previousMigratedVersion, versionToMigrate))
 			.sort(semver.compare);
 
 		newerVersions.forEach(version => {
@@ -151,17 +151,17 @@ class Conf {
 	 * Specifies if a version is suitable to run its migrations.
 	 * To be suitable, a version should be comprehended between the previous migrated version and the version desired to migrate.
 	 *
-	 * @param {string} version The version that's being tested to be suitable or not.
+	 * @param {string} candidateVersion The version that's being tested to be suitable or not.
 	 * @param {string} previousMigratedVersion The version matching the last migration that ocurred.
 	 * @param {string} versionToMigrate The version that specifies what to migrate to (a.k.a the current version).
 	 * @returns {boolean} If the version is suitable or not.
 	 */
-	_shouldPerformMigration(version, previousMigratedVersion, versionToMigrate) {
-		if (semver.lte(version, previousMigratedVersion)) {
+	_shouldPerformMigration(candidateVersion, previousMigratedVersion, versionToMigrate) {
+		if (semver.lte(candidateVersion, previousMigratedVersion)) {
 			return false;
 		}
 
-		if (semver.gt(version, versionToMigrate)) {
+		if (semver.gt(candidateVersion, versionToMigrate)) {
 			return false;
 		}
 
