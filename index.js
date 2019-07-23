@@ -104,8 +104,14 @@ class Conf {
 			this.store = store;
 		}
 
-		if (options.migrations) {
-			this._migrate(options.migrations, options.projectVersion);
+		const {migrations, projectVersion} = options;
+
+		if (migrations) {
+			if (!projectVersion) {
+				throw new Error('You need to specify the `projectVersion` in order for the migrations to work!');
+			}
+
+			this._migrate(migrations, projectVersion);
 		}
 	}
 
@@ -122,7 +128,7 @@ class Conf {
 		}
 	}
 
-	_migrate(migrations, versionToMigrate = '0.0.0') {
+	_migrate(migrations, versionToMigrate) {
 		const MIGRATION_KEY = '__conf-migrated-version__';
 
 		const previousMigratedVersion = this.get(MIGRATION_KEY, '0.0.0');

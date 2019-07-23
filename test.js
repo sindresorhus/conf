@@ -783,11 +783,27 @@ test('migrations - should run the migration when the version changes', t => {
 	t.is(conf2.get('foo'), 'cool stuff');
 });
 
-test('migrations - should previous migration version as 0.0.0 when project version is unspecified', t => {
+test('migrations - should throw an error when project version is unspecified and attempting to migrate', t => {
 	const cwd = tempy.directory();
 
-	const conf = new Conf({cwd, migrations: {}});
-	t.is(conf.get('__conf-migrated-version__'), '0.0.0');
+	t.throws(() => {
+		const conf = new Conf({cwd, migrations: {
+			'1.0.0': store => {
+				store.set('foo', 'bar');
+			}
+		}});
+
+		t.false(conf.has('foo'));
+	}, /You need to specify the `projectVersion`/);
+});
+
+test('migrations - should NOT throw an error when project version is unspecified but there are no migrations', t => {
+	const cwd = tempy.directory();
+
+	t.notThrows(() => {
+		const conf = new Conf({cwd});
+		conf.clear();
+	});
 });
 
 test('migrations - should not create the previous migration key if the migrations aren\'t needed', t => {
