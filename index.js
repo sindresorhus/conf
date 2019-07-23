@@ -131,9 +131,18 @@ class Conf {
 			.filter(version => this._shouldPerformMigration(version, previousMigratedVersion, versionToMigrate))
 			.sort(semver.compare);
 
-		const migrationsToRun = newerVersions.map(version => migrations[version]);
+		newerVersions.forEach(version => {
+			try {
+				const migration = migrations[version];
+				migration(this);
 
-		migrationsToRun.forEach(migration => migration(this));
+				this.set(MIGRATION_KEY, version);
+			} catch (error) {
+				console.error('Something went wrong during the migration!');
+				console.error('Changes applied to the store until this point will be persisted.');
+				throw error;
+			}
+		});
 
 		this.set(MIGRATION_KEY, versionToMigrate);
 	}
