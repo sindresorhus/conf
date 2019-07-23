@@ -144,6 +144,10 @@ class Conf {
 
 		const previousMigratedVersion = this.get(MIGRATION_KEY, '0.0.0');
 
+		if (semver.eq(previousMigratedVersion, versionToMigrate)) {
+			return;
+		}
+
 		const newerVersions = Object.keys(migrations)
 			.filter(candidateVersion => this._shouldPerformMigration(candidateVersion, previousMigratedVersion, versionToMigrate))
 			.sort(semver.compare);
