@@ -722,7 +722,7 @@ test('migrations - should save the project version as the initial migrated versi
 
 	const conf = new Conf({cwd, projectVersion: '0.0.2', migrations: {}});
 
-	t.is(conf.get('__internal__.version'), '0.0.2');
+	t.is(conf._get('__internal__.migrations.version'), '0.0.2');
 });
 
 test('migrations - should save the project version when a migration occurs', t => {
@@ -736,11 +736,11 @@ test('migrations - should save the project version when a migration occurs', t =
 
 	const conf = new Conf({cwd, projectVersion: '0.0.2', migrations});
 
-	t.is(conf.get('__internal__.version'), '0.0.2');
+	t.is(conf._get('__internal__.migrations.version'), '0.0.2');
 
 	const conf2 = new Conf({cwd, projectVersion: '0.0.4', migrations});
 
-	t.is(conf2.get('__internal__.version'), '0.0.4');
+	t.is(conf2._get('__internal__.migrations.version'), '0.0.4');
 	t.is(conf2.get('foo'), 'cool stuff');
 });
 
@@ -754,12 +754,12 @@ test('migrations - should NOT run the migration when the version doesn\'t change
 	};
 
 	const conf = new Conf({cwd, projectVersion: '0.0.2', migrations});
-	t.is(conf.get('__internal__.version'), '0.0.2');
+	t.is(conf._get('__internal__.migrations.version'), '0.0.2');
 	t.false(conf.has('foo'));
 
 	const conf2 = new Conf({cwd, projectVersion: '0.0.2', migrations});
 
-	t.is(conf2.get('__internal__.version'), '0.0.2');
+	t.is(conf2._get('__internal__.migrations.version'), '0.0.2');
 	t.false(conf2.has('foo'));
 });
 
@@ -773,12 +773,12 @@ test('migrations - should run the migration when the version changes', t => {
 	};
 
 	const conf = new Conf({cwd, projectVersion: '0.0.2', migrations});
-	t.is(conf.get('__internal__.version'), '0.0.2');
+	t.is(conf._get('__internal__.migrations.version'), '0.0.2');
 	t.false(conf.has('foo'));
 
 	const conf2 = new Conf({cwd, projectVersion: '1.1.0', migrations});
 
-	t.is(conf2.get('__internal__.version'), '1.1.0');
+	t.is(conf2._get('__internal__.migrations.version'), '1.1.0');
 	t.true(conf2.has('foo'));
 	t.is(conf2.get('foo'), 'cool stuff');
 });
@@ -793,7 +793,7 @@ test('migrations - should infer the applicationVersion from the package.json whe
 	}});
 
 	t.false(conf.has('foo'));
-	t.is(conf.get('__internal__.version'), require('./package.json').version);
+	t.is(conf._get('__internal__.migrations.version'), require('./package.json').version);
 });
 
 test('migrations - should NOT throw an error when project version is unspecified but there are no migrations', t => {
@@ -809,7 +809,7 @@ test('migrations - should not create the previous migration key if the migration
 	const cwd = tempy.directory();
 
 	const conf = new Conf({cwd});
-	t.false(conf.has('__internal__.version'));
+	t.false(conf.has('__internal__.migrations.version'));
 });
 
 test('migrations error handling - should run the migration until the point it failed', t => {
@@ -832,8 +832,18 @@ test('migrations error handling - should run the migration until the point it fa
 	t.throws(() => {
 		const conf = new Conf({cwd, projectVersion: '1.0.2', migrations});
 
-		t.is(conf.get('__internal__.version'), '1.0.0');
+		t.is(conf._get('__internal__.migrations.version'), '1.0.0');
 		t.true(conf.has('foo'));
 		t.is(conf.get('foo'), 'updated before crash');
 	}, /throw the migration and rollback/);
+});
+
+test.only('__internal__ keys - should not be accessible by the user', t => {
+	const cwd = tempy.directory();
+
+	const conf = new Conf({cwd});
+
+	t.throws(() => {
+		conf.set('__internal__.you-shall', 'not-pass');
+	}, /Please don't use the __internal__ key/);
 });

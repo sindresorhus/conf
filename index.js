@@ -35,6 +35,9 @@ const checkValueType = (key, value) => {
 	}
 };
 
+const INTERNAL_KEY = '__internal__';
+const MIGRATION_KEY = `${INTERNAL_KEY}.migrations.version`;
+
 class Conf {
 	constructor(options) {
 		options = {
@@ -133,9 +136,7 @@ class Conf {
 	}
 
 	_migrate(migrations, versionToMigrate) {
-		const MIGRATION_KEY = '__internal__.version';
-
-		let previousMigratedVersion = this.get(MIGRATION_KEY, '0.0.0');
+		let previousMigratedVersion = this._get(MIGRATION_KEY, '0.0.0');
 
 		const newerVersions = Object.keys(migrations)
 			.filter(candidateVersion => this._shouldPerformMigration(candidateVersion, previousMigratedVersion, versionToMigrate))
@@ -146,7 +147,7 @@ class Conf {
 				const migration = migrations[version];
 				migration(this);
 
-				this.set(MIGRATION_KEY, version);
+				this._set(MIGRATION_KEY, version);
 				previousMigratedVersion = version;
 			} catch (error) {
 				console.error('Something went wrong during the migration!');
@@ -156,7 +157,7 @@ class Conf {
 		});
 
 		if (!semver.eq(previousMigratedVersion, versionToMigrate)) {
-			this.set(MIGRATION_KEY, versionToMigrate);
+			this._set(MIGRATION_KEY, versionToMigrate);
 		}
 	}
 
@@ -181,6 +182,17 @@ class Conf {
 		return true;
 	}
 
+	_get(key, defaultValue) {
+		return dotProp.get(this.store, key, defaultValue);
+	}
+
+	_set(key, value) {
+		const {store} = this;
+		dotProp.set(store, key, value);
+
+		this.store = store;
+	}
+
 	get(key, defaultValue) {
 		if (this._options.accessPropertiesByDotNotation) {
 			return dotProp.get(this.store, key, defaultValue);
@@ -196,6 +208,10 @@ class Conf {
 
 		if (typeof key !== 'object' && value === undefined) {
 			throw new TypeError('Use `delete()` to clear values');
+		}
+
+		if (typeof key === 'string' && key.indexOf(INTERNAL_KEY) === 0) {
+			throw new TypeError(`Please don't use the ${INTERNAL_KEY} key, as it's used to manage this module internal operations.`);
 		}
 
 		const {store} = this;
