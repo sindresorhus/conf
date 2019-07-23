@@ -144,11 +144,7 @@ class Conf {
 	_migrate(migrations, versionToMigrate) {
 		const MIGRATION_KEY = '__internal__.version';
 
-		const previousMigratedVersion = this.get(MIGRATION_KEY, '0.0.0');
-
-		if (semver.eq(previousMigratedVersion, versionToMigrate)) {
-			return;
-		}
+		let previousMigratedVersion = this.get(MIGRATION_KEY, '0.0.0');
 
 		const newerVersions = Object.keys(migrations)
 			.filter(candidateVersion => this._shouldPerformMigration(candidateVersion, previousMigratedVersion, versionToMigrate))
@@ -160,6 +156,7 @@ class Conf {
 				migration(this);
 
 				this.set(MIGRATION_KEY, version);
+				previousMigratedVersion = version;
 			} catch (error) {
 				console.error('Something went wrong during the migration!');
 				console.error('Changes applied to the store until this point will be persisted.');
@@ -167,7 +164,9 @@ class Conf {
 			}
 		});
 
-		this.set(MIGRATION_KEY, versionToMigrate);
+		if (!semver.eq(previousMigratedVersion, versionToMigrate)) {
+			this.set(MIGRATION_KEY, versionToMigrate);
+		}
 	}
 
 	/**
