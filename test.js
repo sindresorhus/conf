@@ -796,3 +796,29 @@ test('migrations - should not create the previous migration key if the migration
 	const conf = new Conf({cwd});
 	t.false(conf.has('__conf-migrated-version__'));
 });
+
+test('migrations error handling - should run the migration until the point it failed', t => {
+	const cwd = tempy.directory();
+
+	const migrations = {
+		'1.0.0': store => {
+			store.set('foo', 'cool stuff');
+		},
+		'1.0.1': store => {
+			store.set('foo', 'updated before crash');
+
+			throw new Error('throw the migration and rollback');
+
+			// eslint-disable-next-line no-unreachable
+			store.set('foo', 'can you reach here?');
+		}
+	};
+
+	t.throws(() => {
+		const conf = new Conf({cwd, projectVersion: '1.0.2', migrations});
+
+		t.is(conf.get('__conf-migrated-version__'), '1.0.0');
+		t.true(conf.has('foo'));
+		t.is(conf.get('foo'), 'updated before crash');
+	}, /throw the migration and rollback/);
+});
