@@ -47,22 +47,22 @@ class Conf {
 			...options
 		};
 
-		if (!options.cwd) {
-			const packageData = this._getPackageData();
+		const packageData = this._getPackageData();
 
+		if (packageData && !options.projectVersion) {
+			const {version} = packageData;
+
+			if (version) {
+				options.projectVersion = version;
+			}
+		}
+
+		if (!options.cwd) {
 			if (packageData && !options.projectName) {
 				const {name} = packageData;
 
 				if (name) {
 					options.projectName = name;
-				}
-			}
-
-			if (packageData && !options.projectVersion) {
-				const {version} = packageData;
-
-				if (version) {
-					options.projectVersion = version;
 				}
 			}
 

@@ -783,18 +783,17 @@ test('migrations - should run the migration when the version changes', t => {
 	t.is(conf2.get('foo'), 'cool stuff');
 });
 
-test('migrations - should throw an error when project version is unspecified and attempting to migrate', t => {
+test('migrations - should infer the applicationVersion from the package.json when it isn\'t specified', t => {
 	const cwd = tempy.directory();
 
-	t.throws(() => {
-		const conf = new Conf({cwd, migrations: {
-			'1.0.0': store => {
-				store.set('foo', 'bar');
-			}
-		}});
+	const conf = new Conf({cwd, migrations: {
+		'2000.0.0': store => {
+			store.set('foo', 'bar');
+		}
+	}});
 
-		t.false(conf.has('foo'));
-	}, /Project version could not be inferred/);
+	t.false(conf.has('foo'));
+	t.is(conf.get('__internal__.version'), require('./package.json').version);
 });
 
 test('migrations - should NOT throw an error when project version is unspecified but there are no migrations', t => {
