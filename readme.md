@@ -105,8 +105,7 @@ You can use migrations to perform operations to the store whenever a version is 
 
 The `migrations` object should be consisted of a key-value pair of `version`: `handler`.
 
-**Note**: The `projectVersion` option should be specified in order for the migrations to be run.
-But you only need to specify the `projectVersion` if you don't have a package.json file in your project.
+**Note**: The [`projectVersion`](#projectversion) option should be specified in order for the migrations to be run.
 
 Example:
 
