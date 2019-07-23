@@ -50,7 +50,7 @@ class Conf {
 		if (!options.cwd) {
 			const packageData = this._getPackageData();
 
-			if (!options.projectName) {
+			if (packageData && !options.projectName) {
 				const {name} = packageData;
 
 				if (name) {
@@ -58,7 +58,7 @@ class Conf {
 				}
 			}
 
-			if (!options.projectVersion) {
+			if (packageData && !options.projectVersion) {
 				const {version} = packageData;
 
 				if (version) {
