@@ -106,7 +106,7 @@ You can use migrations to perform operations to the store whenever a version is 
 The `migrations` object should be consisted of a key-value pair of `version`: `handler`.
 
 **Note**: The `projectVersion` option should be specified in order for the migrations to be run.
-But you only need to specify the version if you don't have a package.json file in your project.
+But you only need to specify the `projectVersion` if you don't have a package.json file in your project.
 
 Example:
 
@@ -140,6 +140,13 @@ Useful if you need multiple config files for your app or module. For example, di
 
 Type: `string`<br>
 Default: The `name` field in the package.json closest to where `conf` is imported.
+
+You only need to specify this if you don't have a package.json file in your project.
+
+#### projectVersion
+
+Type: `string`<br>
+Default: The `version` field in the package.json closest to where `conf` is imported.
 
 You only need to specify this if you don't have a package.json file in your project.
 
