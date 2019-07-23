@@ -290,7 +290,7 @@ test('safely handle missing package.json', t => {
 
 	let config;
 	t.notThrows(() => {
-		config = new Conf({projectName: 'conf-fixture-project-name'});
+		config = new Conf({projectName: 'conf-fixture-project-name', projectVersion: '1.0.0'});
 	});
 
 	del.sync(config.path, {force: true});
