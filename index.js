@@ -142,7 +142,7 @@ class Conf {
 	}
 
 	_migrate(migrations, versionToMigrate) {
-		const MIGRATION_KEY = '__conf-migrated-version__';
+		const MIGRATION_KEY = '__internal__.version';
 
 		const previousMigratedVersion = this.get(MIGRATION_KEY, '0.0.0');
 
