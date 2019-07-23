@@ -12,6 +12,7 @@ const envPaths = require('env-paths');
 const writeFileAtomic = require('write-file-atomic');
 const Ajv = require('ajv');
 const semver = require('semver');
+const memoizeOne = require('memoize-one');
 
 const plainObject = () => Object.create(null);
 const encryptionAlgorithm = 'aes-256-cbc';
@@ -47,15 +48,18 @@ class Conf {
 			...options
 		};
 
-		const packageData = this._getPackageData();
+		const getPackageData = memoizeOne(() => {
+			const packagePath = pkgUp.sync(parentDir);
+			// Can't use `require` because of Webpack being annoying:
+			// https://github.com/webpack/webpack/issues/196
+			const packageData = packagePath && JSON.parse(fs.readFileSync(packagePath, 'utf8'));
 
-		if (packageData && !options.projectVersion) {
-			options.projectVersion = packageData.version;
-		}
+			return packageData || {};
+		});
 
 		if (!options.cwd) {
-			if (packageData && !options.projectName) {
-				options.projectName = packageData.name;
+			if (!options.projectName) {
+				options.projectName = getPackageData().name;
 			}
 
 			if (!options.projectName) {
@@ -102,22 +106,17 @@ class Conf {
 			this.store = store;
 		}
 
-		const {migrations, projectVersion} = options;
+		if (options.migrations) {
+			if (!options.projectVersion) {
+				options.projectVersion = getPackageData().version;
+			}
 
-		if (migrations) {
-			if (!projectVersion) {
+			if (!options.projectVersion) {
 				throw new Error('Project version could not be inferred. Please specify the `projectVersion` option.');
 			}
 
-			this._migrate(migrations, projectVersion);
+			this._migrate(options.migrations, options.projectVersion);
 		}
-	}
-
-	_getPackageData() {
-		const pkgPath = pkgUp.sync(parentDir);
-		// Can't use `require` because of Webpack being annoying:
-		// https://github.com/webpack/webpack/issues/196
-		return pkgPath && JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
 	}
 
 	_validate(data) {
