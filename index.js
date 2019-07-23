@@ -112,7 +112,7 @@ class Conf {
 
 		if (migrations) {
 			if (!projectVersion) {
-				throw new Error('You need to specify the `projectVersion` in order for the migrations to work!');
+				throw new Error('Project version could not be inferred. Please specify the `projectVersion` option.');
 			}
 
 			this._migrate(migrations, projectVersion);

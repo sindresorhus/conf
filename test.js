@@ -794,7 +794,7 @@ test('migrations - should throw an error when project version is unspecified and
 		}});
 
 		t.false(conf.has('foo'));
-	}, /You need to specify the `projectVersion`/);
+	}, /Project version could not be inferred/);
 });
 
 test('migrations - should NOT throw an error when project version is unspecified but there are no migrations', t => {
