@@ -141,14 +141,14 @@ Useful if you need multiple config files for your app or module. For example, di
 Type: `string`<br>
 Default: The `name` field in the package.json closest to where `conf` is imported.
 
-You only need to specify this if you don't have a package.json file in your project.
+You only need to specify this if you don't have a package.json file in your project or if there isn't a name defined within it.
 
 #### projectVersion
 
 Type: `string`<br>
 Default: The `version` field in the package.json closest to where `conf` is imported.
 
-You only need to specify this if you don't have a package.json file in your project.
+You only need to specify this if you don't have a package.json file in your project or if there isn't a version defined within it.
 
 #### cwd
 
