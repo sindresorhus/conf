@@ -50,20 +50,12 @@ class Conf {
 		const packageData = this._getPackageData();
 
 		if (packageData && !options.projectVersion) {
-			const {version} = packageData;
-
-			if (version) {
-				options.projectVersion = version;
-			}
+			options.projectVersion = packageData.version;
 		}
 
 		if (!options.cwd) {
 			if (packageData && !options.projectName) {
-				const {name} = packageData;
-
-				if (name) {
-					options.projectName = name;
-				}
+				options.projectName = packageData.name;
 			}
 
 			if (!options.projectName) {
