@@ -49,14 +49,18 @@ class Conf {
 
 		if (!options.cwd) {
 			if (!options.projectName) {
-				const pkgPath = pkgUp.sync(parentDir);
-				// Can't use `require` because of Webpack being annoying:
-				// https://github.com/webpack/webpack/issues/196
-				const pkg = pkgPath && JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+				const {name} = this._getPackageData();
 
-				if (pkg) {
-					options.projectName = pkg.name;
-					options.projectVersion = pkg.version;
+				if (name) {
+					options.projectName = name;
+				}
+			}
+
+			if (!options.projectVersion) {
+				const {version} = this._getPackageData();
+
+				if (version) {
+					options.projectVersion = version;
 				}
 			}
 
@@ -113,6 +117,13 @@ class Conf {
 
 			this._migrate(migrations, projectVersion);
 		}
+	}
+
+	_getPackageData() {
+		const pkgPath = pkgUp.sync(parentDir);
+		// Can't use `require` because of Webpack being annoying:
+		// https://github.com/webpack/webpack/issues/196
+		return pkgPath && JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
 	}
 
 	_validate(data) {
