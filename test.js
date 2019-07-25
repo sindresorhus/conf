@@ -812,12 +812,12 @@ test('migrations - should not create the previous migration key if the migration
 	t.false(conf.has('__internal__.migrations.version'));
 });
 
-test('migrations error handling - should run the migration until the point it failed', t => {
+test('migrations error handling - should rollback changes if a migration failed', t => {
 	const cwd = tempy.directory();
 
-	const migrations = {
+	const failingMigrations = {
 		'1.0.0': store => {
-			store.set('foo', 'cool stuff');
+			store.set('foo', 'initial update');
 		},
 		'1.0.1': store => {
 			store.set('foo', 'updated before crash');
@@ -829,13 +829,21 @@ test('migrations error handling - should run the migration until the point it fa
 		}
 	};
 
-	t.throws(() => {
-		const conf = new Conf({cwd, projectVersion: '1.0.2', migrations});
+	const passingMigrations = {
+		'1.0.0': store => {
+			store.set('foo', 'initial update');
+		}
+	};
 
-		t.is(conf._get('__internal__.migrations.version'), '1.0.0');
-		t.true(conf.has('foo'));
-		t.is(conf.get('foo'), 'updated before crash');
+	let conf = new Conf({cwd, projectVersion: '1.0.0', migrations: passingMigrations});
+
+	t.throws(() => {
+		conf = new Conf({cwd, projectVersion: '1.0.2', migrations: failingMigrations});
 	}, /throw the migration and rollback/);
+
+	t.is(conf._get('__internal__.migrations.version'), '1.0.0');
+	t.true(conf.has('foo'));
+	t.is(conf.get('foo'), 'initial update');
 });
 
 test('__internal__ keys - should not be accessible by the user', t => {
