@@ -838,7 +838,7 @@ test('migrations error handling - should run the migration until the point it fa
 	}, /throw the migration and rollback/);
 });
 
-test.only('__internal__ keys - should not be accessible by the user', t => {
+test('__internal__ keys - should not be accessible by the user', t => {
 	const cwd = tempy.directory();
 
 	const conf = new Conf({cwd});

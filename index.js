@@ -142,16 +142,22 @@ class Conf {
 			.filter(candidateVersion => this._shouldPerformMigration(candidateVersion, previousMigratedVersion, versionToMigrate))
 			.sort(semver.compare);
 
+		let storeBackup = {...this.store};
+
 		newerVersions.forEach(version => {
 			try {
 				const migration = migrations[version];
 				migration(this);
 
 				this._set(MIGRATION_KEY, version);
+
 				previousMigratedVersion = version;
+				storeBackup = {...this.store};
 			} catch (error) {
 				console.error('Something went wrong during the migration!');
-				console.error('Changes applied to the store until this point will be persisted.');
+				console.error('Changes applied to the store until this failed migration will be restored');
+
+				this.store = storeBackup;
 				throw error;
 			}
 		});
