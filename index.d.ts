@@ -57,12 +57,12 @@ declare namespace Conf {
 		readonly configName?: string;
 
 		/**
-		You only need to specify this if you don't have a package.json file in your project or if there isn't a name defined within it. Default: The name field in the `package.json` closest to where `conf` is imported.
+		You only need to specify this if you don't have a package.json file in your project or if it doesn't have a name defined within it. Default: The name field in the `package.json` closest to where `conf` is imported.
 		*/
 		readonly projectName?: string;
 
 		/**
-		You only need to specify this if you don't have a package.json file in your project or if there isn't a version defined within it. Default: The name field in the `package.json` closest to where `conf` is imported.
+		You only need to specify this if you don't have a package.json file in your project or if it doesn't have a version defined within it. Default: The name field in the `package.json` closest to where `conf` is imported.
 		*/
 		readonly projectVersion?: string;
 
