@@ -12,7 +12,7 @@ const envPaths = require('env-paths');
 const writeFileAtomic = require('write-file-atomic');
 const Ajv = require('ajv');
 const semver = require('semver');
-const memoizeOne = require('memoize-one');
+const onetime = require('onetime');
 
 const plainObject = () => Object.create(null);
 const encryptionAlgorithm = 'aes-256-cbc';
@@ -51,7 +51,7 @@ class Conf {
 			...options
 		};
 
-		const getPackageData = memoizeOne(() => {
+		const getPackageData = onetime(() => {
 			const packagePath = pkgUp.sync(parentDir);
 			// Can't use `require` because of Webpack being annoying:
 			// https://github.com/webpack/webpack/issues/196
