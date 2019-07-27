@@ -167,6 +167,30 @@ class Conf {
 		}
 	}
 
+	_containsReservedKey(key) {
+		if (typeof key === 'object') {
+			const firstKey = Object.keys(key)[0];
+
+			if (firstKey === INTERNAL_KEY) {
+				return true;
+			}
+		}
+
+		if (typeof key !== 'string') {
+			return false;
+		}
+
+		if (this._options.accessPropertiesByDotNotation) {
+			if (key.indexOf(`${INTERNAL_KEY}.`) === 0) {
+				return true;
+			}
+
+			return false;
+		}
+
+		return false;
+	}
+
 	_shouldPerformMigration(candidateVersion, previousMigratedVersion, versionToMigrate) {
 		if (semver.lte(candidateVersion, previousMigratedVersion)) {
 			return false;
@@ -207,7 +231,7 @@ class Conf {
 			throw new TypeError('Use `delete()` to clear values');
 		}
 
-		if (typeof key === 'string' && key.indexOf(INTERNAL_KEY) === 0) {
+		if (this._containsReservedKey(key)) {
 			throw new TypeError(`Please don't use the ${INTERNAL_KEY} key, as it's used to manage this module internal operations.`);
 		}
 

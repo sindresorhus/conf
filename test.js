@@ -855,3 +855,27 @@ test('__internal__ keys - should not be accessible by the user', t => {
 		conf.set('__internal__.you-shall', 'not-pass');
 	}, /Please don't use the __internal__ key/);
 });
+
+test('__internal__ keys - should not be accessible by the user even without dot notation', t => {
+	const cwd = tempy.directory();
+
+	const conf = new Conf({cwd, accessPropertiesByDotNotation: false});
+
+	t.throws(() => {
+		conf.set({
+			__internal__: {
+				'you-shall': 'not-pass'
+			}
+		});
+	}, /Please don't use the __internal__ key/);
+});
+
+test('__internal__ keys - should only match specific "__internal__" entry', t => {
+	const cwd = tempy.directory();
+
+	const conf = new Conf({cwd});
+
+	t.notThrows(() => {
+		conf.set('__internal__foo.you-shall', 'not-pass');
+	});
+});
