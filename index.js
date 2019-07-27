@@ -154,11 +154,11 @@ class Conf {
 				previousMigratedVersion = version;
 				storeBackup = {...this.store};
 			} catch (error) {
-				console.error('Something went wrong during the migration!');
-				console.error('Changes applied to the store until this failed migration will be restored');
-
 				this.store = storeBackup;
-				throw error;
+
+				throw new Error(
+					`Something went wrong during the migration! Changes applied to the store until this failed migration will be restored. ${error}`
+				);
 			}
 		});
 
