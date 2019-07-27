@@ -144,7 +144,7 @@ class Conf {
 
 		let storeBackup = {...this.store};
 
-		newerVersions.forEach(version => {
+		for (const version of newerVersions) {
 			try {
 				const migration = migrations[version];
 				migration(this);
@@ -160,7 +160,7 @@ class Conf {
 					`Something went wrong during the migration! Changes applied to the store until this failed migration will be restored. ${error}`
 				);
 			}
-		});
+		}
 
 		if (!semver.eq(previousMigratedVersion, versionToMigrate)) {
 			this._set(MIGRATION_KEY, versionToMigrate);
