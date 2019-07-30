@@ -48,11 +48,11 @@ Returns a new instance.
 
 ### options
 
-Type: `Object`
+Type: `object`
 
 #### defaults
 
-Type: `Object`
+Type: `object`
 
 Default values for the config items.
 
@@ -60,7 +60,7 @@ Default values for the config items.
 
 #### schema
 
-Type: `Object`
+Type: `object`
 
 [JSON Schema](https://json-schema.org) to validate your config data.
 
@@ -99,7 +99,7 @@ config.set('foo', '1');
 
 ### migrations
 
-Type: `Object`
+Type: `object`
 
 You can use migrations to perform operations to the store whenever a version is upgraded.
 
