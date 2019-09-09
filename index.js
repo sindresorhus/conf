@@ -118,8 +118,8 @@ class Conf {
 	}
 
 	_ensureDirectory() {
-		// Ensure the directory exists as it could have been deleted in the meantime
-		// TODO: Use `fs.mkdirSync` `recursive` option when targeting Node.js 12
+		// TODO: Use `fs.mkdirSync` `recursive` option when targeting Node.js 12.
+		// Ensure the directory exists as it could have been deleted in the meantime.
 		makeDir.sync(path.dirname(this.path));
 	}
 
@@ -144,7 +144,7 @@ class Conf {
 		}
 
 		fs.watch(this.path, {persistent: false}, debounceFn(() => {
-			// On linux and windows write to config file emits `rename` event so skip check for eventType
+			// On Linux and Windows, writing to the config file emits a `rename` event, so we skip checking the event type.
 			this.events.emit('change');
 		}, {wait: 100}));
 	}
