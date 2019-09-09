@@ -380,7 +380,14 @@ class Conf {
 			data = Buffer.concat([initializationVector, Buffer.from(':'), cipher.update(Buffer.from(data)), cipher.final()]);
 		}
 
-		writeFileAtomic.sync(this.path, data);
+		// Temporary workaround for Conf being packaged in a Ubuntu Snap app.
+		// See https://github.com/sindresorhus/conf/pull/82
+		if (process.env.SNAP) {
+			fs.writeFileSync(this.path, data);
+		} else {
+			writeFileAtomic.sync(this.path, data);
+		}
+
 		this.events.emit('change');
 	}
 
