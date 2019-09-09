@@ -42,7 +42,7 @@ Or [create a subclass](https://github.com/sindresorhus/electron-store/blob/maste
 
 Changes are written to disk atomically, so if the process crashes during a write, it will not corrupt the existing config.
 
-### Conf([options])
+### Conf(options?)
 
 Returns a new instance.
 
@@ -105,11 +105,11 @@ You can use migrations to perform operations to the store whenever a version is 
 
 The `migrations` object should be consisted of a key-value pair of `version`: `handler`.
 
-**Note**: The [`projectVersion`](#projectversion) option should be specified in order for the migrations to be run.
-
 Example:
 
 ```js
+const Conf = require('conf');
+
 const store = new Conf({
 	migrations: {
 		'0.0.1': store => {
@@ -162,7 +162,7 @@ The only use-case I can think of is having the config located in the app directo
 
 #### encryptionKey
 
-Type: `string` `Buffer` `TypedArray` `DataView`<br>
+Type: `string | Buffer | TypedArray | DataView`<br>
 Default: `undefined`
 
 This can be used to secure sensitive data **if** the encryption key is stored in a secure manner (not plain-text) in the Node.js app. For example, by using [`node-keytar`](https://github.com/atom/node-keytar) to store the encryption key securely, or asking the encryption key from the user (a password) and then storing it in a variable.
@@ -228,6 +228,8 @@ Default: `true`
 Accessing nested properties by dot notation. For example:
 
 ```js
+const Conf = require('conf');
+
 const config = new Conf();
 
 config.set({
@@ -245,6 +247,8 @@ console.log(config.get('foo.bar.foobar'));
 Alternatively, you can set this option to `false` so the whole string would be treated as one key.
 
 ```js
+const Conf = require('conf');
+
 const config = new Conf({accessPropertiesByDotNotation: false});
 
 config.set({
@@ -318,7 +322,6 @@ conf.store = {
 Get the path to the config file.
 
 
-
 ## FAQ
 
 ### How is this different from [`configstore`](https://github.com/yeoman/configstore)?
@@ -347,8 +350,3 @@ const config = new Conf({
 
 - [electron-store](https://github.com/sindresorhus/electron-store) - Simple data persistence for your Electron app or module
 - [cache-conf](https://github.com/SamVerschueren/cache-conf) - Simple cache config handling for your app or module
-
-
-## License
-
-MIT © [Sindre Sorhus](https://sindresorhus.com)

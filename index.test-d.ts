@@ -89,7 +89,8 @@ for (const [key, value] of conf) {
 }
 
 
-// Docs examples
+// -- Docs examples --
+
 type StoreType = {
 	isRainbow: boolean,
 	unicorn?: string
@@ -111,3 +112,23 @@ console.log(config.get('unicorn'));
 config.delete('unicorn');
 console.log(config.get('unicorn'));
 //=> undefined
+
+// --
+
+
+// -- Migrations --
+const store = new Conf({
+	migrations: {
+		'0.0.1': store => {
+			store.set('debug phase', true);
+		},
+		'1.0.0': store => {
+			store.delete('debug phase');
+			store.set('phase', '1.0');
+		},
+		'1.0.2': store => {
+			store.set('phase', '>1.0');
+		}
+	}
+});
+// --

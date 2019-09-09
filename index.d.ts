@@ -57,41 +57,45 @@ declare namespace Conf {
 		readonly configName?: string;
 
 		/**
-		You only need to specify this if you don't have a package.json file in your project or if it doesn't have a name defined within it. Default: The name field in the `package.json` closest to where `conf` is imported.
+		You only need to specify this if you don't have a package.json file in your project or if it doesn't have a name defined within it.
+
+		Default: The name field in the `package.json` closest to where `conf` is imported.
 		*/
 		readonly projectName?: string;
 
 		/**
-		You only need to specify this if you don't have a package.json file in your project or if it doesn't have a version defined within it. Default: The name field in the `package.json` closest to where `conf` is imported.
+		You only need to specify this if you don't have a package.json file in your project or if it doesn't have a version defined within it.
+
+		Default: The name field in the `package.json` closest to where `conf` is imported.
 		*/
 		readonly projectVersion?: string;
 
 		/*
-		You can use migrations to perform operations to the store whenever a version is switched. 
+		You can use migrations to perform operations to the store whenever a version is changed.
 
-		The `migrations` object should be consisted of a key-value pair of `version`: `handler`.
-
-		The `projectVersion` option should be specified in order for the migrations to be run.
+		The `migrations` object should consist of a key-value pair of `version`: `handler`.
 
 		@example
 		```
+		import Conf = require('conf');
+
 		const store = new Conf({
 			migrations: {
 				'0.0.1': store => {
-						store.set('debug phase', true);
+					store.set('debug phase', true);
 				},
 				'1.0.0': store => {
-						store.delete('debug phase');
-						store.set('phase', '1.0');
+					store.delete('debug phase');
+					store.set('phase', '1.0');
 				},
 				'1.0.2': store => {
-						store.set('phase', '>1.0');
+					store.set('phase', '>1.0');
 				}
 			}
 		});
 		```
 		*/
-		readonly migrations?: {[key: string]: JSONSchema};
+		readonly migrations?: {[version: string]: (store: Conf<T>) => void};
 
 		/**
 		__You most likely don't need this. Please don't use it unless you really have to.__
@@ -201,7 +205,7 @@ declare namespace Conf {
 /**
 Simple config handling for your app or module.
 */
-declare class Conf<T = unknown> implements Iterable<[keyof T, T[keyof T]]> {
+declare class Conf<T = any> implements Iterable<[keyof T, T[keyof T]]> {
 	store: Partial<T>;
 	readonly path: string;
 	readonly size: number;
