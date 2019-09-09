@@ -11,6 +11,7 @@ const fixture = '🦄';
 
 test.beforeEach(t => {
 	t.context.config = new Conf({cwd: tempy.directory()});
+	t.context.configWithSchema = new Conf({cwd: tempy.directory(), schema: {foo: {default: 42}}});
 	t.context.configWithoutDotNotation = new Conf({cwd: tempy.directory(), accessPropertiesByDotNotation: false});
 });
 
@@ -93,6 +94,12 @@ test('.has()', t => {
 	t.true(t.context.config.has('foo'));
 	t.true(t.context.config.has('baz.boo'));
 	t.false(t.context.config.has('missing'));
+});
+
+test('.reset()', t => {
+	t.context.configWithSchema.set('foo', 77);
+	t.context.configWithSchema.reset('foo');
+	t.is(t.context.configWithSchema.get('foo'), 42);
 });
 
 test('.delete()', t => {

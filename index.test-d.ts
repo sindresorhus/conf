@@ -30,7 +30,8 @@ new Conf<UnicornFoo>({projectSuffix: 'foo'});
 new Conf<UnicornFoo>({
 	schema: {
 		foo: {
-			type: 'string'
+			type: 'string',
+			default: 'foobar'
 		},
 		unicorn: {
 			type: 'boolean'
@@ -62,6 +63,8 @@ conf.set('unicorn', false);
 
 expectType<string>(conf.get('foo'));
 expectType<string>(conf.get('foo', 'bar'));
+conf.reset('foo');
+expectType<string>(conf.get('foo'));
 conf.delete('foo');
 expectType<boolean>(conf.has('foo'));
 conf.clear();
