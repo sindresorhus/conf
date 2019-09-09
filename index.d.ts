@@ -2,6 +2,8 @@
 import {JSONSchema} from 'json-schema-typed';
 
 declare namespace Conf {
+	type Schema = JSONSchema;
+
 	interface Options<T> {
 		/**
 		Config used if there are no existing config.
@@ -45,7 +47,7 @@ declare namespace Conf {
 
 		**Note:** The `default` value will be overwritten by the `defaults` option if set.
 		*/
-		readonly schema?: {[P in keyof T]: JSONSchema};
+		readonly schema?: {[P in keyof T]: Schema};
 
 		/**
 		Name of the config file (without extension).
