@@ -181,7 +181,7 @@ class Conf {
 		}
 
 		if (this._options.accessPropertiesByDotNotation) {
-			if (key.indexOf(`${INTERNAL_KEY}.`) === 0) {
+			if (key.startsWith(`${INTERNAL_KEY}.`)) {
 				return true;
 			}
 
