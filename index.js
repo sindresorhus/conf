@@ -139,8 +139,7 @@ class Conf {
 		let previousMigratedVersion = this._get(MIGRATION_KEY, '0.0.0');
 
 		const newerVersions = Object.keys(migrations)
-			.filter(candidateVersion => this._shouldPerformMigration(candidateVersion, previousMigratedVersion, versionToMigrate))
-			.sort(semver.compare);
+			.filter(candidateVersion => this._shouldPerformMigration(candidateVersion, previousMigratedVersion, versionToMigrate));
 
 		let storeBackup = {...this.store};
 
@@ -162,7 +161,7 @@ class Conf {
 			}
 		}
 
-		if (!semver.eq(previousMigratedVersion, versionToMigrate)) {
+		if (this._isVersionInRangeFormat(previousMigratedVersion) || !semver.eq(previousMigratedVersion, versionToMigrate)) {
 			this._set(MIGRATION_KEY, versionToMigrate);
 		}
 	}
@@ -191,7 +190,19 @@ class Conf {
 		return false;
 	}
 
+	_isVersionInRangeFormat(version) {
+		return version.match(/^\d+(\.\d+)*$/) === null;
+	}
+
 	_shouldPerformMigration(candidateVersion, previousMigratedVersion, versionToMigrate) {
+		if (this._isVersionInRangeFormat(candidateVersion)) {
+			if (previousMigratedVersion !== '0.0.0' && semver.satisfies(previousMigratedVersion, candidateVersion)) {
+				return false;
+			}
+
+			return semver.satisfies(versionToMigrate, candidateVersion);
+		}
+
 		if (semver.lte(candidateVersion, previousMigratedVersion)) {
 			return false;
 		}

@@ -783,6 +783,63 @@ test('migrations - should run the migration when the version changes', t => {
 	t.is(conf2.get('foo'), 'cool stuff');
 });
 
+test('migrations - should run the migration when the version uses semver comparisons', t => {
+	const cwd = tempy.directory();
+	const migrations = {
+		'>=1.0': store => {
+			store.set('foo', 'cool stuff');
+		}
+	};
+
+	const conf = new Conf({cwd, projectVersion: '1.0.2', migrations});
+	t.is(conf._get('__internal__.migrations.version'), '1.0.2');
+	t.is(conf.get('foo'), 'cool stuff');
+});
+
+test('migrations - should run the migration when the version uses multiple semver comparisons', t => {
+	const cwd = tempy.directory();
+	const migrations = {
+		'>=1.0': store => {
+			store.set('foo', 'cool stuff');
+		},
+		'>2.0.0': store => {
+			store.set('foo', 'modern cool stuff');
+		}
+	};
+
+	const conf = new Conf({cwd, projectVersion: '1.0.2', migrations});
+	t.is(conf._get('__internal__.migrations.version'), '1.0.2');
+	t.is(conf.get('foo'), 'cool stuff');
+
+	const conf2 = new Conf({cwd, projectVersion: '2.0.1', migrations});
+	t.is(conf2._get('__internal__.migrations.version'), '2.0.1');
+	t.is(conf2.get('foo'), 'modern cool stuff');
+});
+
+test('migrations - should run all valid migrations when the version uses multiple semver comparisons', t => {
+	const cwd = tempy.directory();
+	const migrations = {
+		'>=1.0': store => {
+			store.set('foo', 'cool stuff');
+		},
+		'>2.0.0': store => {
+			store.set('woof', 'oof');
+			store.set('medium', 'yes');
+		},
+		'<3.0.0': store => {
+			store.set('woof', 'woof');
+			store.set('heart', '❤');
+		}
+	};
+
+	const conf = new Conf({cwd, projectVersion: '2.4.0', migrations});
+	t.is(conf._get('__internal__.migrations.version'), '2.4.0');
+	t.is(conf.get('foo'), 'cool stuff');
+	t.is(conf.get('medium'), 'yes');
+	t.is(conf.get('woof'), 'woof');
+	t.is(conf.get('heart'), '❤');
+});
+
 test('migrations - should infer the applicationVersion from the package.json when it isn\'t specified', t => {
 	const cwd = tempy.directory();
 
