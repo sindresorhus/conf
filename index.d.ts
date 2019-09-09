@@ -1,5 +1,5 @@
 /// <reference types="node"/>
-import { JSONSchema } from "json-schema-typed";
+import {JSONSchema} from 'json-schema-typed';
 
 declare namespace Conf {
 	interface Options<T> {
@@ -45,7 +45,7 @@ declare namespace Conf {
 
 		**Note:** The `default` value will be overwritten by the `defaults` option if set.
 		*/
-		readonly schema?: { [P in keyof T]: JSONSchema };
+		readonly schema?: {[P in keyof T]: JSONSchema};
 
 		/**
 		Name of the config file (without extension).
@@ -211,16 +211,23 @@ declare class Conf<T = unknown> implements Iterable<[keyof T, T[keyof T]]> {
 	```
 	import Conf = require('conf');
 
-	const config = new Conf();
+	type StoreType = {
+		isRainbow: boolean,
+		unicorn?: string
+	}
+
+	const config = new Conf<StoreType>({
+		defaults: {
+			isRainbow: true
+		}
+	});
+
+	config.get('isRainbow');
+	//=> true
 
 	config.set('unicorn', '🦄');
 	console.log(config.get('unicorn'));
 	//=> '🦄'
-
-	// Use dot-notation to access nested properties
-	config.set('foo.bar', true);
-	console.log(config.get('foo'));
-	//=> {bar: true}
 
 	config.delete('unicorn');
 	console.log(config.get('unicorn'));
