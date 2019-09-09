@@ -716,3 +716,166 @@ test('.delete() - without dot notation', t => {
 	configWithoutDotNotation.delete('foo.bar.baz');
 	t.deepEqual(configWithoutDotNotation.get('foo.bar.zoo'), {awesome: 'redpanda'});
 });
+
+test('migrations - should save the project version as the initial migrated version', t => {
+	const cwd = tempy.directory();
+
+	const conf = new Conf({cwd, projectVersion: '0.0.2', migrations: {}});
+
+	t.is(conf._get('__internal__.migrations.version'), '0.0.2');
+});
+
+test('migrations - should save the project version when a migration occurs', t => {
+	const cwd = tempy.directory();
+
+	const migrations = {
+		'0.0.3': store => {
+			store.set('foo', 'cool stuff');
+		}
+	};
+
+	const conf = new Conf({cwd, projectVersion: '0.0.2', migrations});
+
+	t.is(conf._get('__internal__.migrations.version'), '0.0.2');
+
+	const conf2 = new Conf({cwd, projectVersion: '0.0.4', migrations});
+
+	t.is(conf2._get('__internal__.migrations.version'), '0.0.4');
+	t.is(conf2.get('foo'), 'cool stuff');
+});
+
+test('migrations - should NOT run the migration when the version doesn\'t change', t => {
+	const cwd = tempy.directory();
+
+	const migrations = {
+		'1.0.0': store => {
+			store.set('foo', 'cool stuff');
+		}
+	};
+
+	const conf = new Conf({cwd, projectVersion: '0.0.2', migrations});
+	t.is(conf._get('__internal__.migrations.version'), '0.0.2');
+	t.false(conf.has('foo'));
+
+	const conf2 = new Conf({cwd, projectVersion: '0.0.2', migrations});
+
+	t.is(conf2._get('__internal__.migrations.version'), '0.0.2');
+	t.false(conf2.has('foo'));
+});
+
+test('migrations - should run the migration when the version changes', t => {
+	const cwd = tempy.directory();
+
+	const migrations = {
+		'1.0.0': store => {
+			store.set('foo', 'cool stuff');
+		}
+	};
+
+	const conf = new Conf({cwd, projectVersion: '0.0.2', migrations});
+	t.is(conf._get('__internal__.migrations.version'), '0.0.2');
+	t.false(conf.has('foo'));
+
+	const conf2 = new Conf({cwd, projectVersion: '1.1.0', migrations});
+
+	t.is(conf2._get('__internal__.migrations.version'), '1.1.0');
+	t.true(conf2.has('foo'));
+	t.is(conf2.get('foo'), 'cool stuff');
+});
+
+test('migrations - should infer the applicationVersion from the package.json when it isn\'t specified', t => {
+	const cwd = tempy.directory();
+
+	const conf = new Conf({cwd, migrations: {
+		'2000.0.0': store => {
+			store.set('foo', 'bar');
+		}
+	}});
+
+	t.false(conf.has('foo'));
+	t.is(conf._get('__internal__.migrations.version'), require('./package.json').version);
+});
+
+test('migrations - should NOT throw an error when project version is unspecified but there are no migrations', t => {
+	const cwd = tempy.directory();
+
+	t.notThrows(() => {
+		const conf = new Conf({cwd});
+		conf.clear();
+	});
+});
+
+test('migrations - should not create the previous migration key if the migrations aren\'t needed', t => {
+	const cwd = tempy.directory();
+
+	const conf = new Conf({cwd});
+	t.false(conf.has('__internal__.migrations.version'));
+});
+
+test('migrations error handling - should rollback changes if a migration failed', t => {
+	const cwd = tempy.directory();
+
+	const failingMigrations = {
+		'1.0.0': store => {
+			store.set('foo', 'initial update');
+		},
+		'1.0.1': store => {
+			store.set('foo', 'updated before crash');
+
+			throw new Error('throw the migration and rollback');
+
+			// eslint-disable-next-line no-unreachable
+			store.set('foo', 'can you reach here?');
+		}
+	};
+
+	const passingMigrations = {
+		'1.0.0': store => {
+			store.set('foo', 'initial update');
+		}
+	};
+
+	let conf = new Conf({cwd, projectVersion: '1.0.0', migrations: passingMigrations});
+
+	t.throws(() => {
+		conf = new Conf({cwd, projectVersion: '1.0.2', migrations: failingMigrations});
+	}, /throw the migration and rollback/);
+
+	t.is(conf._get('__internal__.migrations.version'), '1.0.0');
+	t.true(conf.has('foo'));
+	t.is(conf.get('foo'), 'initial update');
+});
+
+test('__internal__ keys - should not be accessible by the user', t => {
+	const cwd = tempy.directory();
+
+	const conf = new Conf({cwd});
+
+	t.throws(() => {
+		conf.set('__internal__.you-shall', 'not-pass');
+	}, /Please don't use the __internal__ key/);
+});
+
+test('__internal__ keys - should not be accessible by the user even without dot notation', t => {
+	const cwd = tempy.directory();
+
+	const conf = new Conf({cwd, accessPropertiesByDotNotation: false});
+
+	t.throws(() => {
+		conf.set({
+			__internal__: {
+				'you-shall': 'not-pass'
+			}
+		});
+	}, /Please don't use the __internal__ key/);
+});
+
+test('__internal__ keys - should only match specific "__internal__" entry', t => {
+	const cwd = tempy.directory();
+
+	const conf = new Conf({cwd});
+
+	t.notThrows(() => {
+		conf.set('__internal__foo.you-shall', 'not-pass');
+	});
+});

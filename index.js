@@ -11,6 +11,8 @@ const pkgUp = require('pkg-up');
 const envPaths = require('env-paths');
 const writeFileAtomic = require('write-file-atomic');
 const Ajv = require('ajv');
+const semver = require('semver');
+const onetime = require('onetime');
 
 const plainObject = () => Object.create(null);
 const encryptionAlgorithm = 'aes-256-cbc';
@@ -33,6 +35,9 @@ const checkValueType = (key, value) => {
 	}
 };
 
+const INTERNAL_KEY = '__internal__';
+const MIGRATION_KEY = `${INTERNAL_KEY}.migrations.version`;
+
 class Conf {
 	constructor(options) {
 		options = {
@@ -46,12 +51,18 @@ class Conf {
 			...options
 		};
 
+		const getPackageData = onetime(() => {
+			const packagePath = pkgUp.sync(parentDir);
+			// Can't use `require` because of Webpack being annoying:
+			// https://github.com/webpack/webpack/issues/196
+			const packageData = packagePath && JSON.parse(fs.readFileSync(packagePath, 'utf8'));
+
+			return packageData || {};
+		});
+
 		if (!options.cwd) {
 			if (!options.projectName) {
-				const pkgPath = pkgUp.sync(parentDir);
-				// Can't use `require` because of Webpack being annoying:
-				// https://github.com/webpack/webpack/issues/196
-				options.projectName = pkgPath && JSON.parse(fs.readFileSync(pkgPath, 'utf8')).name;
+				options.projectName = getPackageData().name;
 			}
 
 			if (!options.projectName) {
@@ -97,6 +108,18 @@ class Conf {
 		} catch (_) {
 			this.store = store;
 		}
+
+		if (options.migrations) {
+			if (!options.projectVersion) {
+				options.projectVersion = getPackageData().version;
+			}
+
+			if (!options.projectVersion) {
+				throw new Error('Project version could not be inferred. Please specify the `projectVersion` option.');
+			}
+
+			this._migrate(options.migrations, options.projectVersion);
+		}
 	}
 
 	_validate(data) {
@@ -110,6 +133,85 @@ class Conf {
 				error + ` \`${dataPath.slice(1)}\` ${message};`, '');
 			throw new Error('Config schema violation:' + errors.slice(0, -1));
 		}
+	}
+
+	_migrate(migrations, versionToMigrate) {
+		let previousMigratedVersion = this._get(MIGRATION_KEY, '0.0.0');
+
+		const newerVersions = Object.keys(migrations)
+			.filter(candidateVersion => this._shouldPerformMigration(candidateVersion, previousMigratedVersion, versionToMigrate))
+			.sort(semver.compare);
+
+		let storeBackup = {...this.store};
+
+		for (const version of newerVersions) {
+			try {
+				const migration = migrations[version];
+				migration(this);
+
+				this._set(MIGRATION_KEY, version);
+
+				previousMigratedVersion = version;
+				storeBackup = {...this.store};
+			} catch (error) {
+				this.store = storeBackup;
+
+				throw new Error(
+					`Something went wrong during the migration! Changes applied to the store until this failed migration will be restored. ${error}`
+				);
+			}
+		}
+
+		if (!semver.eq(previousMigratedVersion, versionToMigrate)) {
+			this._set(MIGRATION_KEY, versionToMigrate);
+		}
+	}
+
+	_containsReservedKey(key) {
+		if (typeof key === 'object') {
+			const firstKey = Object.keys(key)[0];
+
+			if (firstKey === INTERNAL_KEY) {
+				return true;
+			}
+		}
+
+		if (typeof key !== 'string') {
+			return false;
+		}
+
+		if (this._options.accessPropertiesByDotNotation) {
+			if (key.startsWith(`${INTERNAL_KEY}.`)) {
+				return true;
+			}
+
+			return false;
+		}
+
+		return false;
+	}
+
+	_shouldPerformMigration(candidateVersion, previousMigratedVersion, versionToMigrate) {
+		if (semver.lte(candidateVersion, previousMigratedVersion)) {
+			return false;
+		}
+
+		if (semver.gt(candidateVersion, versionToMigrate)) {
+			return false;
+		}
+
+		return true;
+	}
+
+	_get(key, defaultValue) {
+		return dotProp.get(this.store, key, defaultValue);
+	}
+
+	_set(key, value) {
+		const {store} = this;
+		dotProp.set(store, key, value);
+
+		this.store = store;
 	}
 
 	get(key, defaultValue) {
@@ -127,6 +229,10 @@ class Conf {
 
 		if (typeof key !== 'object' && value === undefined) {
 			throw new TypeError('Use `delete()` to clear values');
+		}
+
+		if (this._containsReservedKey(key)) {
+			throw new TypeError(`Please don't use the ${INTERNAL_KEY} key, as it's used to manage this module internal operations.`);
 		}
 
 		const {store} = this;
