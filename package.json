@@ -1,6 +1,6 @@
 {
 	"name": "conf",
-	"version": "4.1.0",
+	"version": "5.0.0",
 	"description": "Simple config handling for your app or module",
 	"license": "MIT",
 	"repository": "sindresorhus/conf",
@@ -49,7 +49,7 @@
 	},
 	"devDependencies": {
 		"@types/node": "^12.0.4",
-		"ava": "^1.4.1",
+		"ava": "^2.0.0",
 		"clear-module": "^3.2.0",
 		"del": "^4.1.0",
 		"tempy": "^0.3.0",
