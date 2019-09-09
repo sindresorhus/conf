@@ -750,6 +750,7 @@ test('`watch` option watches for config file changes by another process', async 
 });
 
 test('`watch` option watches for config file changes by file write', async t => {
+	// TODO: Remove this when targeting Node.js 10.
 	if (process.platform === 'darwin' && process.version.split('.')[0] === 'v8') {
 		t.plan(0);
 		return;
