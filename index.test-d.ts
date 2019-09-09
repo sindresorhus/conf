@@ -1,57 +1,77 @@
-import {expectType, expectError} from 'tsd';
-import Conf = require('.');
+import { expectType, expectError } from "tsd";
+import Conf = require(".");
 
-const conf = new Conf<string | number | boolean>();
-new Conf<string>({
+type UnicornFoo = {
+	foo: string;
+	unicorn: boolean;
+	hello?: number;
+};
+
+const conf = new Conf<UnicornFoo>();
+new Conf<UnicornFoo>({
 	defaults: {
-		foo: 'bar',
-		unicorn: 'rainbow'
+		foo: "bar",
+		unicorn: false
 	}
 });
-new Conf<string>({configName: ''});
-new Conf<string>({projectName: 'foo'});
-new Conf<string>({cwd: ''});
-new Conf<string>({encryptionKey: ''});
-new Conf<string>({encryptionKey: new Buffer('')});
-new Conf<string>({encryptionKey: new Uint8Array([1])});
-new Conf<string>({encryptionKey: new DataView(new ArrayBuffer(2))});
-new Conf<string>({fileExtension: '.foo'});
-new Conf<string>({clearInvalidConfig: false});
-new Conf<string>({serialize: value => 'foo'});
-new Conf<string>({deserialize: string => ({})});
-new Conf<string>({projectSuffix: 'foo'});
+new Conf<UnicornFoo>({ configName: "" });
+new Conf<UnicornFoo>({ projectName: "foo" });
+new Conf<UnicornFoo>({ cwd: "" });
+new Conf<UnicornFoo>({ encryptionKey: "" });
+new Conf<UnicornFoo>({ encryptionKey: new Buffer("") });
+new Conf<UnicornFoo>({ encryptionKey: new Uint8Array([1]) });
+new Conf<UnicornFoo>({ encryptionKey: new DataView(new ArrayBuffer(2)) });
+new Conf<UnicornFoo>({ fileExtension: ".foo" });
+new Conf<UnicornFoo>({ clearInvalidConfig: false });
+new Conf<UnicornFoo>({ serialize: value => "foo" });
+new Conf<UnicornFoo>({ deserialize: string => ({}) });
+new Conf<UnicornFoo>({ projectSuffix: "foo" });
 
-new Conf<string>({schema: {foo: {type: 'string'}}});
-expectError(new Conf<string>({schema: {foo: {type: 'nope'}}}));
+new Conf<UnicornFoo>({
+	schema: {
+		foo: { type: "string" },
+		unicorn: { type: "boolean" },
+		hello: { type: "number" }
+	}
+});
+expectError(
+	new Conf<UnicornFoo>({
+		schema: {
+			foo: { type: "nope" },
+			unicorn: { type: "nope" },
+			hello: { type: "nope" }
+		}
+	})
+);
 
-conf.set('foo', 'bar');
-conf.set('hello', 1);
-conf.set('unicorn', false);
+conf.set("foo", "bar");
+conf.set("hello", 1);
+conf.set("unicorn", false);
 
-expectType<string | number | boolean>(conf.get('foo'));
-expectType<string | number | boolean>(conf.get('foo', 'bar'));
-conf.delete('foo');
-expectType<boolean>(conf.has('foo'));
+expectType<string>(conf.get("foo"));
+expectType<string>(conf.get("foo", "bar"));
+conf.delete("foo");
+expectType<boolean>(conf.has("foo"));
 conf.clear();
-const off = conf.onDidChange('foo', (oldValue, newValue) => {
-	expectType<string | number | boolean | undefined>(oldValue);
-	expectType<string | number | boolean | undefined>(newValue);
+const off = conf.onDidChange("foo", (oldValue, newValue) => {
+	expectType<UnicornFoo[keyof UnicornFoo]>(oldValue);
+	expectType<UnicornFoo[keyof UnicornFoo]>(newValue);
 });
 
 expectType<() => void>(off);
 off();
 
 conf.store = {
-	foo: 'bar',
-	unicorn: 'rainbow'
+	foo: "bar",
+	unicorn: false
 };
 expectType<string>(conf.path);
 expectType<number>(conf.size);
 
-expectType<IterableIterator<[string, string | number | boolean]>>(
+expectType<IterableIterator<[keyof UnicornFoo, UnicornFoo[keyof UnicornFoo]]>>(
 	conf[Symbol.iterator]()
 );
 for (const [key, value] of conf) {
-	expectType<string>(key);
-	expectType<string | number | boolean>(value);
+	expectType<keyof UnicornFoo>(key);
+	expectType<UnicornFoo[keyof UnicornFoo]>(value);
 }
