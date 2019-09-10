@@ -42,8 +42,6 @@ new Conf<UnicornFoo>({
 	}
 });
 
-new Conf<string>({schema: {foo: {type: 'string'}}});
-expectError(new Conf<string>({schema: {foo: {type: 'nope'}}}));
 expectError(
 	new Conf<UnicornFoo>({
 		schema: {
