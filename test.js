@@ -775,6 +775,8 @@ test('`watch` option watches for config file changes by file write', async t => 
 	})();
 
 	await pEvent(conf.events, 'change');
+});
+
 test('migrations - should save the project version as the initial migrated version', t => {
 	const cwd = tempy.directory();
 

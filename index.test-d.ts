@@ -26,6 +26,7 @@ new Conf<UnicornFoo>({clearInvalidConfig: false});
 new Conf<UnicornFoo>({serialize: value => 'foo'});
 new Conf<UnicornFoo>({deserialize: string => ({})});
 new Conf<UnicornFoo>({projectSuffix: 'foo'});
+new Conf<UnicornFoo>({watch: true});
 
 new Conf<UnicornFoo>({
 	schema: {
@@ -40,19 +41,6 @@ new Conf<UnicornFoo>({
 		}
 	}
 });
-new Conf<string>({configName: ''});
-new Conf<string>({projectName: 'foo'});
-new Conf<string>({cwd: ''});
-new Conf<string>({encryptionKey: ''});
-new Conf<string>({encryptionKey: new Buffer('')});
-new Conf<string>({encryptionKey: new Uint8Array([1])});
-new Conf<string>({encryptionKey: new DataView(new ArrayBuffer(2))});
-new Conf<string>({fileExtension: '.foo'});
-new Conf<string>({clearInvalidConfig: false});
-new Conf<string>({serialize: value => 'foo'});
-new Conf<string>({deserialize: string => ({})});
-new Conf<string>({projectSuffix: 'foo'});
-new Conf<string>({watch: true});
 
 new Conf<string>({schema: {foo: {type: 'string'}}});
 expectError(new Conf<string>({schema: {foo: {type: 'nope'}}}));

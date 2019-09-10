@@ -112,6 +112,8 @@ class Conf {
 
 		if (options.watch) {
 			this._watch();
+		}
+
 		if (options.migrations) {
 			if (!options.projectVersion) {
 				options.projectVersion = getPackageData().version;
@@ -154,7 +156,13 @@ class Conf {
 			data = Buffer.concat([initializationVector, Buffer.from(':'), cipher.update(Buffer.from(data)), cipher.final()]);
 		}
 
-		writeFileAtomic.sync(this.path, data);
+		// Temporary workaround for Conf being packaged in a Ubuntu Snap app.
+		// See https://github.com/sindresorhus/conf/pull/82
+		if (process.env.SNAP) {
+			fs.writeFileSync(this.path, data);
+		} else {
+			writeFileAtomic.sync(this.path, data);
+		}
 	}
 
 	_watch() {
@@ -168,6 +176,8 @@ class Conf {
 			// On Linux and Windows, writing to the config file emits a `rename` event, so we skip checking the event type.
 			this.events.emit('change');
 		}, {wait: 100}));
+	}
+
 	_migrate(migrations, versionToMigrate) {
 		let previousMigratedVersion = this._get(MIGRATION_KEY, '0.0.0');
 
@@ -403,21 +413,6 @@ class Conf {
 
 		this._validate(value);
 		this._write(value);
-
-		if (this.encryptionKey) {
-			const initializationVector = crypto.randomBytes(16);
-			const password = crypto.pbkdf2Sync(this.encryptionKey, initializationVector.toString(), 10000, 32, 'sha512');
-			const cipher = crypto.createCipheriv(encryptionAlgorithm, password, initializationVector);
-			data = Buffer.concat([initializationVector, Buffer.from(':'), cipher.update(Buffer.from(data)), cipher.final()]);
-		}
-
-		// Temporary workaround for Conf being packaged in a Ubuntu Snap app.
-		// See https://github.com/sindresorhus/conf/pull/82
-		if (process.env.SNAP) {
-			fs.writeFileSync(this.path, data);
-		} else {
-			writeFileAtomic.sync(this.path, data);
-		}
 
 		this.events.emit('change');
 	}
