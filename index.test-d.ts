@@ -24,7 +24,7 @@ new Conf<UnicornFoo>({encryptionKey: new DataView(new ArrayBuffer(2))});
 new Conf<UnicornFoo>({fileExtension: '.foo'});
 new Conf<UnicornFoo>({clearInvalidConfig: false});
 new Conf<UnicornFoo>({serialize: value => 'foo'});
-new Conf<UnicornFoo>({deserialize: string => ({})});
+new Conf<UnicornFoo>({deserialize: string => ({ foo: 'foo', unicorn: true })});
 new Conf<UnicornFoo>({projectSuffix: 'foo'});
 
 new Conf<UnicornFoo>({

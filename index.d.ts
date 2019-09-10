@@ -140,7 +140,7 @@ declare namespace Conf {
 
 		@default value => JSON.stringify(value, null, '\t')
 		*/
-		readonly serialize?: (value: Partial<T>) => string;
+		readonly serialize?: (value: T) => string;
 
 		/**
 		Function to deserialize the config object from a UTF-8 string when reading the config file.
@@ -149,7 +149,7 @@ declare namespace Conf {
 
 		@default JSON.parse
 		*/
-		readonly deserialize?: (text: string) => Partial<T>;
+		readonly deserialize?: (text: string) => T;
 
 		/**
 		__You most likely don't need this. Please don't use it unless you really have to.__
@@ -208,7 +208,7 @@ declare namespace Conf {
 Simple config handling for your app or module.
 */
 declare class Conf<T = any> implements Iterable<[keyof T, T[keyof T]]> {
-	store: Partial<T>;
+	store: T;
 	readonly path: string;
 	readonly size: number;
 
@@ -255,7 +255,7 @@ declare class Conf<T = any> implements Iterable<[keyof T, T[keyof T]]> {
 
 	@param object - A hashmap of items to set at once.
 	*/
-	set(object: Partial<T>): void;
+	set(object: T): void;
 
 	/**
 	Get an item.
