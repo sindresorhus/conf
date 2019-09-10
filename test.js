@@ -49,6 +49,12 @@ test('.set() - with object', t => {
 	t.is(t.context.config.get('baz.foo.bar'), 'baz');
 });
 
+test('.set() - with Date', t => {
+	t.context.config.set('dateobj', new Date());
+	const myDate = t.context.config.get('dateobj');
+	t.true(myDate instanceof Date);
+});
+
 test('.set() - with undefined', t => {
 	t.throws(() => {
 		t.context.config.set('foo', undefined);

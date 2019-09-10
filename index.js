@@ -38,6 +38,7 @@ const checkValueType = (key, value) => {
 
 const INTERNAL_KEY = '__internal__';
 const MIGRATION_KEY = `${INTERNAL_KEY}.migrations.version`;
+const TYPE_KEY = `${INTERNAL_KEY}.type`;
 
 class Conf {
 	constructor(options) {
@@ -284,11 +285,24 @@ class Conf {
 	}
 
 	get(key, defaultValue) {
+		let returnValue;
+
 		if (this._options.accessPropertiesByDotNotation) {
-			return dotProp.get(this.store, key, defaultValue);
+			returnValue = dotProp.get(this.store, key, defaultValue);
+		} else {
+			returnValue = key in this.store ? this.store[key] : defaultValue;
 		}
 
-		return key in this.store ? this.store[key] : defaultValue;
+		if (returnValue !== undefined && returnValue[TYPE_KEY] !== undefined) {
+			switch (returnValue[TYPE_KEY]) {
+				case 'Date':
+					return new Date(returnValue.val);
+				default:
+					return returnValue.val;
+			}
+		}
+
+		return returnValue;
 	}
 
 	set(key, value) {
@@ -308,6 +322,13 @@ class Conf {
 
 		const set = (key, value) => {
 			checkValueType(key, value);
+			if (value instanceof Date) {
+				value = {
+					[TYPE_KEY]: 'Date',
+					val: value
+				};
+			}
+
 			if (this._options.accessPropertiesByDotNotation) {
 				dotProp.set(store, key, value);
 			} else {
