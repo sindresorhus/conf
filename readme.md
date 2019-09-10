@@ -42,17 +42,17 @@ Or [create a subclass](https://github.com/sindresorhus/electron-store/blob/maste
 
 Changes are written to disk atomically, so if the process crashes during a write, it will not corrupt the existing config.
 
-### Conf([options])
+### Conf(options?)
 
 Returns a new instance.
 
 ### options
 
-Type: `Object`
+Type: `object`
 
 #### defaults
 
-Type: `Object`
+Type: `object`
 
 Default values for the config items.
 
@@ -60,7 +60,7 @@ Default values for the config items.
 
 #### schema
 
-Type: `Object`
+Type: `object`
 
 [JSON Schema](https://json-schema.org) to validate your config data.
 
@@ -97,6 +97,35 @@ config.set('foo', '1');
 
 **Note:** The `default` value will be overwritten by the `defaults` option if set.
 
+### migrations
+
+Type: `object`
+
+You can use migrations to perform operations to the store whenever a version is upgraded.
+
+The `migrations` object should be consisted of a key-value pair of `version`: `handler`.
+
+Example:
+
+```js
+const Conf = require('conf');
+
+const store = new Conf({
+	migrations: {
+		'0.0.1': store => {
+			store.set('debug phase', true);
+		},
+		'1.0.0': store => {
+			store.delete('debug phase');
+			store.set('phase', '1.0');
+		},
+		'1.0.2': store => {
+			store.set('phase', '>1.0');
+		}
+	}
+});
+```
+
 #### configName
 
 Type: `string`<br>
@@ -111,7 +140,14 @@ Useful if you need multiple config files for your app or module. For example, di
 Type: `string`<br>
 Default: The `name` field in the package.json closest to where `conf` is imported.
 
-You only need to specify this if you don't have a package.json file in your project.
+You only need to specify this if you don't have a package.json file in your project or if it doesn't have a name defined within it.
+
+#### projectVersion
+
+Type: `string`<br>
+Default: The `version` field in the package.json closest to where `conf` is imported.
+
+You only need to specify this if you don't have a package.json file in your project or if it doesn't have a version defined within it.
 
 #### cwd
 
@@ -126,7 +162,7 @@ The only use-case I can think of is having the config located in the app directo
 
 #### encryptionKey
 
-Type: `string` `Buffer` `TypedArray` `DataView`<br>
+Type: `string | Buffer | TypedArray | DataView`<br>
 Default: `undefined`
 
 This can be used to secure sensitive data **if** the encryption key is stored in a secure manner (not plain-text) in the Node.js app. For example, by using [`node-keytar`](https://github.com/atom/node-keytar) to store the encryption key securely, or asking the encryption key from the user (a password) and then storing it in a variable.
@@ -192,6 +228,8 @@ Default: `true`
 Accessing nested properties by dot notation. For example:
 
 ```js
+const Conf = require('conf');
+
 const config = new Conf();
 
 config.set({
@@ -209,6 +247,8 @@ console.log(config.get('foo.bar.foobar'));
 Alternatively, you can set this option to `false` so the whole string would be treated as one key.
 
 ```js
+const Conf = require('conf');
+
 const config = new Conf({accessPropertiesByDotNotation: false});
 
 config.set({
@@ -291,7 +331,6 @@ conf.store = {
 Get the path to the config file.
 
 
-
 ## FAQ
 
 ### How is this different from [`configstore`](https://github.com/yeoman/configstore)?
@@ -320,8 +359,3 @@ const config = new Conf({
 
 - [electron-store](https://github.com/sindresorhus/electron-store) - Simple data persistence for your Electron app or module
 - [cache-conf](https://github.com/SamVerschueren/cache-conf) - Simple cache config handling for your app or module
-
-
-## License
-
-MIT © [Sindre Sorhus](https://sindresorhus.com)

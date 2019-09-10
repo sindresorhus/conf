@@ -2,13 +2,15 @@
 import {JSONSchema} from 'json-schema-typed';
 
 declare namespace Conf {
+	type Schema = JSONSchema;
+
 	interface Options<T> {
 		/**
 		Config used if there are no existing config.
 
 		**Note:** The values in `defaults` will overwrite the `default` key in the `schema` option.
 		*/
-		readonly defaults?: {[key: string]: T};
+		readonly defaults?: Readonly<T>;
 
 		/**
 		[JSON Schema](https://json-schema.org) to validate your config data.
@@ -45,7 +47,7 @@ declare namespace Conf {
 
 		**Note:** The `default` value will be overwritten by the `defaults` option if set.
 		*/
-		readonly schema?: {[key: string]: JSONSchema};
+		readonly schema?: {[P in keyof T]: Schema};
 
 		/**
 		Name of the config file (without extension).
@@ -57,9 +59,45 @@ declare namespace Conf {
 		readonly configName?: string;
 
 		/**
-		You only need to specify this if you don't have a `package.json` file in your project. Default: The name field in the `package.json` closest to where `conf` is imported.
+		You only need to specify this if you don't have a package.json file in your project or if it doesn't have a name defined within it.
+
+		Default: The name field in the `package.json` closest to where `conf` is imported.
 		*/
 		readonly projectName?: string;
+
+		/**
+		You only need to specify this if you don't have a package.json file in your project or if it doesn't have a version defined within it.
+
+		Default: The name field in the `package.json` closest to where `conf` is imported.
+		*/
+		readonly projectVersion?: string;
+
+		/*
+		You can use migrations to perform operations to the store whenever a version is changed.
+
+		The `migrations` object should consist of a key-value pair of `version`: `handler`.
+
+		@example
+		```
+		import Conf = require('conf');
+
+		const store = new Conf({
+			migrations: {
+				'0.0.1': store => {
+					store.set('debug phase', true);
+				},
+				'1.0.0': store => {
+					store.delete('debug phase');
+					store.set('phase', '1.0');
+				},
+				'1.0.2': store => {
+					store.set('phase', '>1.0');
+				}
+			}
+		});
+		```
+		*/
+		readonly migrations?: {[version: string]: (store: Conf<T>) => void};
 
 		/**
 		__You most likely don't need this. Please don't use it unless you really have to.__
@@ -102,7 +140,7 @@ declare namespace Conf {
 
 		@default value => JSON.stringify(value, null, '\t')
 		*/
-		readonly serialize?: (value: {[key: string]: T}) => string;
+		readonly serialize?: (value: Partial<T>) => string;
 
 		/**
 		Function to deserialize the config object from a UTF-8 string when reading the config file.
@@ -111,7 +149,7 @@ declare namespace Conf {
 
 		@default JSON.parse
 		*/
-		readonly deserialize?: (text: string) => {[key: string]: T};
+		readonly deserialize?: (text: string) => Partial<T>;
 
 		/**
 		__You most likely don't need this. Please don't use it unless you really have to.__
@@ -178,8 +216,8 @@ declare namespace Conf {
 /**
 Simple config handling for your app or module.
 */
-declare class Conf<T> implements Iterable<[string, T]> {
-	store: {[key: string]: T};
+declare class Conf<T = any> implements Iterable<[keyof T, T[keyof T]]> {
+	store: Partial<T>;
 	readonly path: string;
 	readonly size: number;
 
@@ -188,16 +226,23 @@ declare class Conf<T> implements Iterable<[string, T]> {
 	```
 	import Conf = require('conf');
 
-	const config = new Conf();
+	type StoreType = {
+		isRainbow: boolean,
+		unicorn?: string
+	}
+
+	const config = new Conf<StoreType>({
+		defaults: {
+			isRainbow: true
+		}
+	});
+
+	config.get('isRainbow');
+	//=> true
 
 	config.set('unicorn', '🦄');
 	console.log(config.get('unicorn'));
 	//=> '🦄'
-
-	// Use dot-notation to access nested properties
-	config.set('foo.bar', true);
-	console.log(config.get('foo'));
-	//=> {bar: true}
 
 	config.delete('unicorn');
 	console.log(config.get('unicorn'));
@@ -212,14 +257,14 @@ declare class Conf<T> implements Iterable<[string, T]> {
 	@param key - You can use [dot-notation](https://github.com/sindresorhus/dot-prop) in a key to access nested properties.
 	@param value - Must be JSON serializable. Trying to set the type `undefined`, `function`, or `symbol` will result in a `TypeError`.
 	*/
-	set(key: string, value: T): void;
+	set<K extends keyof T>(key: K, value: T[K]): void;
 
 	/**
 	Set multiple items at once.
 
 	@param object - A hashmap of items to set at once.
 	*/
-	set(object: {[key: string]: T}): void;
+	set(object: Partial<T>): void;
 
 	/**
 	Get an item.
@@ -227,21 +272,21 @@ declare class Conf<T> implements Iterable<[string, T]> {
 	@param key - The key of the item to get.
 	@param defaultValue - The default value if the item does not exist.
 	*/
-	get(key: string, defaultValue?: T): T;
+	get<K extends keyof T>(key: K, defaultValue?: T[K]): T[K];
 
 	/**
 	Check if an item exists.
 
 	@param key - The key of the item to check.
 	*/
-	has(key: string): boolean;
+	has<K extends keyof T>(key: K): boolean;
 
 	/**
 	Delete an item.
 
 	@param key - The key of the item to delete.
 	*/
-	delete(key: string): void;
+	delete<K extends keyof T>(key: K): void;
 
 	/**
 	Delete all items.
@@ -254,9 +299,9 @@ declare class Conf<T> implements Iterable<[string, T]> {
 	@param key - The key wo watch.
 	@param callback - A callback function that is called on any changes. When a `key` is first set `oldValue` will be `undefined`, and when a key is deleted `newValue` will be `undefined`.
 	*/
-	onDidChange(
-		key: string,
-		callback: (newValue: T | undefined, oldValue: T | undefined) => void
+	onDidChange<K extends keyof T>(
+		key: K,
+		callback: (newValue?: T[K], oldValue?: T[K]) => void
 	): () => void;
 
 	/**
@@ -265,10 +310,10 @@ declare class Conf<T> implements Iterable<[string, T]> {
 	@param callback - A callback function that is called on any changes. When a `key` is first set `oldValue` will be `undefined`, and when a key is deleted `newValue` will be `undefined`.
 	*/
 	onDidAnyChange(
-		callback: (oldValue: {[key: string]: T} | undefined, newValue: {[key: string]: T} | undefined) => void
+		callback: (newValue?: Readonly<T>, oldValue?: Readonly<T>) => void
 	): () => void;
 
-	[Symbol.iterator](): IterableIterator<[string, T]>;
+	[Symbol.iterator](): IterableIterator<[keyof T, T[keyof T]]>;
 }
 
 export = Conf;

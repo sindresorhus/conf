@@ -12,6 +12,8 @@ const envPaths = require('env-paths');
 const writeFileAtomic = require('write-file-atomic');
 const Ajv = require('ajv');
 const debounceFn = require('debounce-fn');
+const semver = require('semver');
+const onetime = require('onetime');
 
 const plainObject = () => Object.create(null);
 const encryptionAlgorithm = 'aes-256-cbc';
@@ -34,6 +36,9 @@ const checkValueType = (key, value) => {
 	}
 };
 
+const INTERNAL_KEY = '__internal__';
+const MIGRATION_KEY = `${INTERNAL_KEY}.migrations.version`;
+
 class Conf {
 	constructor(options) {
 		options = {
@@ -47,12 +52,18 @@ class Conf {
 			...options
 		};
 
+		const getPackageData = onetime(() => {
+			const packagePath = pkgUp.sync(parentDir);
+			// Can't use `require` because of Webpack being annoying:
+			// https://github.com/webpack/webpack/issues/196
+			const packageData = packagePath && JSON.parse(fs.readFileSync(packagePath, 'utf8'));
+
+			return packageData || {};
+		});
+
 		if (!options.cwd) {
 			if (!options.projectName) {
-				const pkgPath = pkgUp.sync(parentDir);
-				// Can't use `require` because of Webpack being annoying:
-				// https://github.com/webpack/webpack/issues/196
-				options.projectName = pkgPath && JSON.parse(fs.readFileSync(pkgPath, 'utf8')).name;
+				options.projectName = getPackageData().name;
 			}
 
 			if (!options.projectName) {
@@ -101,6 +112,16 @@ class Conf {
 
 		if (options.watch) {
 			this._watch();
+		if (options.migrations) {
+			if (!options.projectVersion) {
+				options.projectVersion = getPackageData().version;
+			}
+
+			if (!options.projectVersion) {
+				throw new Error('Project version could not be inferred. Please specify the `projectVersion` option.');
+			}
+
+			this._migrate(options.migrations, options.projectVersion);
 		}
 	}
 
@@ -147,6 +168,83 @@ class Conf {
 			// On Linux and Windows, writing to the config file emits a `rename` event, so we skip checking the event type.
 			this.events.emit('change');
 		}, {wait: 100}));
+	_migrate(migrations, versionToMigrate) {
+		let previousMigratedVersion = this._get(MIGRATION_KEY, '0.0.0');
+
+		const newerVersions = Object.keys(migrations)
+			.filter(candidateVersion => this._shouldPerformMigration(candidateVersion, previousMigratedVersion, versionToMigrate))
+			.sort(semver.compare);
+
+		let storeBackup = {...this.store};
+
+		for (const version of newerVersions) {
+			try {
+				const migration = migrations[version];
+				migration(this);
+
+				this._set(MIGRATION_KEY, version);
+
+				previousMigratedVersion = version;
+				storeBackup = {...this.store};
+			} catch (error) {
+				this.store = storeBackup;
+
+				throw new Error(
+					`Something went wrong during the migration! Changes applied to the store until this failed migration will be restored. ${error}`
+				);
+			}
+		}
+
+		if (!semver.eq(previousMigratedVersion, versionToMigrate)) {
+			this._set(MIGRATION_KEY, versionToMigrate);
+		}
+	}
+
+	_containsReservedKey(key) {
+		if (typeof key === 'object') {
+			const firstKey = Object.keys(key)[0];
+
+			if (firstKey === INTERNAL_KEY) {
+				return true;
+			}
+		}
+
+		if (typeof key !== 'string') {
+			return false;
+		}
+
+		if (this._options.accessPropertiesByDotNotation) {
+			if (key.startsWith(`${INTERNAL_KEY}.`)) {
+				return true;
+			}
+
+			return false;
+		}
+
+		return false;
+	}
+
+	_shouldPerformMigration(candidateVersion, previousMigratedVersion, versionToMigrate) {
+		if (semver.lte(candidateVersion, previousMigratedVersion)) {
+			return false;
+		}
+
+		if (semver.gt(candidateVersion, versionToMigrate)) {
+			return false;
+		}
+
+		return true;
+	}
+
+	_get(key, defaultValue) {
+		return dotProp.get(this.store, key, defaultValue);
+	}
+
+	_set(key, value) {
+		const {store} = this;
+		dotProp.set(store, key, value);
+
+		this.store = store;
 	}
 
 	get(key, defaultValue) {
@@ -164,6 +262,10 @@ class Conf {
 
 		if (typeof key !== 'object' && value === undefined) {
 			throw new TypeError('Use `delete()` to clear values');
+		}
+
+		if (this._containsReservedKey(key)) {
+			throw new TypeError(`Please don't use the ${INTERNAL_KEY} key, as it's used to manage this module internal operations.`);
 		}
 
 		const {store} = this;
@@ -301,6 +403,21 @@ class Conf {
 
 		this._validate(value);
 		this._write(value);
+
+		if (this.encryptionKey) {
+			const initializationVector = crypto.randomBytes(16);
+			const password = crypto.pbkdf2Sync(this.encryptionKey, initializationVector.toString(), 10000, 32, 'sha512');
+			const cipher = crypto.createCipheriv(encryptionAlgorithm, password, initializationVector);
+			data = Buffer.concat([initializationVector, Buffer.from(':'), cipher.update(Buffer.from(data)), cipher.final()]);
+		}
+
+		// Temporary workaround for Conf being packaged in a Ubuntu Snap app.
+		// See https://github.com/sindresorhus/conf/pull/82
+		if (process.env.SNAP) {
+			fs.writeFileSync(this.path, data);
+		} else {
+			writeFileAtomic.sync(this.path, data);
+		}
 
 		this.events.emit('change');
 	}
