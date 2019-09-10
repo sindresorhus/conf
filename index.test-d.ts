@@ -24,7 +24,7 @@ new Conf<UnicornFoo>({encryptionKey: new DataView(new ArrayBuffer(2))});
 new Conf<UnicornFoo>({fileExtension: '.foo'});
 new Conf<UnicornFoo>({clearInvalidConfig: false});
 new Conf<UnicornFoo>({serialize: value => 'foo'});
-new Conf<UnicornFoo>({deserialize: string => ({})});
+new Conf<UnicornFoo>({deserialize: string => ({foo: 'foo', unicorn: true})});
 new Conf<UnicornFoo>({projectSuffix: 'foo'});
 
 new Conf<UnicornFoo>({
@@ -56,9 +56,9 @@ expectError(
 	})
 );
 
-conf.set('foo', 'bar');
 conf.set('hello', 1);
 conf.set('unicorn', false);
+conf.set({foo: 'nope'});
 
 expectType<string>(conf.get('foo'));
 expectType<string>(conf.get('foo', 'bar'));
