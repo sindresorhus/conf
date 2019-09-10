@@ -56,9 +56,9 @@ expectError(
 	})
 );
 
-conf.set('foo', 'bar');
 conf.set('hello', 1);
 conf.set('unicorn', false);
+conf.set({foo: 'nope'});
 
 expectType<string>(conf.get('foo'));
 expectType<string>(conf.get('foo', 'bar'));

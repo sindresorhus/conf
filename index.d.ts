@@ -255,7 +255,7 @@ declare class Conf<T = any> implements Iterable<[keyof T, T[keyof T]]> {
 
 	@param object - A hashmap of items to set at once.
 	*/
-	set(object: T): void;
+	set(object: Partial<T>): void;
 
 	/**
 	Get an item.
