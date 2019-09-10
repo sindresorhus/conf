@@ -213,6 +213,8 @@ declare class Conf<T = any> implements Iterable<[keyof T, T[keyof T]]> {
 	readonly size: number;
 
 	/**
+	Changes are written to disk atomically, so if the process crashes during a write, it will not corrupt the existing config.
+
 	@example
 	```
 	import Conf = require('conf');
