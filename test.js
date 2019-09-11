@@ -55,6 +55,12 @@ test('.set() - with Date', t => {
 	t.true(myDate instanceof Date);
 });
 
+test('.set() - with Date in a nested object', t => {
+	t.context.config.set('dateobj', {str: 'this is a string', date: new Date()});
+	const myDate = t.context.config.get('dateobj').date;
+	t.true(myDate instanceof Date);
+});
+
 test('.set() - with undefined', t => {
 	t.throws(() => {
 		t.context.config.set('foo', undefined);

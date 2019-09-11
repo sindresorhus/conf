@@ -216,6 +216,13 @@ declare namespace Conf {
 		*/
 		readonly watch?: boolean;
 	}
+
+	interface ExtraType<T> {
+		name: string,
+		instance: T,
+		convertFrom: (val: T) => string | number,
+		convertTo: (val: string) => T
+	}
 }
 
 /**
@@ -225,6 +232,7 @@ declare class Conf<T = any> implements Iterable<[keyof T, T[keyof T]]> {
 	store: T;
 	readonly path: string;
 	readonly size: number;
+	readonly extraTypes: Conf.ExtraType<any>[];
 
 	/**
 	Changes are written to disk atomically, so if the process crashes during a write, it will not corrupt the existing config.
