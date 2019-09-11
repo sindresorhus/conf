@@ -270,7 +270,7 @@ declare class Conf<T = any> implements Iterable<[keyof T, T[keyof T]]> {
 	Set an item.
 
 	@param key - You can use [dot-notation](https://github.com/sindresorhus/dot-prop) in a key to access nested properties.
-	@param value - Must be JSON serializable. Trying to set the type `undefined`, `function`, or `symbol` will result in a `TypeError`.
+	@param value - Must be JSON serializable. Trying to set the type `undefined`, `function`, or `symbol` will result in a `TypeError`. Additionally Conf automatically seralizes and deserializes `Date` objects
 	*/
 	set<K extends keyof T>(key: K, value: T[K]): void;
 

@@ -276,6 +276,8 @@ You can use [dot-notation](https://github.com/sindresorhus/dot-prop) in a `key` 
 
 The instance is [`iterable`](https://developer.mozilla.org/en/docs/Web/JavaScript/Reference/Iteration_protocols) so you can use it directly in a [`for…of`](https://developer.mozilla.org/en/docs/Web/JavaScript/Reference/Statements/for...of) loop.
 
+Please see the [Supported Types](#Supported-Types) section for more information about the (de)serialization of pre-configured objects.
+
 #### .set(key, value)
 
 Set an item.
@@ -355,6 +357,15 @@ conf.store = {
 #### .path
 
 Get the path to the config file.
+
+## Supported Types
+
+As stated before `.set()` only accepts JSON serializable values, so you can't use `undefined`, `function` or `symbol`.
+Additionally Conf has the ability to automatically serialize and deserialize pre-configured objects.
+Currently supported objects are:
+- `Date` - serializes the Date to milliseconds, then back to a `Date` object when the getter is called
+
+If you want support for a new object/type please open a new issue for discussion.
 
 ## FAQ
 
