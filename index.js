@@ -53,6 +53,15 @@ class Conf {
 			...options
 		};
 
+		this.extraTypes = [
+			{
+				name: 'Date',
+				instance: Date,
+				convertFrom: val => val.getTime(),
+				convertTo: val => new Date(val)
+			}
+		];
+
 		const getPackageData = onetime(() => {
 			const packagePath = pkgUp.sync(parentDir);
 			// Can't use `require` because of Webpack being annoying:
@@ -284,25 +293,81 @@ class Conf {
 		this.store = store;
 	}
 
-	get(key, defaultValue) {
-		let returnValue;
-
-		if (this._options.accessPropertiesByDotNotation) {
-			returnValue = dotProp.get(this.store, key, defaultValue);
-		} else {
-			returnValue = key in this.store ? this.store[key] : defaultValue;
-		}
-
-		if (returnValue !== undefined && returnValue[TYPE_KEY] !== undefined) {
-			switch (returnValue[TYPE_KEY]) {
-				case 'Date':
-					return new Date(returnValue.val);
-				default:
-					return returnValue.val;
+	_serializeExtraTypes(value) {
+		// Base cases
+		for (const type of this.extraTypes) {
+			if (value instanceof type.instance) {
+				return {
+					[TYPE_KEY]: type.name,
+					val: type.convertFrom(value)
+				};
 			}
 		}
 
-		return returnValue;
+		// Sub-object handling of extra types
+		const stack = [];
+		stack.push(value);
+		while (stack.length > 0) {
+			const current = stack.pop();
+			Object.keys(current).forEach(currentItemKey => {
+				const currentItemValue = current[currentItemKey];
+				if (typeof currentItemValue === 'object') {
+					let didConvert = false;
+					for (const type of this.extraTypes) {
+						if (currentItemValue instanceof type.instance) {
+							current[currentItemKey] = {
+								[TYPE_KEY]: type.name,
+								val: type.convertFrom(currentItemValue)
+							};
+							didConvert = true;
+							break;
+						}
+					}
+
+					if (!didConvert) {
+						// Check sub-objects
+						stack.push(current[currentItemKey]);
+					}
+				}
+			});
+		}
+
+		return value;
+	}
+
+	_deserializeExtraTypes(value) {
+		// Base cases
+		for (const type of this.extraTypes) {
+			if (value[TYPE_KEY] !== undefined) {
+				return type.convertFrom(value);
+			}
+		}
+
+		// Sub-object handling of extra types
+		const stack = [];
+		stack.push(value);
+		while (stack.length > 0) {
+			const current = stack.pop();
+			Object.keys(current).forEach(currentItemKey => {
+				const currentItemValue = current[currentItemKey];
+				if (currentItemValue[TYPE_KEY] !== undefined) {
+					const currentType = this.extraTypes.find(typeInfo => typeInfo.name === currentItemValue[TYPE_KEY]);
+					current[currentItemKey] = currentType.convertTo(currentItemValue.val);
+				} else if (typeof currentItemValue === 'object') {
+					stack.push(current[currentItemKey]);
+				}
+			});
+		}
+
+		return value;
+	}
+
+	get(key, defaultValue) {
+		if (this._options.accessPropertiesByDotNotation) {
+			return dotProp.get(this.store, key, defaultValue);
+		}
+
+		return key in this.store ? this.store[key] : defaultValue;
 	}
 
 	set(key, value) {
@@ -322,12 +387,6 @@ class Conf {
 
 		const set = (key, value) => {
 			checkValueType(key, value);
-			if (value instanceof Date) {
-				value = {
-					[TYPE_KEY]: 'Date',
-					val: value
-				};
-			}
 
 			if (this._options.accessPropertiesByDotNotation) {
 				dotProp.set(store, key, value);
@@ -447,6 +506,7 @@ class Conf {
 			}
 
 			data = this.deserialize(data);
+			data = this._deserializeExtraTypes(data);
 			this._validate(data);
 			return Object.assign(plainObject(), data);
 		} catch (error) {
@@ -465,6 +525,9 @@ class Conf {
 
 	set store(value) {
 		this._ensureDirectory();
+
+		// Serialize extra types
+		value = this._serializeExtraTypes(value);
 
 		this._validate(value);
 		this._write(value);
