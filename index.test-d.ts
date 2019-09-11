@@ -26,7 +26,7 @@ new Conf<UnicornFoo>({encryptionKey: new DataView(new ArrayBuffer(2))});
 new Conf<UnicornFoo>({fileExtension: '.foo'});
 new Conf<UnicornFoo>({clearInvalidConfig: false});
 new Conf<UnicornFoo>({serialize: value => 'foo'});
-new Conf<UnicornFoo>({deserialize: string => ({foo: 'foo', unicorn: true})});
+new Conf<UnicornFoo>({deserialize: string => ({foo: 'foo', unicorn: true, myDate: new Date(1990)})});
 new Conf<UnicornFoo>({projectSuffix: 'foo'});
 new Conf<UnicornFoo>({watch: true});
 
@@ -86,7 +86,8 @@ off();
 
 conf.store = {
 	foo: 'bar',
-	unicorn: false
+	unicorn: false,
+	myDate: new Date(1991)
 };
 expectType<string>(conf.path);
 expectType<number>(conf.size);
