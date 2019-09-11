@@ -530,6 +530,9 @@ class Conf {
 		value = this._serializeExtraTypes(value);
 
 		this._validate(value);
+		let data = this.serialize(value);
+
+		this._validate(value);
 		this._write(value);
 
 		this.events.emit('change');
