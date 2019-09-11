@@ -223,6 +223,13 @@ declare namespace Conf {
 		convertFrom: (val: T) => string | number,
 		convertTo: (val: string) => T
 	}
+
+	interface ExtraType<T> {
+		name: string,
+		instance: T,
+		convertFrom: (val: T) => string | number,
+		convertTo: (val: string) => T
+	}
 }
 
 /**
