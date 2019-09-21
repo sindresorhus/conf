@@ -259,6 +259,15 @@ console.log(config.get('foo.bar.foobar'));
 //=> '🦄'
 ```
 
+#### watch
+
+type: `boolean`<br>
+Default: `false`
+
+Watch for any changes in the config file and call the callback for `onDidChange` if set. This is useful if there are multiple processes changing the same config file.
+
+**Currently this option doesn't work on Node.js 8 on macOS.**
+
 ### Instance
 
 You can use [dot-notation](https://github.com/sindresorhus/dot-prop) in a `key` to access nested properties.

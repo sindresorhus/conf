@@ -26,6 +26,7 @@ new Conf<UnicornFoo>({clearInvalidConfig: false});
 new Conf<UnicornFoo>({serialize: value => 'foo'});
 new Conf<UnicornFoo>({deserialize: string => ({foo: 'foo', unicorn: true})});
 new Conf<UnicornFoo>({projectSuffix: 'foo'});
+new Conf<UnicornFoo>({watch: true});
 
 new Conf<UnicornFoo>({
 	schema: {
@@ -40,6 +41,7 @@ new Conf<UnicornFoo>({
 		}
 	}
 });
+
 expectError(
 	new Conf<UnicornFoo>({
 		schema: {

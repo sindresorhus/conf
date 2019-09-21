@@ -40,6 +40,7 @@
 	],
 	"dependencies": {
 		"ajv": "^6.10.2",
+		"debounce-fn": "^3.0.1",
 		"dot-prop": "^5.0.0",
 		"env-paths": "^2.2.0",
 		"json-schema-typed": "^7.0.1",
@@ -54,6 +55,8 @@
 		"ava": "^2.3.0",
 		"clear-module": "^4.0.0",
 		"del": "^5.1.0",
+		"delay": "^4.3.0",
+		"p-event": "^4.1.0",
 		"tempy": "^0.3.0",
 		"tsd": "^0.7.4",
 		"xo": "^0.24.0"

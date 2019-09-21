@@ -11,6 +11,7 @@ const pkgUp = require('pkg-up');
 const envPaths = require('env-paths');
 const writeFileAtomic = require('write-file-atomic');
 const Ajv = require('ajv');
+const debounceFn = require('debounce-fn');
 const semver = require('semver');
 const onetime = require('onetime');
 
@@ -109,6 +110,10 @@ class Conf {
 			this.store = store;
 		}
 
+		if (options.watch) {
+			this._watch();
+		}
+
 		if (options.migrations) {
 			if (!options.projectVersion) {
 				options.projectVersion = getPackageData().version;
@@ -133,6 +138,44 @@ class Conf {
 				error + ` \`${dataPath.slice(1)}\` ${message};`, '');
 			throw new Error('Config schema violation:' + errors.slice(0, -1));
 		}
+	}
+
+	_ensureDirectory() {
+		// TODO: Use `fs.mkdirSync` `recursive` option when targeting Node.js 12.
+		// Ensure the directory exists as it could have been deleted in the meantime.
+		makeDir.sync(path.dirname(this.path));
+	}
+
+	_write(value) {
+		let data = this.serialize(value);
+
+		if (this.encryptionKey) {
+			const initializationVector = crypto.randomBytes(16);
+			const password = crypto.pbkdf2Sync(this.encryptionKey, initializationVector.toString(), 10000, 32, 'sha512');
+			const cipher = crypto.createCipheriv(encryptionAlgorithm, password, initializationVector);
+			data = Buffer.concat([initializationVector, Buffer.from(':'), cipher.update(Buffer.from(data)), cipher.final()]);
+		}
+
+		// Temporary workaround for Conf being packaged in a Ubuntu Snap app.
+		// See https://github.com/sindresorhus/conf/pull/82
+		if (process.env.SNAP) {
+			fs.writeFileSync(this.path, data);
+		} else {
+			writeFileAtomic.sync(this.path, data);
+		}
+	}
+
+	_watch() {
+		this._ensureDirectory();
+
+		if (!fs.existsSync(this.path)) {
+			this._write({});
+		}
+
+		fs.watch(this.path, {persistent: false}, debounceFn(() => {
+			// On Linux and Windows, writing to the config file emits a `rename` event, so we skip checking the event type.
+			this.events.emit('change');
+		}, {wait: 100}));
 	}
 
 	_migrate(migrations, versionToMigrate) {
@@ -353,8 +396,7 @@ class Conf {
 			return Object.assign(plainObject(), data);
 		} catch (error) {
 			if (error.code === 'ENOENT') {
-				// TODO: Use `fs.mkdirSync` `recursive` option when targeting Node.js 12
-				makeDir.sync(path.dirname(this.path));
+				this._ensureDirectory();
 				return plainObject();
 			}
 
@@ -367,26 +409,10 @@ class Conf {
 	}
 
 	set store(value) {
-		// Ensure the directory exists as it could have been deleted in the meantime
-		makeDir.sync(path.dirname(this.path));
+		this._ensureDirectory();
 
 		this._validate(value);
-		let data = this.serialize(value);
-
-		if (this.encryptionKey) {
-			const initializationVector = crypto.randomBytes(16);
-			const password = crypto.pbkdf2Sync(this.encryptionKey, initializationVector.toString(), 10000, 32, 'sha512');
-			const cipher = crypto.createCipheriv(encryptionAlgorithm, password, initializationVector);
-			data = Buffer.concat([initializationVector, Buffer.from(':'), cipher.update(Buffer.from(data)), cipher.final()]);
-		}
-
-		// Temporary workaround for Conf being packaged in a Ubuntu Snap app.
-		// See https://github.com/sindresorhus/conf/pull/82
-		if (process.env.SNAP) {
-			fs.writeFileSync(this.path, data);
-		} else {
-			writeFileAtomic.sync(this.path, data);
-		}
+		this._write(value);
 
 		this.events.emit('change');
 	}
