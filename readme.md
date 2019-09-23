@@ -279,9 +279,9 @@ Set multiple items at once.
 
 Get an item or `defaultValue` if the item does not exist.
 
-#### .reset(key)
+#### .reset(...keys)
 
-Reset an item to its predefined `defaultValue`.
+Reset an item to its default value, as defined on `defaults` or its `schema` option.
 
 #### .has(key)
 

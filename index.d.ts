@@ -266,11 +266,11 @@ declare class Conf<T = any> implements Iterable<[keyof T, T[keyof T]]> {
 	get<K extends keyof T>(key: K, defaultValue?: T[K]): T[K];
 
 	/**
-	 Reset an item to its default value (as defined on its schema).
+	 Reset an item to its default value, as defined on `defaults` or its `schema` option.
 
-	 @param key - The key of the item to get.
+	 @param keys - The key/keys of the item/items to reset.
 	 */
-	reset<K extends keyof T>(key: K): void;
+	reset<K extends keyof T>(...keys: K[]): void;
 
 	/**
 	Check if an item exists.

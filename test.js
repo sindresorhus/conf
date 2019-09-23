@@ -11,7 +11,6 @@ const fixture = '🦄';
 
 test.beforeEach(t => {
 	t.context.config = new Conf({cwd: tempy.directory()});
-	t.context.configWithSchema = new Conf({cwd: tempy.directory(), schema: {foo: {default: 42}}});
 	t.context.configWithoutDotNotation = new Conf({cwd: tempy.directory(), accessPropertiesByDotNotation: false});
 });
 
@@ -97,9 +96,20 @@ test('.has()', t => {
 });
 
 test('.reset()', t => {
+	t.context.configWithSchema = new Conf({cwd: tempy.directory(), schema: {foo: {default: 42}, bar: {default: 99}}});
+	t.context.configWithDefaults = new Conf({cwd: tempy.directory(), defaults: {foo: 42, bar: 99}});
+
 	t.context.configWithSchema.set('foo', 77);
-	t.context.configWithSchema.reset('foo');
+	t.context.configWithSchema.set('bar', 0);
+	t.context.configWithSchema.reset('foo', 'bar');
 	t.is(t.context.configWithSchema.get('foo'), 42);
+	t.is(t.context.configWithSchema.get('bar'), 99);
+
+	t.context.configWithDefaults.set('foo', 77);
+	t.context.configWithDefaults.set('bar', 0);
+	t.context.configWithDefaults.reset('foo', 'bar');
+	t.is(t.context.configWithDefaults.get('foo'), 42);
+	t.is(t.context.configWithDefaults.get('bar'), 99);
 });
 
 test('.delete()', t => {

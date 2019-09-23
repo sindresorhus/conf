@@ -62,9 +62,8 @@ conf.set('hello', 1);
 conf.set('unicorn', false);
 
 expectType<string>(conf.get('foo'));
+expectType<void>(conf.reset('foo', 'unicorn'));
 expectType<string>(conf.get('foo', 'bar'));
-conf.reset('foo');
-expectType<string>(conf.get('foo'));
 conf.delete('foo');
 expectType<boolean>(conf.has('foo'));
 conf.clear();
