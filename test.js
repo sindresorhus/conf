@@ -96,8 +96,25 @@ test('.has()', t => {
 });
 
 test('.reset()', t => {
-	t.context.configWithSchema = new Conf({cwd: tempy.directory(), schema: {foo: {default: 42}, bar: {default: 99}}});
-	t.context.configWithDefaults = new Conf({cwd: tempy.directory(), defaults: {foo: 42, bar: 99}});
+	t.context.configWithSchema = new Conf({
+		cwd: tempy.directory(),
+		schema: {
+			foo: {
+				default: 42
+			},
+			bar: {
+				default: 99
+			}
+		}
+	});
+
+	t.context.configWithDefaults = new Conf({
+		cwd: tempy.directory(),
+		defaults: {
+			foo: 42,
+			bar: 99
+		}
+	});
 
 	t.context.configWithSchema.set('foo', 77);
 	t.context.configWithSchema.set('bar', 0);

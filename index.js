@@ -282,11 +282,11 @@ class Conf {
 	}
 
 	reset(...keys) {
-		keys.forEach(key => {
+		for (const key of keys) {
 			if (this._defaultValues[key]) {
-				return this.set(key, this._defaultValues[key]);
+				this.set(key, this._defaultValues[key]);
 			}
-		});
+		}
 	}
 
 	delete(key) {
