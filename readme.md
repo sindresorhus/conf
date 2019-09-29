@@ -281,7 +281,7 @@ Get an item or `defaultValue` if the item does not exist.
 
 #### .reset(...keys)
 
-Reset an item to its default value, as defined on `defaults` or its `schema` option.
+Reset items to their default values, as defined by the `defaults` or `schema` option.
 
 #### .has(key)
 
