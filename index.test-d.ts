@@ -31,7 +31,8 @@ new Conf<UnicornFoo>({watch: true});
 new Conf<UnicornFoo>({
 	schema: {
 		foo: {
-			type: 'string'
+			type: 'string',
+			default: 'foobar'
 		},
 		unicorn: {
 			type: 'boolean'
@@ -63,6 +64,7 @@ conf.set('unicorn', false);
 conf.set({foo: 'nope'});
 
 expectType<string>(conf.get('foo'));
+expectType<void>(conf.reset('foo', 'unicorn'));
 expectType<string>(conf.get('foo', 'bar'));
 conf.delete('foo');
 expectType<boolean>(conf.has('foo'));

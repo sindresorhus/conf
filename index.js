@@ -74,6 +74,7 @@ class Conf {
 		}
 
 		this._options = options;
+		this._defaultValues = {};
 
 		if (options.schema) {
 			if (typeof options.schema !== 'object') {
@@ -90,7 +91,21 @@ class Conf {
 				type: 'object',
 				properties: options.schema
 			};
+
 			this._validator = ajv.compile(schema);
+
+			for (const [key, value] of Object.entries(options.schema)) {
+				if (value && value.default) {
+					this._defaultValues[key] = value.default;
+				}
+			}
+		}
+
+		if (options.defaults) {
+			this._defaultValues = {
+				...this._defaultValues,
+				...options.defaults
+			};
 		}
 
 		this.events = new EventEmitter();
@@ -307,6 +322,14 @@ class Conf {
 		}
 
 		return key in this.store;
+	}
+
+	reset(...keys) {
+		for (const key of keys) {
+			if (this._defaultValues[key]) {
+				this.set(key, this._defaultValues[key]);
+			}
+		}
 	}
 
 	delete(key) {
