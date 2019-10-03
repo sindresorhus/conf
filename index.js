@@ -191,7 +191,7 @@ class Conf {
 	}
 
 	_isVersionInRangeFormat(version) {
-		return version.match(/^\d+(\.\d+)*$/) === null;
+		return semver.clean(version) === null;
 	}
 
 	_shouldPerformMigration(candidateVersion, previousMigratedVersion, versionToMigrate) {
