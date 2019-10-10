@@ -154,7 +154,7 @@ You only need to specify this if you don't have a package.json file in your proj
 Type: `string`<br>
 Default: System default [user config directory](https://github.com/sindresorhus/env-paths#pathsconfig)
 
-**You most likely don't need this. Please don't use it unless you really have to.**
+**You most likely don't need this. Please don't use it unless you really have to. By default, it will pick the optimal location by adhering to system conventions. You are very likely to get this wrong and annoy users.**
 
 Overrides `projectName`.
 
