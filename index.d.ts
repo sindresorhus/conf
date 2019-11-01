@@ -73,9 +73,11 @@ declare namespace Conf {
 		readonly projectVersion?: string;
 
 		/*
+		_Don't use this feature until [this issue](https://github.com/sindresorhus/conf/issues/92) has been fixed._
+
 		You can use migrations to perform operations to the store whenever a version is changed.
 
-		The `migrations` object should consist of a key-value pair of `version`: `handler`.
+		The `migrations` object should consist of a key-value pair of `'version': handler`. The `version` can also be a [semver range](https://github.com/npm/node-semver#ranges).
 
 		@example
 		```
@@ -84,14 +86,17 @@ declare namespace Conf {
 		const store = new Conf({
 			migrations: {
 				'0.0.1': store => {
-					store.set('debug phase', true);
+					store.set('debugPhase', true);
 				},
 				'1.0.0': store => {
-					store.delete('debug phase');
-					store.set('phase', '1.0');
+					store.delete('debugPhase');
+					store.set('phase', '1.0.0');
 				},
 				'1.0.2': store => {
-					store.set('phase', '>1.0');
+					store.set('phase', '1.0.2');
+				},
+				'>=2.0.0': store => {
+					store.set('phase', '>=2.0.0');
 				}
 			}
 		});
