@@ -696,6 +696,36 @@ test('schema - validate Conf default', t => {
 	}, 'Config schema violation: `foo` should be string');
 });
 
+test('ajvValidator - validate Conf default', t => {
+	const Ajv = require('ajv');
+	const ajv = new Ajv({
+		allErrors: true,
+		format: 'full',
+		useDefaults: true,
+		errorDataPath: 'property'
+	});
+	const schema = {
+		type: 'object',
+		properties: {
+			foo: {
+				type: 'string'
+			}
+		}
+	};
+
+	const validator = ajv.compile(schema);
+
+	t.throws(() => {
+		new Conf({ // eslint-disable-line no-new
+			cwd: tempy.directory(),
+			defaults: {
+				foo: 1
+			},
+			ajvValidator: validator
+		});
+	}, 'Config schema violation: `foo` should be string');
+});
+
 test('.get() - without dot notation', t => {
 	t.is(t.context.configWithoutDotNotation.get('foo'), undefined);
 	t.is(t.context.configWithoutDotNotation.get('foo', '🐴'), '🐴');

@@ -99,6 +99,12 @@ class Conf {
 					this._defaultValues[key] = value.default;
 				}
 			}
+		} else if (options.ajvValidator) {
+			if (typeof options.ajvValidator !== 'function') {
+				throw new TypeError('The `schema` option must be an object.');
+			}
+
+			this._validator = options.ajvValidator;
 		}
 
 		if (options.defaults) {
