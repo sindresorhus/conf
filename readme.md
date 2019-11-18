@@ -103,7 +103,7 @@ Type: `object`
 
 **Don't use this feature until [this issue](https://github.com/sindresorhus/conf/issues/92) has been fixed.**
 
-You can use migrations to perform operations to the store whenever a version is upgraded.
+You can use migrations to perform operations to the store whenever a **project version** is upgraded.
 
 The `migrations` object should consist of a key-value pair of `'version': handler`. The `version` can also be a [semver range](https://github.com/npm/node-semver#ranges).
 
@@ -129,7 +129,10 @@ const store = new Conf({
 		}
 	}
 });
+
 ```
+
+> Note: The version the migrations use refers to the **project version** by default. If you want to change this behavior, specify a [projectVersion](#projectVersion)
 
 #### configName
 
