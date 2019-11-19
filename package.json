@@ -4,6 +4,7 @@
 	"description": "Simple config handling for your app or module",
 	"license": "MIT",
 	"repository": "sindresorhus/conf",
+	"main": "dist/index.js",
 	"author": {
 		"name": "Sindre Sorhus",
 		"email": "sindresorhus@gmail.com",
@@ -13,12 +14,15 @@
 		"node": ">=8"
 	},
 	"scripts": {
-		"test": "xo && ava && tsd"
+		"build": "del dist && tsc",
+		"test": "xo && npm run build && nyc ava",
+		"bench": "ts-node bench.ts",
+		"prepublishOnly": "npm run build"
 	},
 	"files": [
-		"index.js",
-		"index.d.ts"
+		"dist"
 	],
+	"types": "dist",
 	"keywords": [
 		"config",
 		"store",
@@ -38,6 +42,32 @@
 		"write",
 		"cache"
 	],
+	"ava": {
+		"babel": false,
+		"compileEnhancements": false,
+		"extensions": [
+			"ts"
+		],
+		"require": [
+			"ts-node/register"
+		]
+	},
+	"xo": {
+		"extends": "xo-typescript",
+		"extensions": [
+			"ts"
+		],
+		"rules": {
+			"import/first": "off",
+			"import/newline-after-import": "off",
+			"@typescript-eslint/member-ordering": "off"
+		}
+	},
+	"nyc": {
+		"extension": [
+			".ts"
+		]
+	},
 	"dependencies": {
 		"ajv": "^6.10.2",
 		"debounce-fn": "^3.0.1",
@@ -51,14 +81,24 @@
 		"write-file-atomic": "^3.0.0"
 	},
 	"devDependencies": {
+		"@sindresorhus/tsconfig": "^0.4.0",
 		"@types/node": "^12.7.4",
+		"@types/semver": "^6.2.0",
+		"@types/write-file-atomic": "^2.1.2",
+		"@typescript-eslint/eslint-plugin": "^1.11.0",
+		"@typescript-eslint/parser": "^1.11.0",
 		"ava": "^2.3.0",
 		"clear-module": "^4.0.0",
 		"del": "^5.1.0",
+		"del-cli": "^3.0.0",
 		"delay": "^4.3.0",
+		"eslint-config-xo-typescript": "^0.15.0",
+		"nyc": "^14.1.1",
 		"p-event": "^4.1.0",
 		"tempy": "^0.3.0",
+		"ts-node": "^8.3.0",
 		"tsd": "^0.7.4",
+		"typescript": "^3.7.2",
 		"xo": "^0.24.0"
 	}
 }

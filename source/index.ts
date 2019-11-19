@@ -1,28 +1,26 @@
-/* eslint-disable node/no-deprecated-api */
-'use strict';
-const fs = require('fs');
-const path = require('path');
-const crypto = require('crypto');
-const assert = require('assert');
-const EventEmitter = require('events');
-const dotProp = require('dot-prop');
-const makeDir = require('make-dir');
-const pkgUp = require('pkg-up');
-const envPaths = require('env-paths');
-const writeFileAtomic = require('write-file-atomic');
-const Ajv = require('ajv');
-const debounceFn = require('debounce-fn');
-const semver = require('semver');
-const onetime = require('onetime');
+import fs = require('fs');
+import path = require('path');
+import crypto = require('crypto');
+import assert = require('assert');
+import EventEmitter = require('events');
+import dotProp = require('dot-prop');
+import makeDir = require('make-dir');
+import pkgUp = require('pkg-up');
+import envPaths = require('env-paths');
+import writeFileAtomic = require('write-file-atomic');
+import Ajv = require('ajv');
+import debounceFn = require('debounce-fn');
+import semver = require('semver');
+import onetime = require('onetime');
 
-const plainObject = () => Object.create(null);
+const plainObject: () => object = () => Object.create(null);
 const encryptionAlgorithm = 'aes-256-cbc';
 
 // Prevent caching of this module so module.parent is always accurate
 delete require.cache[__filename];
 const parentDir = path.dirname((module.parent && module.parent.filename) || '.');
 
-const checkValueType = (key, value) => {
+const checkValueType = (key: string, value: StoreValue): void => {
 	const nonJsonTypes = [
 		'undefined',
 		'symbol',
@@ -39,21 +37,67 @@ const checkValueType = (key, value) => {
 const INTERNAL_KEY = '__internal__';
 const MIGRATION_KEY = `${INTERNAL_KEY}.migrations.version`;
 
-class Conf {
-	constructor(options) {
+type ConfSerializer = (args: any) => ArrayBuffer | Buffer | string;
+type ConfDeserializer = (args: any) => any;
+type ConfDefaultValues = {
+	[key: string]: object;
+};
+type ConfMigrations = {
+	[key: string]: (store: Conf) => void;
+};
+type GenericCallback = () => any;
+type GenericVoidCallback = (...args: any) => void;
+type StoreValue = any;
+
+type ConfOptions = {
+	accessPropertiesByDotNotation?: boolean;
+	clearInvalidConfig?: boolean;
+	configName?: string;
+	cwd?: string;
+	defaults?: object;
+	encryptionKey?: string;
+	fileExtension?: string;
+	migrations?: ConfMigrations;
+	projectName?: string;
+	projectSuffix?: string;
+	projectVersion?: string;
+	schema?: object;
+	watch?: boolean;
+	serialize?: ConfSerializer;
+	deserialize?: ConfDeserializer;
+};
+
+export default class Conf {
+	_options: ConfOptions;
+
+	_defaultValues: ConfDefaultValues = {};
+
+	_validator?: Ajv.ValidateFunction;
+
+	encryptionKey?: string;
+
+	events?: EventEmitter;
+
+	serialize?: ConfSerializer;
+
+	deserialize?: ConfDeserializer;
+
+	path: string;
+
+	constructor(options?: ConfOptions) {
 		options = {
 			configName: 'config',
 			fileExtension: 'json',
 			projectSuffix: 'nodejs',
 			clearInvalidConfig: true,
-			serialize: value => JSON.stringify(value, null, '\t'),
+			serialize: (value: object) => JSON.stringify(value, null, '\t'),
 			deserialize: JSON.parse,
 			accessPropertiesByDotNotation: true,
 			...options
 		};
 
 		const getPackageData = onetime(() => {
-			const packagePath = pkgUp.sync(parentDir);
+			const packagePath = pkgUp.sync({cwd: parentDir});
 			// Can't use `require` because of Webpack being annoying:
 			// https://github.com/webpack/webpack/issues/196
 			const packageData = packagePath && JSON.parse(fs.readFileSync(packagePath, 'utf8'));
@@ -74,7 +118,6 @@ class Conf {
 		}
 
 		this._options = options;
-		this._defaultValues = {};
 
 		if (options.schema) {
 			if (typeof options.schema !== 'object') {
@@ -142,27 +185,33 @@ class Conf {
 		}
 	}
 
-	_validate(data) {
+	_validate(data: any): boolean {
 		if (!this._validator) {
-			return;
+			return false;
 		}
 
 		const valid = this._validator(data);
-		if (!valid) {
-			const errors = this._validator.errors.reduce((error, {dataPath, message}) =>
-				error + ` \`${dataPath.slice(1)}\` ${message};`, '');
-			throw new Error('Config schema violation:' + errors.slice(0, -1));
+		if (valid) {
+			return true;
 		}
+
+		if (!this._validator.errors) {
+			return false;
+		}
+
+		const errors = this._validator.errors.reduce((error, {dataPath, message}) =>
+			error + ` \`${dataPath.slice(1)}\` ${message};`, '');
+		throw new Error('Config schema violation:' + errors.slice(0, -1));
 	}
 
-	_ensureDirectory() {
+	_ensureDirectory(): void {
 		// TODO: Use `fs.mkdirSync` `recursive` option when targeting Node.js 12.
 		// Ensure the directory exists as it could have been deleted in the meantime.
 		makeDir.sync(path.dirname(this.path));
 	}
 
-	_write(value) {
-		let data = this.serialize(value);
+	_write(value: StoreValue): void {
+		let data: any = this.serialize && this.serialize(value);
 
 		if (this.encryptionKey) {
 			const initializationVector = crypto.randomBytes(16);
@@ -180,7 +229,7 @@ class Conf {
 		}
 	}
 
-	_watch() {
+	_watch(): void {
 		this._ensureDirectory();
 
 		if (!fs.existsSync(this.path)) {
@@ -189,11 +238,11 @@ class Conf {
 
 		fs.watch(this.path, {persistent: false}, debounceFn(() => {
 			// On Linux and Windows, writing to the config file emits a `rename` event, so we skip checking the event type.
-			this.events.emit('change');
+			this.events?.emit('change');
 		}, {wait: 100}));
 	}
 
-	_migrate(migrations, versionToMigrate) {
+	_migrate(migrations: ConfMigrations, versionToMigrate: string): void {
 		let previousMigratedVersion = this._get(MIGRATION_KEY, '0.0.0');
 
 		const newerVersions = Object.keys(migrations)
@@ -224,7 +273,7 @@ class Conf {
 		}
 	}
 
-	_containsReservedKey(key) {
+	_containsReservedKey(key: string): boolean {
 		if (typeof key === 'object') {
 			const firstKey = Object.keys(key)[0];
 
@@ -248,11 +297,11 @@ class Conf {
 		return false;
 	}
 
-	_isVersionInRangeFormat(version) {
+	_isVersionInRangeFormat(version: string): boolean {
 		return semver.clean(version) === null;
 	}
 
-	_shouldPerformMigration(candidateVersion, previousMigratedVersion, versionToMigrate) {
+	_shouldPerformMigration(candidateVersion: string, previousMigratedVersion: string, versionToMigrate: string): boolean {
 		if (this._isVersionInRangeFormat(candidateVersion)) {
 			if (previousMigratedVersion !== '0.0.0' && semver.satisfies(previousMigratedVersion, candidateVersion)) {
 				return false;
@@ -272,18 +321,18 @@ class Conf {
 		return true;
 	}
 
-	_get(key, defaultValue) {
+	_get(key: string, defaultValue?: StoreValue): any {
 		return dotProp.get(this.store, key, defaultValue);
 	}
 
-	_set(key, value) {
+	_set(key: string, value?: StoreValue): void {
 		const {store} = this;
 		dotProp.set(store, key, value);
 
 		this.store = store;
 	}
 
-	get(key, defaultValue) {
+	get(key: string, defaultValue?: any): any {
 		if (this._options.accessPropertiesByDotNotation) {
 			return dotProp.get(this.store, key, defaultValue);
 		}
@@ -291,7 +340,7 @@ class Conf {
 		return key in this.store ? this.store[key] : defaultValue;
 	}
 
-	set(key, value) {
+	set(key: any, value?: StoreValue): void {
 		if (typeof key !== 'string' && typeof key !== 'object') {
 			throw new TypeError(`Expected \`key\` to be of type \`string\` or \`object\`, got ${typeof key}`);
 		}
@@ -306,7 +355,7 @@ class Conf {
 
 		const {store} = this;
 
-		const set = (key, value) => {
+		const set = (key: string, value: StoreValue): void => {
 			checkValueType(key, value);
 			if (this._options.accessPropertiesByDotNotation) {
 				dotProp.set(store, key, value);
@@ -327,7 +376,7 @@ class Conf {
 		this.store = store;
 	}
 
-	has(key) {
+	has(key: string): boolean {
 		if (this._options.accessPropertiesByDotNotation) {
 			return dotProp.has(this.store, key);
 		}
@@ -335,7 +384,7 @@ class Conf {
 		return key in this.store;
 	}
 
-	reset(...keys) {
+	reset(...keys: any): void {
 		for (const key of keys) {
 			if (this._defaultValues[key]) {
 				this.set(key, this._defaultValues[key]);
@@ -343,7 +392,7 @@ class Conf {
 		}
 	}
 
-	delete(key) {
+	delete(key: string): void {
 		const {store} = this;
 		if (this._options.accessPropertiesByDotNotation) {
 			dotProp.delete(store, key);
@@ -354,11 +403,11 @@ class Conf {
 		this.store = store;
 	}
 
-	clear() {
+	clear(): void{
 		this.store = plainObject();
 	}
 
-	onDidChange(key, callback) {
+	onDidChange(key: string, callback: GenericVoidCallback): GenericCallback {
 		if (typeof key !== 'string') {
 			throw new TypeError(`Expected \`key\` to be of type \`string\`, got ${typeof key}`);
 		}
@@ -367,25 +416,25 @@ class Conf {
 			throw new TypeError(`Expected \`callback\` to be of type \`function\`, got ${typeof callback}`);
 		}
 
-		const getter = () => this.get(key);
+		const getter: GenericCallback = () => this.get(key);
 
 		return this.handleChange(getter, callback);
 	}
 
-	onDidAnyChange(callback) {
+	onDidAnyChange(callback: GenericCallback): GenericCallback {
 		if (typeof callback !== 'function') {
 			throw new TypeError(`Expected \`callback\` to be of type \`function\`, got ${typeof callback}`);
 		}
 
-		const getter = () => this.store;
+		const getter: GenericCallback = () => this.store;
 
 		return this.handleChange(getter, callback);
 	}
 
-	handleChange(getter, callback) {
+	handleChange(getter: GenericCallback, callback: GenericVoidCallback): () => void {
 		let currentValue = getter();
 
-		const onChange = () => {
+		const onChange: GenericCallback = () => {
 			const oldValue = currentValue;
 			const newValue = getter();
 
@@ -398,17 +447,17 @@ class Conf {
 			}
 		};
 
-		this.events.on('change', onChange);
-		return () => this.events.removeListener('change', onChange);
+		this.events?.on('change', onChange);
+		return () => this.events?.removeListener('change', onChange);
 	}
 
-	get size() {
+	get size(): number {
 		return Object.keys(this.store).length;
 	}
 
-	get store() {
+	get store(): StoreValue {
 		try {
-			let data = fs.readFileSync(this.path, this.encryptionKey ? null : 'utf8');
+			let data: any = fs.readFileSync(this.path, this.encryptionKey ? null : 'utf8');
 
 			if (this.encryptionKey) {
 				try {
@@ -425,7 +474,7 @@ class Conf {
 				} catch (_) {}
 			}
 
-			data = this.deserialize(data);
+			data = this.deserialize && this.deserialize(data);
 			this._validate(data);
 			return Object.assign(plainObject(), data);
 		} catch (error) {
@@ -442,20 +491,18 @@ class Conf {
 		}
 	}
 
-	set store(value) {
+	set store(value: StoreValue) {
 		this._ensureDirectory();
 
 		this._validate(value);
 		this._write(value);
 
-		this.events.emit('change');
+		this.events?.emit('change');
 	}
 
-	* [Symbol.iterator]() {
+	* [Symbol.iterator](): any {
 		for (const [key, value] of Object.entries(this.store)) {
 			yield [key, value];
 		}
 	}
 }
-
-module.exports = Conf;

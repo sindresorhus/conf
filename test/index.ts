@@ -1,36 +1,38 @@
-import fs from 'fs';
-import path from 'path';
-import {serial as test} from 'ava';
-import tempy from 'tempy';
-import del from 'del';
-import pkgUp from 'pkg-up';
-import clearModule from 'clear-module';
-import pEvent from 'p-event';
-import delay from 'delay';
-import Conf from '.';
+/* eslint-disable no-new */
+/* eslint-disable ava/no-ignored-test-files */
+import fs = require('fs');
+import path = require('path');
+import tempy = require('tempy');
+import del = require('del');
+import pkgUp = require('pkg-up');
+import clearModule = require('clear-module');
+import pEvent = require('p-event');
+import delay = require('delay');
+import test from 'ava';
+import Conf from '../source';
 
 const fixture = '🦄';
 
-test.beforeEach(t => {
+test.beforeEach((t: any) => {
 	t.context.config = new Conf({cwd: tempy.directory()});
 	t.context.configWithoutDotNotation = new Conf({cwd: tempy.directory(), accessPropertiesByDotNotation: false});
 });
 
-test('.get()', t => {
+test('.get()', (t: any) => {
 	t.is(t.context.config.get('foo'), undefined);
 	t.is(t.context.config.get('foo', '🐴'), '🐴');
 	t.context.config.set('foo', fixture);
 	t.is(t.context.config.get('foo'), fixture);
 });
 
-test('.set()', t => {
+test('.set()', (t: any) => {
 	t.context.config.set('foo', fixture);
 	t.context.config.set('baz.boo', fixture);
 	t.is(t.context.config.get('foo'), fixture);
 	t.is(t.context.config.get('baz.boo'), fixture);
 });
 
-test('.set() - with object', t => {
+test('.set() - with object', (t: any) => {
 	t.context.config.set({
 		foo1: 'bar1',
 		foo2: 'bar2',
@@ -49,13 +51,13 @@ test('.set() - with object', t => {
 	t.is(t.context.config.get('baz.foo.bar'), 'baz');
 });
 
-test('.set() - with undefined', t => {
+test('.set() - with undefined', (t: any) => {
 	t.throws(() => {
 		t.context.config.set('foo', undefined);
 	}, 'Use `delete()` to clear values');
 });
 
-test('.set() - with unsupported values', t => {
+test('.set() - with unsupported values', (t: any) => {
 	t.throws(() => {
 		t.context.config.set('a', () => {});
 	}, /not supported by JSON/);
@@ -83,13 +85,13 @@ test('.set() - with unsupported values', t => {
 	}, /not supported by JSON/);
 });
 
-test('.set() - invalid key', t => {
+test('.set() - invalid key', (t: any) => {
 	t.throws(() => {
 		t.context.config.set(1, 'unicorn');
 	}, 'Expected `key` to be of type `string` or `object`, got number');
 });
 
-test('.has()', t => {
+test('.has()', (t: any) => {
 	t.context.config.set('foo', fixture);
 	t.context.config.set('baz.boo', fixture);
 	t.true(t.context.config.has('foo'));
@@ -97,7 +99,7 @@ test('.has()', t => {
 	t.false(t.context.config.has('missing'));
 });
 
-test('.reset()', t => {
+test('.reset()', (t: any) => {
 	t.context.configWithSchema = new Conf({
 		cwd: tempy.directory(),
 		schema: {
@@ -131,7 +133,7 @@ test('.reset()', t => {
 	t.is(t.context.configWithDefaults.get('bar'), 99);
 });
 
-test('.delete()', t => {
+test('.delete()', (t: any) => {
 	const {config} = t.context;
 	config.set('foo', 'bar');
 	config.set('baz.boo', true);
@@ -148,7 +150,7 @@ test('.delete()', t => {
 	t.is(config.get('foo.bar.zoo.awesome'), 'redpanda');
 });
 
-test('.clear()', t => {
+test('.clear()', (t: any) => {
 	t.context.config.set('foo', 'bar');
 	t.context.config.set('foo1', 'bar1');
 	t.context.config.set('baz.boo', true);
@@ -156,12 +158,12 @@ test('.clear()', t => {
 	t.is(t.context.config.size, 0);
 });
 
-test('.size', t => {
+test('.size', (t: any) => {
 	t.context.config.set('foo', 'bar');
 	t.is(t.context.config.size, 1);
 });
 
-test('.store', t => {
+test('.store', (t: any) => {
 	t.context.config.set('foo', 'bar');
 	t.context.config.set('baz.boo', true);
 	t.deepEqual(t.context.config.store, {
@@ -172,7 +174,7 @@ test('.store', t => {
 	});
 });
 
-test('`defaults` option', t => {
+test('`defaults` option', (t: any) => {
 	const config = new Conf({
 		cwd: tempy.directory(),
 		defaults: {
@@ -183,7 +185,7 @@ test('`defaults` option', t => {
 	t.is(config.get('foo'), 'bar');
 });
 
-test('`configName` option', t => {
+test('`configName` option', (t: any) => {
 	const configName = 'alt-config';
 	const config = new Conf({
 		cwd: tempy.directory(),
@@ -195,12 +197,12 @@ test('`configName` option', t => {
 	t.is(path.basename(config.path, '.json'), configName);
 });
 
-test('no `suffix` option', t => {
+test('no `suffix` option', (t: any) => {
 	const config = new Conf();
 	t.true(config.path.includes('-nodejs'));
 });
 
-test('with `suffix` option set to empty string', t => {
+test('with `suffix` option set to empty string', (t: any) => {
 	const projectSuffix = '';
 	const projectName = 'conf-temp1-project';
 	const config = new Conf({projectSuffix, projectName});
@@ -209,7 +211,7 @@ test('with `suffix` option set to empty string', t => {
 	t.true(configRootIndex >= 0 && configRootIndex < configPathSegments.length);
 });
 
-test('with `projectSuffix` option set to non-empty string', t => {
+test('with `projectSuffix` option set to non-empty string', (t: any) => {
 	const projectSuffix = 'new-projectSuffix';
 	const projectName = 'conf-temp2-project';
 	const config = new Conf({projectSuffix, projectName});
@@ -219,7 +221,7 @@ test('with `projectSuffix` option set to non-empty string', t => {
 	t.true(configRootIndex >= 0 && configRootIndex < configPathSegments.length);
 });
 
-test('`fileExtension` option', t => {
+test('`fileExtension` option', (t: any) => {
 	const fileExtension = 'alt-ext';
 	const config = new Conf({
 		cwd: tempy.directory(),
@@ -231,7 +233,7 @@ test('`fileExtension` option', t => {
 	t.is(path.extname(config.path), `.${fileExtension}`);
 });
 
-test('`fileExtension` option = empty string', t => {
+test('`fileExtension` option = empty string', (t: any) => {
 	const configName = 'unicorn';
 	const config = new Conf({
 		cwd: tempy.directory(),
@@ -241,16 +243,16 @@ test('`fileExtension` option = empty string', t => {
 	t.is(path.basename(config.path), configName);
 });
 
-test('`serialize` and `deserialize` options', t => {
+test('`serialize` and `deserialize` options', (t: any) => {
 	t.plan(4);
 	const serialized = `foo:${fixture}`;
 	const deserialized = {foo: fixture};
-	const serialize = value => {
+	const serialize = (value: any): string => {
 		t.is(value, deserialized);
 		return serialized;
 	};
 
-	const deserialize = value => {
+	const deserialize = (value: any): any => {
 		t.is(value, serialized);
 		return deserialized;
 	};
@@ -265,7 +267,7 @@ test('`serialize` and `deserialize` options', t => {
 	t.deepEqual(config.store, deserialized);
 });
 
-test('`projectName` option', t => {
+test('`projectName` option', (t: any) => {
 	const projectName = 'conf-fixture-project-name';
 	const config = new Conf({projectName});
 	t.is(config.get('foo'), undefined);
@@ -275,7 +277,7 @@ test('`projectName` option', t => {
 	del.sync(config.path, {force: true});
 });
 
-test('ensure `.store` is always an object', t => {
+test('ensure `.store` is always an object', (t: any) => {
 	const cwd = tempy.directory();
 	const config = new Conf({cwd});
 
@@ -286,7 +288,7 @@ test('ensure `.store` is always an object', t => {
 	});
 });
 
-test('instance is iterable', t => {
+test('instance is iterable', (t: any) => {
 	t.context.config.set({
 		foo: fixture,
 		bar: fixture
@@ -297,7 +299,7 @@ test('instance is iterable', t => {
 	);
 });
 
-test('automatic `projectName` inference', t => {
+test('automatic `projectName` inference', (t: any) => {
 	const config = new Conf();
 	config.set('foo', fixture);
 	t.is(config.get('foo'), fixture);
@@ -305,10 +307,10 @@ test('automatic `projectName` inference', t => {
 	del.sync(config.path, {force: true});
 });
 
-test('`cwd` option overrides `projectName` option', t => {
+test('`cwd` option overrides `projectName` option', (t: any) => {
 	const cwd = tempy.directory();
 
-	let config;
+	let config: any;
 	t.notThrows(() => {
 		config = new Conf({cwd, projectName: ''});
 	});
@@ -320,11 +322,11 @@ test('`cwd` option overrides `projectName` option', t => {
 	del.sync(config.path, {force: true});
 });
 
-test('safely handle missing package.json', t => {
+test('safely handle missing package.json', (t: any) => {
 	const pkgUpSyncOrig = pkgUp.sync;
 	pkgUp.sync = () => null;
 
-	let config;
+	let config: any;
 	t.notThrows(() => {
 		config = new Conf({projectName: 'conf-fixture-project-name'});
 	});
@@ -333,11 +335,11 @@ test('safely handle missing package.json', t => {
 	pkgUp.sync = pkgUpSyncOrig;
 });
 
-test('handle `cwd` being set and `projectName` not being set', t => {
+test('handle `cwd` being set and `projectName` not being set', (t: any) => {
 	const pkgUpSyncOrig = pkgUp.sync;
 	pkgUp.sync = () => null;
 
-	let config;
+	let config: any;
 	t.notThrows(() => {
 		config = new Conf({cwd: 'conf-fixture-cwd'});
 	});
@@ -347,14 +349,15 @@ test('handle `cwd` being set and `projectName` not being set', t => {
 });
 
 // See #11
-test('fallback to cwd if `module.filename` is `null`', t => {
-	const preservedFilename = module.filename;
-	module.filename = null;
+test('fallback to cwd if `module.filename` is `null`', (t: any) => {
+	const preservedFilename: string = module.filename;
+	const filename: any = null;
+	module.filename = filename;
 	clearModule('.');
 
-	let config;
+	let config: any;
 	t.notThrows(() => {
-		const Conf = require('.');
+		const Conf = require('../dist').default;
 		config = new Conf({cwd: 'conf-fixture-fallback-module-filename-null'});
 	});
 
@@ -362,7 +365,7 @@ test('fallback to cwd if `module.filename` is `null`', t => {
 	del.sync(path.dirname(config.path));
 });
 
-test('encryption', t => {
+test('encryption', (t: any) => {
 	const config = new Conf({cwd: tempy.directory(), encryptionKey: 'abc123'});
 	t.is(config.get('foo'), undefined);
 	t.is(config.get('foo', '🐴'), '🐴');
@@ -372,7 +375,7 @@ test('encryption', t => {
 	t.is(config.get('baz.boo'), fixture);
 });
 
-test('encryption - upgrade', t => {
+test('encryption - upgrade', (t: any) => {
 	const cwd = tempy.directory();
 
 	const before = new Conf({cwd});
@@ -383,7 +386,7 @@ test('encryption - upgrade', t => {
 	t.is(after.get('foo'), fixture);
 });
 
-test('encryption - corrupt file', t => {
+test('encryption - corrupt file', (t: any) => {
 	const cwd = tempy.directory();
 
 	const before = new Conf({cwd, encryptionKey: 'abc123'});
@@ -396,7 +399,7 @@ test('encryption - corrupt file', t => {
 	t.is(after.get('foo'), undefined);
 });
 
-test('decryption - migration to initialization vector', t => {
+test('decryption - migration to initialization vector', (t: any) => {
 	// The `test/config-encrypted-with-conf-4-1-0.json` file contains `{"unicorn": "🦄"}` JSON data which is encrypted with conf@4.1.0 and password `abcd1234`
 	const config = new Conf({
 		cwd: 'test',
@@ -407,17 +410,17 @@ test('decryption - migration to initialization vector', t => {
 	t.deepEqual(config.store, {unicorn: '🦄'});
 });
 
-test('onDidChange()', t => {
+test('onDidChange()', (t: any) => {
 	const {config} = t.context;
 
 	t.plan(8);
 
-	const checkFoo = (newValue, oldValue) => {
+	const checkFoo = (newValue: any, oldValue: any): void => {
 		t.is(newValue, '🐴');
 		t.is(oldValue, fixture);
 	};
 
-	const checkBaz = (newValue, oldValue) => {
+	const checkBaz = (newValue: any, oldValue: any): void => {
 		t.is(newValue, '🐴');
 		t.is(oldValue, fixture);
 	};
@@ -434,12 +437,12 @@ test('onDidChange()', t => {
 	unsubscribe();
 	config.set('baz.boo', fixture);
 
-	const checkUndefined = (newValue, oldValue) => {
+	const checkUndefined = (newValue: any, oldValue: any): void => {
 		t.is(oldValue, fixture);
 		t.is(newValue, undefined);
 	};
 
-	const checkSet = (newValue, oldValue) => {
+	const checkSet = (newValue: any, oldValue: any): void => {
 		t.is(oldValue, undefined);
 		t.is(newValue, '🐴');
 	};
@@ -453,17 +456,17 @@ test('onDidChange()', t => {
 	config.set('foo', fixture);
 });
 
-test('onDidAnyChange()', t => {
+test('onDidAnyChange()', (t: any) => {
 	const {config} = t.context;
 
 	t.plan(8);
 
-	const checkFoo = (newValue, oldValue) => {
+	const checkFoo = (newValue: any, oldValue: any): void => {
 		t.deepEqual(newValue, {foo: '🐴'});
 		t.deepEqual(oldValue, {foo: fixture});
 	};
 
-	const checkBaz = (newValue, oldValue) => {
+	const checkBaz = (newValue: any, oldValue: any): void => {
 		t.deepEqual(newValue, {
 			foo: fixture,
 			baz: {boo: '🐴'}
@@ -486,7 +489,7 @@ test('onDidAnyChange()', t => {
 	unsubscribe();
 	config.set('baz.boo', fixture);
 
-	const checkUndefined = (newValue, oldValue) => {
+	const checkUndefined = (newValue: any, oldValue: any): void => {
 		t.deepEqual(oldValue, {
 			foo: '🦄',
 			baz: {boo: '🦄'}
@@ -497,7 +500,7 @@ test('onDidAnyChange()', t => {
 		});
 	};
 
-	const checkSet = (newValue, oldValue) => {
+	const checkSet = (newValue: any, oldValue: any): void => {
 		t.deepEqual(oldValue, {
 			baz: {boo: fixture}
 		});
@@ -518,7 +521,7 @@ test('onDidAnyChange()', t => {
 });
 
 // See #32
-test('doesn\'t write to disk upon instanciation if and only if the store didn\'t change', t => {
+test('doesn\'t write to disk upon instanciation if and only if the store didn\'t change', (t: any) => {
 	let exists = fs.existsSync(t.context.config.path);
 	t.is(exists, false);
 
@@ -532,7 +535,7 @@ test('doesn\'t write to disk upon instanciation if and only if the store didn\'t
 	t.is(exists, true);
 });
 
-test('`clearInvalidConfig` option - invalid data', t => {
+test('`clearInvalidConfig` option - invalid data', (t: any) => {
 	const config = new Conf({cwd: tempy.directory(), clearInvalidConfig: false});
 	fs.writeFileSync(config.path, '🦄');
 
@@ -541,20 +544,20 @@ test('`clearInvalidConfig` option - invalid data', t => {
 	}, {instanceOf: SyntaxError});
 });
 
-test('`clearInvalidConfig` option - valid data', t => {
+test('`clearInvalidConfig` option - valid data', (t: any) => {
 	const config = new Conf({cwd: tempy.directory(), clearInvalidConfig: false});
 	config.set('foo', 'bar');
 	t.deepEqual(config.store, {foo: 'bar'});
 });
 
-test('schema - should be an object', t => {
-	const schema = 'object';
+test('schema - should be an object', (t: any) => {
+	const schema: any = 'object';
 	t.throws(() => {
-		new Conf({cwd: tempy.directory(), schema}); // eslint-disable-line no-new
+		new Conf({cwd: tempy.directory(), schema});
 	}, 'The `schema` option must be an object.');
 });
 
-test('schema - valid set', t => {
+test('schema - valid set', (t: any) => {
 	const schema = {
 		foo: {
 			type: 'object',
@@ -575,7 +578,7 @@ test('schema - valid set', t => {
 	});
 });
 
-test('schema - one violation', t => {
+test('schema - one violation', (t: any) => {
 	const schema = {
 		foo: {
 			type: 'string'
@@ -587,7 +590,7 @@ test('schema - one violation', t => {
 	}, 'Config schema violation: `foo` should be string');
 });
 
-test('schema - multiple violations', t => {
+test('schema - multiple violations', (t: any) => {
 	const schema = {
 		foo: {
 			type: 'object',
@@ -608,7 +611,7 @@ test('schema - multiple violations', t => {
 	}, 'Config schema violation: `foo.bar` should be number; `foo.foobar` should be <= 100');
 });
 
-test('schema - complex schema', t => {
+test('schema - complex schema', (t: any) => {
 	const schema = {
 		foo: {
 			type: 'string',
@@ -633,7 +636,7 @@ test('schema - complex schema', t => {
 	}, 'Config schema violation: `bar` should NOT have more than 3 items; `bar[3]` should be integer; `bar` should NOT have duplicate items (items ## 1 and 0 are identical)');
 });
 
-test('schema - invalid write to config file', t => {
+test('schema - invalid write to config file', (t: any) => {
 	const schema = {
 		foo: {
 			type: 'string'
@@ -648,7 +651,7 @@ test('schema - invalid write to config file', t => {
 	}, 'Config schema violation: `foo` should be string');
 });
 
-test('schema - default', t => {
+test('schema - default', (t: any) => {
 	const schema = {
 		foo: {
 			type: 'string',
@@ -662,7 +665,7 @@ test('schema - default', t => {
 	t.is(config.get('foo'), 'bar');
 });
 
-test('schema - Conf defaults overwrites schema default', t => {
+test('schema - Conf defaults overwrites schema default', (t: any) => {
 	const schema = {
 		foo: {
 			type: 'string',
@@ -679,14 +682,14 @@ test('schema - Conf defaults overwrites schema default', t => {
 	t.is(config.get('foo'), 'foo');
 });
 
-test('schema - validate Conf default', t => {
+test('schema - validate Conf default', (t: any) => {
 	const schema = {
 		foo: {
 			type: 'string'
 		}
 	};
 	t.throws(() => {
-		new Conf({ // eslint-disable-line no-new
+		new Conf({
 			cwd: tempy.directory(),
 			defaults: {
 				foo: 1
@@ -696,21 +699,21 @@ test('schema - validate Conf default', t => {
 	}, 'Config schema violation: `foo` should be string');
 });
 
-test('.get() - without dot notation', t => {
+test('.get() - without dot notation', (t: any) => {
 	t.is(t.context.configWithoutDotNotation.get('foo'), undefined);
 	t.is(t.context.configWithoutDotNotation.get('foo', '🐴'), '🐴');
 	t.context.configWithoutDotNotation.set('foo', fixture);
 	t.is(t.context.configWithoutDotNotation.get('foo'), fixture);
 });
 
-test('.set() - without dot notation', t => {
+test('.set() - without dot notation', (t: any) => {
 	t.context.configWithoutDotNotation.set('foo', fixture);
 	t.context.configWithoutDotNotation.set('baz.boo', fixture);
 	t.is(t.context.configWithoutDotNotation.get('foo'), fixture);
 	t.is(t.context.configWithoutDotNotation.get('baz.boo'), fixture);
 });
 
-test('.set() - with object - without dot notation', t => {
+test('.set() - with object - without dot notation', (t: any) => {
 	t.context.configWithoutDotNotation.set({
 		foo1: 'bar1',
 		foo2: 'bar2',
@@ -728,7 +731,7 @@ test('.set() - with object - without dot notation', t => {
 	t.is(t.context.configWithoutDotNotation.get('baz.foo.bar'), undefined);
 });
 
-test('.has() - without dot notation', t => {
+test('.has() - without dot notation', (t: any) => {
 	t.context.configWithoutDotNotation.set('foo', fixture);
 	t.context.configWithoutDotNotation.set('baz.boo', fixture);
 	t.true(t.context.configWithoutDotNotation.has('foo'));
@@ -736,7 +739,7 @@ test('.has() - without dot notation', t => {
 	t.false(t.context.configWithoutDotNotation.has('missing'));
 });
 
-test('.delete() - without dot notation', t => {
+test('.delete() - without dot notation', (t: any) => {
 	const {configWithoutDotNotation} = t.context;
 	configWithoutDotNotation.set('foo', 'bar');
 	configWithoutDotNotation.set('baz.boo', true);
@@ -753,7 +756,7 @@ test('.delete() - without dot notation', t => {
 	t.deepEqual(configWithoutDotNotation.get('foo.bar.zoo'), {awesome: 'redpanda'});
 });
 
-test('`watch` option watches for config file changes by another process', async t => {
+test('`watch` option watches for config file changes by another process', async (t: any) => {
 	if (process.platform === 'darwin' && process.version.split('.')[0] === 'v8') {
 		t.plan(0);
 		return;
@@ -766,7 +769,7 @@ test('`watch` option watches for config file changes by another process', async 
 
 	t.plan(4);
 
-	const checkFoo = (newValue, oldValue) => {
+	const checkFoo = (newValue: any, oldValue: any): void => {
 		t.is(newValue, '🐴');
 		t.is(oldValue, '👾');
 	};
@@ -780,10 +783,12 @@ test('`watch` option watches for config file changes by another process', async 
 		conf2.set('foo', '🐴');
 	})();
 
-	await pEvent(conf1.events, 'change');
+	const {events}: any = conf1;
+
+	await pEvent(events, 'change');
 });
 
-test('`watch` option watches for config file changes by file write', async t => {
+test('`watch` option watches for config file changes by file write', async (t: any) => {
 	// TODO: Remove this when targeting Node.js 10.
 	if (process.platform === 'darwin' && process.version.split('.')[0] === 'v8') {
 		t.plan(0);
@@ -796,7 +801,7 @@ test('`watch` option watches for config file changes by file write', async t => 
 
 	t.plan(2);
 
-	const checkFoo = (newValue, oldValue) => {
+	const checkFoo = (newValue: any, oldValue: any): void => {
 		t.is(newValue, '🦄');
 		t.is(oldValue, '🐴');
 	};
@@ -808,10 +813,12 @@ test('`watch` option watches for config file changes by file write', async t => 
 		fs.writeFileSync(path.join(cwd, 'config.json'), JSON.stringify({foo: '🦄'}));
 	})();
 
-	await pEvent(conf.events, 'change');
+	const {events}: any = conf;
+
+	await pEvent(events, 'change');
 });
 
-test('migrations - should save the project version as the initial migrated version', t => {
+test('migrations - should save the project version as the initial migrated version', (t: any) => {
 	const cwd = tempy.directory();
 
 	const conf = new Conf({cwd, projectVersion: '0.0.2', migrations: {}});
@@ -819,11 +826,11 @@ test('migrations - should save the project version as the initial migrated versi
 	t.is(conf._get('__internal__.migrations.version'), '0.0.2');
 });
 
-test('migrations - should save the project version when a migration occurs', t => {
+test('migrations - should save the project version when a migration occurs', (t: any) => {
 	const cwd = tempy.directory();
 
 	const migrations = {
-		'0.0.3': store => {
+		'0.0.3': (store: any) => {
 			store.set('foo', 'cool stuff');
 		}
 	};
@@ -838,11 +845,11 @@ test('migrations - should save the project version when a migration occurs', t =
 	t.is(conf2.get('foo'), 'cool stuff');
 });
 
-test('migrations - should NOT run the migration when the version doesn\'t change', t => {
+test('migrations - should NOT run the migration when the version doesn\'t change', (t: any) => {
 	const cwd = tempy.directory();
 
 	const migrations = {
-		'1.0.0': store => {
+		'1.0.0': (store: any) => {
 			store.set('foo', 'cool stuff');
 		}
 	};
@@ -857,11 +864,11 @@ test('migrations - should NOT run the migration when the version doesn\'t change
 	t.false(conf2.has('foo'));
 });
 
-test('migrations - should run the migration when the version changes', t => {
+test('migrations - should run the migration when the version changes', (t: any) => {
 	const cwd = tempy.directory();
 
 	const migrations = {
-		'1.0.0': store => {
+		'1.0.0': (store: any) => {
 			store.set('foo', 'cool stuff');
 		}
 	};
@@ -877,10 +884,10 @@ test('migrations - should run the migration when the version changes', t => {
 	t.is(conf2.get('foo'), 'cool stuff');
 });
 
-test('migrations - should run the migration when the version uses semver comparisons', t => {
+test('migrations - should run the migration when the version uses semver comparisons', (t: any) => {
 	const cwd = tempy.directory();
 	const migrations = {
-		'>=1.0': store => {
+		'>=1.0': (store: any) => {
 			store.set('foo', 'cool stuff');
 		}
 	};
@@ -890,13 +897,13 @@ test('migrations - should run the migration when the version uses semver compari
 	t.is(conf.get('foo'), 'cool stuff');
 });
 
-test('migrations - should run the migration when the version uses multiple semver comparisons', t => {
+test('migrations - should run the migration when the version uses multiple semver comparisons', (t: any) => {
 	const cwd = tempy.directory();
 	const migrations = {
-		'>=1.0': store => {
+		'>=1.0': (store: any) => {
 			store.set('foo', 'cool stuff');
 		},
-		'>2.0.0': store => {
+		'>2.0.0': (store: any) => {
 			store.set('foo', 'modern cool stuff');
 		}
 	};
@@ -910,17 +917,17 @@ test('migrations - should run the migration when the version uses multiple semve
 	t.is(conf2.get('foo'), 'modern cool stuff');
 });
 
-test('migrations - should run all valid migrations when the version uses multiple semver comparisons', t => {
+test('migrations - should run all valid migrations when the version uses multiple semver comparisons', (t: any) => {
 	const cwd = tempy.directory();
 	const migrations = {
-		'>=1.0': store => {
+		'>=1.0': (store: any) => {
 			store.set('foo', 'cool stuff');
 		},
-		'>2.0.0': store => {
+		'>2.0.0': (store: any) => {
 			store.set('woof', 'oof');
 			store.set('medium', 'yes');
 		},
-		'<3.0.0': store => {
+		'<3.0.0': (store: any) => {
 			store.set('woof', 'woof');
 			store.set('heart', '❤');
 		}
@@ -934,17 +941,17 @@ test('migrations - should run all valid migrations when the version uses multipl
 	t.is(conf.get('heart'), '❤');
 });
 
-test('migrations - should cleanup migrations with non-numeric values', t => {
+test('migrations - should cleanup migrations with non-numeric values', (t: any) => {
 	const cwd = tempy.directory();
 	const migrations = {
-		'1.0.1-alpha': store => {
+		'1.0.1-alpha': (store: any) => {
 			store.set('foo', 'cool stuff');
 		},
-		'>2.0.0-beta': store => {
+		'>2.0.0-beta': (store: any) => {
 			store.set('woof', 'oof');
 			store.set('medium', 'yes');
 		},
-		'<3.0.0': store => {
+		'<3.0.0': (store: any) => {
 			store.set('woof', 'woof');
 			store.set('heart', '❤');
 		}
@@ -958,20 +965,20 @@ test('migrations - should cleanup migrations with non-numeric values', t => {
 	t.is(conf.get('heart'), '❤');
 });
 
-test('migrations - should infer the applicationVersion from the package.json when it isn\'t specified', t => {
+test('migrations - should infer the applicationVersion from the package.json when it isn\'t specified', (t: any) => {
 	const cwd = tempy.directory();
 
 	const conf = new Conf({cwd, migrations: {
-		'2000.0.0': store => {
+		'2000.0.0': (store: any) => {
 			store.set('foo', 'bar');
 		}
 	}});
 
 	t.false(conf.has('foo'));
-	t.is(conf._get('__internal__.migrations.version'), require('./package.json').version);
+	t.is(conf._get('__internal__.migrations.version'), require('../package.json').version);
 });
 
-test('migrations - should NOT throw an error when project version is unspecified but there are no migrations', t => {
+test('migrations - should NOT throw an error when project version is unspecified but there are no migrations', (t: any) => {
 	const cwd = tempy.directory();
 
 	t.notThrows(() => {
@@ -980,21 +987,21 @@ test('migrations - should NOT throw an error when project version is unspecified
 	});
 });
 
-test('migrations - should not create the previous migration key if the migrations aren\'t needed', t => {
+test('migrations - should not create the previous migration key if the migrations aren\'t needed', (t: any) => {
 	const cwd = tempy.directory();
 
 	const conf = new Conf({cwd});
 	t.false(conf.has('__internal__.migrations.version'));
 });
 
-test('migrations error handling - should rollback changes if a migration failed', t => {
+test('migrations error handling - should rollback changes if a migration failed', (t: any) => {
 	const cwd = tempy.directory();
 
 	const failingMigrations = {
-		'1.0.0': store => {
+		'1.0.0': (store: any) => {
 			store.set('foo', 'initial update');
 		},
-		'1.0.1': store => {
+		'1.0.1': (store: any) => {
 			store.set('foo', 'updated before crash');
 
 			throw new Error('throw the migration and rollback');
@@ -1005,7 +1012,7 @@ test('migrations error handling - should rollback changes if a migration failed'
 	};
 
 	const passingMigrations = {
-		'1.0.0': store => {
+		'1.0.0': (store: any) => {
 			store.set('foo', 'initial update');
 		}
 	};
@@ -1021,7 +1028,7 @@ test('migrations error handling - should rollback changes if a migration failed'
 	t.is(conf.get('foo'), 'initial update');
 });
 
-test('__internal__ keys - should not be accessible by the user', t => {
+test('__internal__ keys - should not be accessible by the user', (t: any) => {
 	const cwd = tempy.directory();
 
 	const conf = new Conf({cwd});
@@ -1031,7 +1038,7 @@ test('__internal__ keys - should not be accessible by the user', t => {
 	}, /Please don't use the __internal__ key/);
 });
 
-test('__internal__ keys - should not be accessible by the user even without dot notation', t => {
+test('__internal__ keys - should not be accessible by the user even without dot notation', (t: any) => {
 	const cwd = tempy.directory();
 
 	const conf = new Conf({cwd, accessPropertiesByDotNotation: false});
@@ -1045,7 +1052,7 @@ test('__internal__ keys - should not be accessible by the user even without dot 
 	}, /Please don't use the __internal__ key/);
 });
 
-test('__internal__ keys - should only match specific "__internal__" entry', t => {
+test('__internal__ keys - should only match specific "__internal__" entry', (t: any) => {
 	const cwd = tempy.directory();
 
 	const conf = new Conf({cwd});
