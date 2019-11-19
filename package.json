@@ -15,7 +15,7 @@
 	},
 	"scripts": {
 		"build": "del dist && tsc",
-		"test": "xo && npm run build && nyc ava",
+		"test": "npm run build && xo && nyc ava",
 		"bench": "ts-node bench.ts",
 		"prepublishOnly": "npm run build"
 	},
