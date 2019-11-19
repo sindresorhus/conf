@@ -82,7 +82,7 @@
 	},
 	"devDependencies": {
 		"@sindresorhus/tsconfig": "^0.4.0",
-		"@types/node": "^12.7.4",
+		"@types/node": "^12.12.9",
 		"@types/semver": "^6.2.0",
 		"@types/write-file-atomic": "^2.1.2",
 		"@typescript-eslint/eslint-plugin": "^1.11.0",

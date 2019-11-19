@@ -1,17 +1,17 @@
-import fs = require('fs');
-import path = require('path');
-import crypto = require('crypto');
-import assert = require('assert');
-import EventEmitter = require('events');
-import dotProp = require('dot-prop');
-import makeDir = require('make-dir');
-import pkgUp = require('pkg-up');
-import envPaths = require('env-paths');
-import writeFileAtomic = require('write-file-atomic');
-import Ajv = require('ajv');
-import debounceFn = require('debounce-fn');
-import semver = require('semver');
-import onetime = require('onetime');
+import * as fs from 'fs';
+import * as path from 'path';
+import * as crypto from 'crypto';
+import * as assert from 'assert';
+import * as EventEmitter from 'events';
+import * as dotProp from 'dot-prop';
+import * as makeDir from 'make-dir';
+import * as pkgUp from 'pkg-up';
+import * as envPaths from 'env-paths';
+import * as writeFileAtomic from 'write-file-atomic';
+import * as Ajv from 'ajv';
+import * as debounceFn from 'debounce-fn';
+import * as semver from 'semver';
+import onetime from 'onetime';
 
 const plainObject: () => object = () => Object.create(null);
 const encryptionAlgorithm = 'aes-256-cbc';
@@ -163,7 +163,7 @@ export default class Conf {
 		const store = Object.assign(plainObject(), options.defaults, fileStore);
 		this._validate(store);
 		try {
-			assert.deepEqual(fileStore, store);
+			assert.deepStrictEqual(fileStore, store);
 		} catch (_) {
 			this.store = store;
 		}
@@ -440,7 +440,7 @@ export default class Conf {
 
 			try {
 				// TODO: Use `util.isDeepStrictEqual` when targeting Node.js 10
-				assert.deepEqual(newValue, oldValue);
+				assert.deepStrictEqual(newValue, oldValue);
 			} catch (_) {
 				currentValue = newValue;
 				callback.call(this, newValue, oldValue);
@@ -451,6 +451,30 @@ export default class Conf {
 		return () => this.events?.removeListener('change', onChange);
 	}
 
+	encryptData(data: any): Buffer | undefined {
+		if (!this.encryptionKey) {
+			return data;
+		}
+
+		try {
+			// Check if an initialization vector has been used to encrypt the data
+			if (data.slice(16, 17).toString() === ':') {
+				const initializationVector = data.slice(0, 16);
+				const password = crypto.pbkdf2Sync(this.encryptionKey, initializationVector.toString(), 10000, 32, 'sha512');
+				const decipher = crypto.createDecipheriv(encryptionAlgorithm, password, initializationVector);
+				return Buffer.concat([decipher.update(data.slice(17)), decipher.final()]);
+			}
+
+			// Legacy decryption without initialization vector
+			// tslint:disable-next-line
+			// eslint-disable-next-line node/no-deprecated-api
+			const decipher = crypto.createDecipher(encryptionAlgorithm, this.encryptionKey);
+			return Buffer.concat([decipher.update(data), decipher.final()]);
+		} catch (_) {
+			return data;
+		}
+	}
+
 	get size(): number {
 		return Object.keys(this.store).length;
 	}
@@ -458,22 +482,7 @@ export default class Conf {
 	get store(): StoreValue {
 		try {
 			let data: any = fs.readFileSync(this.path, this.encryptionKey ? null : 'utf8');
-
-			if (this.encryptionKey) {
-				try {
-					// Check if an initialization vector has been used to encrypt the data
-					if (data.slice(16, 17).toString() === ':') {
-						const initializationVector = data.slice(0, 16);
-						const password = crypto.pbkdf2Sync(this.encryptionKey, initializationVector.toString(), 10000, 32, 'sha512');
-						const decipher = crypto.createDecipheriv(encryptionAlgorithm, password, initializationVector);
-						data = Buffer.concat([decipher.update(data.slice(17)), decipher.final()]);
-					} else {
-						const decipher = crypto.createDecipher(encryptionAlgorithm, this.encryptionKey);
-						data = Buffer.concat([decipher.update(data), decipher.final()]);
-					}
-				} catch (_) {}
-			}
-
+			data = this.encryptData(data);
 			data = this.deserialize && this.deserialize(data);
 			this._validate(data);
 			return Object.assign(plainObject(), data);
