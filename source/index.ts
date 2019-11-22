@@ -20,7 +20,7 @@ const encryptionAlgorithm = 'aes-256-cbc';
 delete require.cache[__filename];
 const parentDir = path.dirname((module.parent && module.parent.filename) || '.');
 
-const checkValueType = (key: string, value: StoreValue): void => {
+const checkValueType = (key: string, value: unknown): void => {
 	const nonJsonTypes = [
 		'undefined',
 		'symbol',
@@ -37,19 +37,46 @@ const checkValueType = (key: string, value: StoreValue): void => {
 const INTERNAL_KEY = '__internal__';
 const MIGRATION_KEY = `${INTERNAL_KEY}.migrations.version`;
 
-type ConfSerializer = (args: any) => ArrayBuffer | Buffer | string;
-type ConfDeserializer = (args: any) => any;
-type ConfDefaultValues = {
+export type Serializer = (...args: unknown[]) => string;
+export type Deserializer = (arg: string | Buffer) => unknown;
+export type DefaultValues = {
 	[key: string]: object;
 };
-type ConfMigrations = {
+export type Migrations = {
 	[key: string]: (store: Conf) => void;
 };
-type GenericCallback = () => any;
-type GenericVoidCallback = (...args: any) => void;
-type StoreValue = any;
 
-type ConfOptions = {
+/**
+[JSON Schema](https://json-schema.org) to validate your config data.
+Under the hood, the JSON Schema validator [ajv](https://github.com/epoberezkin/ajv) is used to validate your config. We use [JSON Schema draft-07](http://json-schema.org/latest/json-schema-validation.html) and support all [validation keywords](https://github.com/epoberezkin/ajv/blob/master/KEYWORDS.md) and [formats](https://github.com/epoberezkin/ajv#formats)
+You should define your schema as an object where each key is the name of your data's property and each value is a JSON schema used to validate that property. See more [here](https://json-schema.org/understanding-json-schema/reference/object.html#properties)
+@example
+```
+import Conf = require('conf');
+const schema = {
+    foo: {
+		type: 'number',
+		maximum: 100,
+		minimum: 1,
+		default: 50
+	},
+	bar: {
+		type: 'string',
+		format: 'url'
+	}
+};
+const config = new Conf({schema});
+console.log(config.get('foo'));
+//=> 50
+config.set('foo', '1');
+// [Error: Config schema violation: `foo` should be number]
+```
+**Note:** The `default` value will be overwritten by the `defaults` option if set.
+*/
+
+export type Schema = object | boolean;
+
+export type Options = {
 	accessPropertiesByDotNotation?: boolean;
 	clearInvalidConfig?: boolean;
 	configName?: string;
@@ -57,20 +84,23 @@ type ConfOptions = {
 	defaults?: object;
 	encryptionKey?: string;
 	fileExtension?: string;
-	migrations?: ConfMigrations;
+	migrations?: Migrations;
 	projectName?: string;
 	projectSuffix?: string;
 	projectVersion?: string;
-	schema?: object;
+	/**
+	 * @type Schema
+	 */
+	schema?: Schema;
 	watch?: boolean;
-	serialize?: ConfSerializer;
-	deserialize?: ConfDeserializer;
+	serialize: Serializer;
+	deserialize?: Deserializer;
 };
 
 export default class Conf {
-	_options: ConfOptions;
+	_options: Options;
 
-	_defaultValues: ConfDefaultValues = {};
+	_defaultValues: DefaultValues = {};
 
 	_validator?: Ajv.ValidateFunction;
 
@@ -78,22 +108,22 @@ export default class Conf {
 
 	events?: EventEmitter;
 
-	serialize?: ConfSerializer;
+	serialize: Serializer;
 
-	deserialize?: ConfDeserializer;
+	deserialize?: Deserializer;
 
 	path: string;
 
-	constructor(options?: ConfOptions) {
-		options = {
+	constructor(partialOptions?: Partial<Options>) {
+		const options: Options = {
 			configName: 'config',
 			fileExtension: 'json',
 			projectSuffix: 'nodejs',
 			clearInvalidConfig: true,
-			serialize: (value: object) => JSON.stringify(value, null, '\t'),
-			deserialize: JSON.parse,
+			serialize: (value: unknown) => JSON.stringify(value, null, '\t'),
+			deserialize: (arg: string | Buffer) => JSON.parse(arg.toString()),
 			accessPropertiesByDotNotation: true,
-			...options
+			...partialOptions
 		};
 
 		const getPackageData = onetime(() => {
@@ -185,7 +215,7 @@ export default class Conf {
 		}
 	}
 
-	_validate(data: any): boolean {
+	_validate(data: unknown): boolean {
 		if (!this._validator) {
 			return false;
 		}
@@ -210,8 +240,8 @@ export default class Conf {
 		makeDir.sync(path.dirname(this.path));
 	}
 
-	_write(value: StoreValue): void {
-		let data: any = this.serialize && this.serialize(value);
+	_write(value: unknown): void {
+		let data: string | Buffer = this.serialize && this.serialize(value);
 
 		if (this.encryptionKey) {
 			const initializationVector = crypto.randomBytes(16);
@@ -242,10 +272,10 @@ export default class Conf {
 		}, {wait: 100}));
 	}
 
-	_migrate(migrations: ConfMigrations, versionToMigrate: string): void {
-		let previousMigratedVersion = this._get(MIGRATION_KEY, '0.0.0');
+	_migrate(migrations: Migrations, versionToMigrate: string): void {
+		let previousMigratedVersion: string = this._get(MIGRATION_KEY, '0.0.0');
 
-		const newerVersions = Object.keys(migrations)
+		const newerVersions: string[] = Object.keys(migrations)
 			.filter(candidateVersion => this._shouldPerformMigration(candidateVersion, previousMigratedVersion, versionToMigrate));
 
 		let storeBackup = {...this.store};
@@ -273,7 +303,7 @@ export default class Conf {
 		}
 	}
 
-	_containsReservedKey(key: string): boolean {
+	_containsReservedKey(key: string | object): boolean {
 		if (typeof key === 'object') {
 			const firstKey = Object.keys(key)[0];
 
@@ -321,18 +351,18 @@ export default class Conf {
 		return true;
 	}
 
-	_get(key: string, defaultValue?: StoreValue): any {
+	_get(key: string, defaultValue?: unknown): any {
 		return dotProp.get(this.store, key, defaultValue);
 	}
 
-	_set(key: string, value?: StoreValue): void {
+	_set(key: string, value?: unknown): void {
 		const {store} = this;
 		dotProp.set(store, key, value);
 
 		this.store = store;
 	}
 
-	get(key: string, defaultValue?: any): any {
+	get(key: string, defaultValue?: unknown): unknown {
 		if (this._options.accessPropertiesByDotNotation) {
 			return dotProp.get(this.store, key, defaultValue);
 		}
@@ -340,7 +370,7 @@ export default class Conf {
 		return key in this.store ? this.store[key] : defaultValue;
 	}
 
-	set(key: any, value?: StoreValue): void {
+	set(key: string | object, value?: unknown): void {
 		if (typeof key !== 'string' && typeof key !== 'object') {
 			throw new TypeError(`Expected \`key\` to be of type \`string\` or \`object\`, got ${typeof key}`);
 		}
@@ -355,7 +385,7 @@ export default class Conf {
 
 		const {store} = this;
 
-		const set = (key: string, value: StoreValue): void => {
+		const set = (key: string, value: unknown): void => {
 			checkValueType(key, value);
 			if (this._options.accessPropertiesByDotNotation) {
 				dotProp.set(store, key, value);
@@ -384,7 +414,7 @@ export default class Conf {
 		return key in this.store;
 	}
 
-	reset(...keys: any): void {
+	reset(...keys: string[]): void {
 		for (const key of keys) {
 			if (this._defaultValues[key]) {
 				this.set(key, this._defaultValues[key]);
@@ -407,7 +437,7 @@ export default class Conf {
 		this.store = plainObject();
 	}
 
-	onDidChange(key: string, callback: GenericVoidCallback): GenericCallback {
+	onDidChange(key: string, callback: (...args: unknown[]) => void): () => unknown {
 		if (typeof key !== 'string') {
 			throw new TypeError(`Expected \`key\` to be of type \`string\`, got ${typeof key}`);
 		}
@@ -416,25 +446,25 @@ export default class Conf {
 			throw new TypeError(`Expected \`callback\` to be of type \`function\`, got ${typeof callback}`);
 		}
 
-		const getter: GenericCallback = () => this.get(key);
+		const getter: () => unknown = () => this.get(key);
 
 		return this.handleChange(getter, callback);
 	}
 
-	onDidAnyChange(callback: GenericCallback): GenericCallback {
+	onDidAnyChange(callback: () => unknown): () => unknown {
 		if (typeof callback !== 'function') {
 			throw new TypeError(`Expected \`callback\` to be of type \`function\`, got ${typeof callback}`);
 		}
 
-		const getter: GenericCallback = () => this.store;
+		const getter: () => unknown = () => this.store;
 
 		return this.handleChange(getter, callback);
 	}
 
-	handleChange(getter: GenericCallback, callback: GenericVoidCallback): () => void {
+	handleChange(getter: () => unknown, callback: (newValue: unknown, oldValue: unknown) => void): () => void {
 		let currentValue = getter();
 
-		const onChange: GenericCallback = () => {
+		const onChange: () => unknown = () => {
 			const oldValue = currentValue;
 			const newValue = getter();
 
@@ -451,7 +481,7 @@ export default class Conf {
 		return () => this.events?.removeListener('change', onChange);
 	}
 
-	encryptData(data: any): Buffer | undefined {
+	encryptData(data: string | Buffer): string | Buffer {
 		if (!this.encryptionKey) {
 			return data;
 		}
@@ -462,14 +492,15 @@ export default class Conf {
 				const initializationVector = data.slice(0, 16);
 				const password = crypto.pbkdf2Sync(this.encryptionKey, initializationVector.toString(), 10000, 32, 'sha512');
 				const decipher = crypto.createDecipheriv(encryptionAlgorithm, password, initializationVector);
-				return Buffer.concat([decipher.update(data.slice(17)), decipher.final()]);
+				const slicedData: any = data.slice(17);
+				return Buffer.concat([decipher.update(slicedData), decipher.final()]);
 			}
 
 			// Legacy decryption without initialization vector
-			// tslint:disable-next-line
 			// eslint-disable-next-line node/no-deprecated-api
 			const decipher = crypto.createDecipher(encryptionAlgorithm, this.encryptionKey);
-			return Buffer.concat([decipher.update(data), decipher.final()]);
+			const legacyData: any = data;
+			return Buffer.concat([decipher.update(legacyData), decipher.final()]);
 		} catch (_) {
 			return data;
 		}
@@ -479,13 +510,13 @@ export default class Conf {
 		return Object.keys(this.store).length;
 	}
 
-	get store(): StoreValue {
+	get store(): any {
 		try {
-			let data: any = fs.readFileSync(this.path, this.encryptionKey ? null : 'utf8');
-			data = this.encryptData(data);
-			data = this.deserialize && this.deserialize(data);
-			this._validate(data);
-			return Object.assign(plainObject(), data);
+			const data: string | Buffer = fs.readFileSync(this.path, this.encryptionKey ? null : 'utf8');
+			const dataString: string | Buffer = this.encryptData(data);
+			const deserializedData = this.deserialize && this.deserialize(dataString);
+			this._validate(deserializedData);
+			return Object.assign(plainObject(), deserializedData);
 		} catch (error) {
 			if (error.code === 'ENOENT') {
 				this._ensureDirectory();
@@ -500,7 +531,7 @@ export default class Conf {
 		}
 	}
 
-	set store(value: StoreValue) {
+	set store(value: any) {
 		this._ensureDirectory();
 
 		this._validate(value);
@@ -509,7 +540,7 @@ export default class Conf {
 		this.events?.emit('change');
 	}
 
-	* [Symbol.iterator](): any {
+	* [Symbol.iterator](): unknown {
 		for (const [key, value] of Object.entries(this.store)) {
 			yield [key, value];
 		}
