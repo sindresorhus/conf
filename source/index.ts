@@ -1,16 +1,16 @@
-import * as fs from 'fs';
-import * as path from 'path';
-import * as crypto from 'crypto';
-import * as assert from 'assert';
-import * as EventEmitter from 'events';
-import * as dotProp from 'dot-prop';
-import * as makeDir from 'make-dir';
-import * as pkgUp from 'pkg-up';
-import * as envPaths from 'env-paths';
-import * as writeFileAtomic from 'write-file-atomic';
-import * as Ajv from 'ajv';
-import * as debounceFn from 'debounce-fn';
-import * as semver from 'semver';
+import fs = require('fs');
+import path = require('path');
+import crypto = require('crypto');
+import assert = require('assert');
+import EventEmitter = require('events');
+import dotProp = require('dot-prop');
+import makeDir = require('make-dir');
+import pkgUp = require('pkg-up');
+import envPaths = require('env-paths');
+import writeFileAtomic = require('write-file-atomic');
+import Ajv = require('ajv');
+import debounceFn = require('debounce-fn');
+import semver = require('semver');
 import onetime from 'onetime';
 
 const plainObject: () => object = () => Object.create(null);
@@ -497,7 +497,6 @@ export default class Conf {
 			}
 
 			// Legacy decryption without initialization vector
-			// eslint-disable-next-line node/no-deprecated-api
 			const decipher = crypto.createDecipher(encryptionAlgorithm, this.encryptionKey);
 			const legacyData: any = data;
 			return Buffer.concat([decipher.update(legacyData), decipher.final()]);
