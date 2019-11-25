@@ -435,7 +435,7 @@ export default class Conf<T = any> implements Iterable<[string, T]> {
 
 	@param callback - A callback function that is called on any changes. When a `key` is first set `oldValue` will be `undefined`, and when a key is deleted `newValue` will be `undefined`.
 	*/
-	onDidAnyChange(callback: () => unknown): () => unknown {
+	onDidAnyChange(callback: (newValue: unknown, oldValue: unknown) => void): () => unknown {
 		if (typeof callback !== 'function') {
 			throw new TypeError(`Expected \`callback\` to be of type \`function\`, got ${typeof callback}`);
 		}
@@ -445,7 +445,7 @@ export default class Conf<T = any> implements Iterable<[string, T]> {
 		return this.handleChange(getter, callback);
 	}
 
-	handleChange(getter: () => unknown, callback: (newValue: unknown, oldValue: unknown) => void): () => void {
+	handleChange(getter: () => unknown, callback: (newValue: unknown, oldValue: unknown) => void): () => unknown {
 		let currentValue = getter();
 
 		const onChange: () => unknown = () => {
