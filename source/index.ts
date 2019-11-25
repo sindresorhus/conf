@@ -246,7 +246,7 @@ export default class Conf<T = any> implements Iterable<[string, T]> {
 		}
 	}
 
-	_containsReservedKey(key: string | object): boolean {
+	_containsReservedKey(key: string | {[key: string]: unknown}): boolean {
 		if (typeof key === 'object') {
 			const firstKey = Object.keys(key)[0];
 
@@ -325,7 +325,7 @@ export default class Conf<T = any> implements Iterable<[string, T]> {
 	@param key - You can use [dot-notation](https://github.com/sindresorhus/dot-prop) in a key to access nested properties.
 	@param value - Must be JSON serializable. Trying to set the type `undefined`, `function`, or `symbol` will result in a `TypeError`.
 	*/
-	set(key: string | object, value?: unknown): void {
+	set(key: string | {[key: string]: unknown}, value?: unknown): void {
 		if (typeof key !== 'string' && typeof key !== 'object') {
 			throw new TypeError(`Expected \`key\` to be of type \`string\` or \`object\`, got ${typeof key}`);
 		}
