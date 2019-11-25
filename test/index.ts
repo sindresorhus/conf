@@ -1,5 +1,5 @@
 /* eslint-disable no-new */
-/* eslint-disable ava/no-ignored-test-files */
+/* eslint-disable ava/use-test */
 import fs = require('fs');
 import path = require('path');
 import tempy = require('tempy');
@@ -8,9 +8,10 @@ import pkgUp = require('pkg-up');
 import clearModule = require('clear-module');
 import pEvent = require('p-event');
 import delay = require('delay');
-import test from 'ava';
+import anyTest, {TestInterface} from 'ava';
 import Conf from '../source';
 
+const test = anyTest as TestInterface<{T: string}>;
 const fixture = '🦄';
 
 test.beforeEach((t: any) => {
