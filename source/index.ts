@@ -44,13 +44,13 @@ export default class Conf<T = any> implements Iterable<[string, T]> {
 
 	_validator?: Ajv.ValidateFunction;
 
-	encryptionKey?: string;
+	encryptionKey: string | undefined;
 
-	events?: EventEmitter;
+	events: EventEmitter;
 
 	serialize: Serializer;
 
-	deserialize?: Deserializer;
+	deserialize: Deserializer | undefined;
 
 	path: string;
 
