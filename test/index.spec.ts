@@ -1,5 +1,4 @@
-/* eslint-disable no-new */
-/* eslint-disable ava/use-test */
+/* eslint-disable no-new, @typescript-eslint/no-empty-function, ava/use-test */
 import fs = require('fs');
 import path = require('path');
 import tempy = require('tempy');
@@ -542,7 +541,8 @@ test('`clearInvalidConfig` option - invalid data', t => {
 	fs.writeFileSync(config.path, '🦄');
 
 	t.throws(() => {
-		config.store; // eslint-disable-line no-unused-expressions
+		// eslint-disable-next-line @typescript-eslint/no-unused-expressions
+		config.store;
 	}, {instanceOf: SyntaxError});
 });
 

@@ -66,10 +66,12 @@
 	"nyc": {
 		"extension": [
 			".ts"
-		]
+		],
+		"include": ["source/**"]
 	},
 	"dependencies": {
 		"ajv": "^6.10.2",
+		"crypto": "^1.0.1",
 		"debounce-fn": "^3.0.1",
 		"dot-prop": "^5.2.0",
 		"env-paths": "^2.2.0",
@@ -81,24 +83,24 @@
 		"write-file-atomic": "^3.0.1"
 	},
 	"devDependencies": {
-		"@sindresorhus/tsconfig": "^0.4.0",
-		"@types/node": "^12.12.11",
+		"@sindresorhus/tsconfig": "^0.6.0",
+		"@types/node": "^12.12.12",
 		"@types/semver": "^6.2.0",
 		"@types/write-file-atomic": "^2.1.2",
-		"@typescript-eslint/eslint-plugin": "^1.13.0",
-		"@typescript-eslint/parser": "^1.13.0",
-		"ava": "^2.3.0",
+		"@typescript-eslint/eslint-plugin": "^2.9.0",
+		"@typescript-eslint/parser": "^2.9.0",
+		"ava": "^2.4.0",
 		"clear-module": "^4.0.0",
 		"del": "^5.1.0",
 		"del-cli": "^3.0.0",
 		"delay": "^4.3.0",
-		"eslint-config-xo-typescript": "^0.15.0",
+		"eslint-config-xo-typescript": "^0.22.0",
 		"nyc": "^14.1.1",
 		"p-event": "^4.1.0",
 		"tempy": "^0.3.0",
 		"ts-node": "^8.5.2",
-		"tsd": "^0.7.4",
+		"tsd": "^0.11.0",
 		"typescript": "^3.7.2",
-		"xo": "^0.24.0"
+		"xo": "^0.25.3"
 	}
 }

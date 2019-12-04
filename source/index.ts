@@ -11,12 +11,12 @@ import writeFileAtomic = require('write-file-atomic');
 import Ajv = require('ajv');
 import debounceFn = require('debounce-fn');
 import semver = require('semver');
-import onetime from 'onetime';
+import onetime = require('onetime');
 
-const plainObject: () => object = () => Object.create(null);
 const encryptionAlgorithm = 'aes-256-cbc';
 
 // Prevent caching of this module so module.parent is always accurate
+// eslint-disable-next-line @typescript-eslint/no-dynamic-delete
 delete require.cache[__filename];
 const parentDir = path.dirname((module.parent && module.parent.filename) || '.');
 
@@ -37,10 +37,10 @@ const checkValueType = (key: string, value: unknown): void => {
 const INTERNAL_KEY = '__internal__';
 const MIGRATION_KEY = `${INTERNAL_KEY}.migrations.version`;
 
-export default class Conf<T = any> implements Iterable<[string, T]> {
-	_options: Options;
+export default class Conf<T = unknown> implements Iterable<[string, T]> {
+	_options: Partial<Options<T>>;
 
-	_defaultValues: DefaultValues = {};
+	_defaultValues: {[key: string]: T} = {};
 
 	_validator?: Ajv.ValidateFunction;
 
@@ -48,23 +48,21 @@ export default class Conf<T = any> implements Iterable<[string, T]> {
 
 	events: EventEmitter;
 
-	serialize: Serializer;
+	serialize: (value: {[key: string]: T}) => string;
 
-	deserialize: Deserializer | undefined;
+	deserialize: (text: string) => T;
 
 	path: string;
 
 	/**
 	Simple config handling for your app or module.
 	*/
-	constructor(partialOptions?: Partial<Options>) {
-		const options: Options = {
+	constructor(partialOptions?: Partial<Options<T>>) {
+		const options: Partial<Options<T>> = {
 			configName: 'config',
 			fileExtension: 'json',
 			projectSuffix: 'nodejs',
 			clearInvalidConfig: true,
-			serialize: (value: unknown) => JSON.stringify(value, null, '\t'),
-			deserialize: (arg: string | Buffer) => JSON.parse(arg.toString()),
 			accessPropertiesByDotNotation: true,
 			...partialOptions
 		};
@@ -126,15 +124,16 @@ export default class Conf<T = any> implements Iterable<[string, T]> {
 
 		this.events = new EventEmitter();
 		this.encryptionKey = options.encryptionKey;
-		this.serialize = options.serialize;
-		this.deserialize = options.deserialize;
+		this.serialize = options.serialize ? options.serialize : value => JSON.stringify(value, null, '\t');
+		this.deserialize = options.deserialize ? options.deserialize : (arg: string): T => JSON.parse(arg);
 
 		const fileExtension = options.fileExtension ? `.${options.fileExtension}` : '';
-		this.path = path.resolve(options.cwd, `${options.configName}${fileExtension}`);
+		this.path = path.resolve(options.cwd, `${options.configName || 'config'}${fileExtension}`);
 
 		const fileStore = this.store;
-		const store = Object.assign(plainObject(), options.defaults, fileStore);
+		const store = Object.assign(this.createPlainObject(), options.defaults, fileStore);
 		this._validate(store);
+
 		try {
 			assert.deepEqual(fileStore, store);
 		} catch (_) {
@@ -172,7 +171,7 @@ export default class Conf<T = any> implements Iterable<[string, T]> {
 			return false;
 		}
 
-		const errors = this._validator.errors.reduce((error, {dataPath, message}) =>
+		const errors = this._validator.errors.reduce((error, {dataPath, message = ''}) =>
 			error + ` \`${dataPath.slice(1)}\` ${message};`, '');
 		throw new Error('Config schema violation:' + errors.slice(0, -1));
 	}
@@ -183,8 +182,8 @@ export default class Conf<T = any> implements Iterable<[string, T]> {
 		makeDir.sync(path.dirname(this.path));
 	}
 
-	_write(value: unknown): void {
-		let data: string | Buffer = this.serialize && this.serialize(value);
+	_write(value: {[key: string]: T}): void {
+		let data: string | Buffer = this.serialize(value);
 
 		if (this.encryptionKey) {
 			const initializationVector = crypto.randomBytes(16);
@@ -216,7 +215,7 @@ export default class Conf<T = any> implements Iterable<[string, T]> {
 	}
 
 	_migrate(migrations: Migrations, versionToMigrate: string): void {
-		let previousMigratedVersion: string = this._get(MIGRATION_KEY, '0.0.0');
+		let previousMigratedVersion: string = this._get(MIGRATION_KEY, '0.0.0') as string;
 
 		const newerVersions: string[] = Object.keys(migrations)
 			.filter(candidateVersion => this._shouldPerformMigration(candidateVersion, previousMigratedVersion, versionToMigrate));
@@ -236,7 +235,7 @@ export default class Conf<T = any> implements Iterable<[string, T]> {
 				this.store = storeBackup;
 
 				throw new Error(
-					`Something went wrong during the migration! Changes applied to the store until this failed migration will be restored. ${error}`
+					`Something went wrong during the migration! Changes applied to the store until this failed migration will be restored. ${error as string}`
 				);
 			}
 		}
@@ -294,7 +293,7 @@ export default class Conf<T = any> implements Iterable<[string, T]> {
 		return true;
 	}
 
-	_get(key: string, defaultValue?: unknown): any {
+	_get(key: string, defaultValue?: unknown): unknown {
 		return dotProp.get(this.store, key, defaultValue);
 	}
 
@@ -325,7 +324,7 @@ export default class Conf<T = any> implements Iterable<[string, T]> {
 	@param key - You can use [dot-notation](https://github.com/sindresorhus/dot-prop) in a key to access nested properties.
 	@param value - Must be JSON serializable. Trying to set the type `undefined`, `function`, or `symbol` will result in a `TypeError`.
 	*/
-	set(key: string | {[key: string]: unknown}, value?: unknown): void {
+	set(key: string | {[key: string]: T}, value?: T): void {
 		if (typeof key !== 'string' && typeof key !== 'object') {
 			throw new TypeError(`Expected \`key\` to be of type \`string\` or \`object\`, got ${typeof key}`);
 		}
@@ -340,7 +339,7 @@ export default class Conf<T = any> implements Iterable<[string, T]> {
 
 		const {store} = this;
 
-		const set = (key: string, value: unknown): void => {
+		const set = (key: string, value: T): void => {
 			checkValueType(key, value);
 			if (this._options.accessPropertiesByDotNotation) {
 				dotProp.set(store, key, value);
@@ -355,7 +354,7 @@ export default class Conf<T = any> implements Iterable<[string, T]> {
 				set(key, value);
 			}
 		} else {
-			set(key, value);
+			set(key, value as T);
 		}
 
 		this.store = store;
@@ -397,6 +396,7 @@ export default class Conf<T = any> implements Iterable<[string, T]> {
 		if (this._options.accessPropertiesByDotNotation) {
 			dotProp.delete(store, key);
 		} else {
+			// eslint-disable-next-line @typescript-eslint/no-dynamic-delete
 			delete store[key];
 		}
 
@@ -407,7 +407,7 @@ export default class Conf<T = any> implements Iterable<[string, T]> {
 	Delete all items.
 	*/
 	clear(): void{
-		this.store = plainObject();
+		this.store = this.createPlainObject();
 	}
 
 	/**
@@ -489,32 +489,36 @@ export default class Conf<T = any> implements Iterable<[string, T]> {
 		}
 	}
 
+	createPlainObject(): {[key: string]: T} {
+		return Object.create(null);
+	}
+
 	get size(): number {
 		return Object.keys(this.store).length;
 	}
 
-	get store(): any {
+	get store(): {[key: string]: T} {
 		try {
 			const data: string | Buffer = fs.readFileSync(this.path, this.encryptionKey ? null : 'utf8');
-			const dataString: string | Buffer = this.encryptData(data);
+			const dataString = this.encryptData(data) as string;
 			const deserializedData = this.deserialize && this.deserialize(dataString);
 			this._validate(deserializedData);
-			return Object.assign(plainObject(), deserializedData);
+			return Object.assign(this.createPlainObject(), deserializedData);
 		} catch (error) {
 			if (error.code === 'ENOENT') {
 				this._ensureDirectory();
-				return plainObject();
+				return this.createPlainObject();
 			}
 
 			if (this._options.clearInvalidConfig && error.name === 'SyntaxError') {
-				return plainObject();
+				return this.createPlainObject();
 			}
 
 			throw error;
 		}
 	}
 
-	set store(value: any) {
+	set store(value: {[key: string]: T}) {
 		this._ensureDirectory();
 
 		this._validate(value);
@@ -523,25 +527,20 @@ export default class Conf<T = any> implements Iterable<[string, T]> {
 		this.events?.emit('change');
 	}
 
-	* [Symbol.iterator](): IterableIterator<[string, any]> {
+	* [Symbol.iterator](): IterableIterator<[string, T]> {
 		for (const [key, value] of Object.entries(this.store)) {
 			yield [key, value];
 		}
 	}
 }
 
-export type Serializer = (...args: unknown[]) => string;
-export type Deserializer = (arg: string | Buffer) => unknown;
-export type DefaultValues = {
-	[key: string]: object;
-};
 export type Migrations = {
-	[key: string]: (store: Conf) => void;
+	[key: string]: (store: unknown) => void;
 };
 
 export type Schema = object | boolean;
 
-export type Options = {
+export interface Options<T> {
 	/**
 		Access nested properties by dot notation.
 
@@ -586,6 +585,7 @@ export type Options = {
 		@default true
 	*/
 	clearInvalidConfig?: boolean;
+
 	/**
 		Name of the config file (without extension).
 
@@ -593,7 +593,7 @@ export type Options = {
 
 		@default 'config'
 	*/
-	configName?: string;
+	configName: string;
 
 	/**
 		__You most likely don't need this. Please don't use it unless you really have to.__
@@ -733,7 +733,7 @@ export type Options = {
 
 		@default value => JSON.stringify(value, null, '\t')
 	*/
-	serialize: Serializer;
+	serialize?: (value: {[key: string]: T}) => string;
 
 	/**
 		Function to deserialize the config object from a UTF-8 string when reading the config file.
@@ -742,5 +742,5 @@ export type Options = {
 
 		@default JSON.parse
 	*/
-	deserialize?: Deserializer;
-};
+	deserialize?: (text: string) => T;
+}
