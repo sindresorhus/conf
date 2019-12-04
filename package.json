@@ -15,8 +15,7 @@
 	},
 	"scripts": {
 		"build": "del dist && tsc",
-		"test": "npm run build && xo && nyc ava",
-		"bench": "ts-node bench.ts",
+		"test": "npm run build && xo source/** && nyc ava",
 		"prepublishOnly": "npm run build"
 	},
 	"files": [
@@ -58,16 +57,16 @@
 			"ts"
 		],
 		"rules": {
-			"import/first": "off",
-			"import/newline-after-import": "off",
-			"@typescript-eslint/member-ordering": "off"
+			"@typescript-eslint/no-dynamic-delete": "off"
 		}
 	},
 	"nyc": {
 		"extension": [
 			".ts"
 		],
-		"include": ["source/**"]
+		"include": [
+			"source/**"
+		]
 	},
 	"dependencies": {
 		"ajv": "^6.10.2",

@@ -16,7 +16,6 @@ import onetime = require('onetime');
 const encryptionAlgorithm = 'aes-256-cbc';
 
 // Prevent caching of this module so module.parent is always accurate
-// eslint-disable-next-line @typescript-eslint/no-dynamic-delete
 delete require.cache[__filename];
 const parentDir = path.dirname((module.parent && module.parent.filename) || '.');
 
@@ -214,7 +213,7 @@ export default class Conf<T = unknown> implements Iterable<[string, T]> {
 		}, {wait: 100}));
 	}
 
-	_migrate(migrations: Migrations, versionToMigrate: string): void {
+	_migrate(migrations: Migrations<T>, versionToMigrate: string): void {
 		let previousMigratedVersion: string = this._get(MIGRATION_KEY, '0.0.0') as string;
 
 		const newerVersions: string[] = Object.keys(migrations)
@@ -310,7 +309,7 @@ export default class Conf<T = unknown> implements Iterable<[string, T]> {
 	@param key - The key of the item to get.
 	@param defaultValue - The default value if the item does not exist.
 	*/
-	get(key: string, defaultValue?: unknown): unknown {
+	get(key: string, defaultValue?: T): T | undefined {
 		if (this._options.accessPropertiesByDotNotation) {
 			return dotProp.get(this.store, key, defaultValue);
 		}
@@ -396,7 +395,6 @@ export default class Conf<T = unknown> implements Iterable<[string, T]> {
 		if (this._options.accessPropertiesByDotNotation) {
 			dotProp.delete(store, key);
 		} else {
-			// eslint-disable-next-line @typescript-eslint/no-dynamic-delete
 			delete store[key];
 		}
 
@@ -465,7 +463,7 @@ export default class Conf<T = unknown> implements Iterable<[string, T]> {
 		return () => this.events?.removeListener('change', onChange);
 	}
 
-	encryptData(data: string | Buffer): string | Buffer {
+	_encryptData(data: string | Buffer): string | Buffer {
 		if (!this.encryptionKey) {
 			return data;
 		}
@@ -500,7 +498,7 @@ export default class Conf<T = unknown> implements Iterable<[string, T]> {
 	get store(): {[key: string]: T} {
 		try {
 			const data: string | Buffer = fs.readFileSync(this.path, this.encryptionKey ? null : 'utf8');
-			const dataString = this.encryptData(data) as string;
+			const dataString = this._encryptData(data) as string;
 			const deserializedData = this.deserialize && this.deserialize(dataString);
 			this._validate(deserializedData);
 			return Object.assign(this.createPlainObject(), deserializedData);
@@ -534,8 +532,8 @@ export default class Conf<T = unknown> implements Iterable<[string, T]> {
 	}
 }
 
-export type Migrations = {
-	[key: string]: (store: unknown) => void;
+export type Migrations<T> = {
+	[key: string]: (store: Conf<T>) => void;
 };
 
 export type Schema = object | boolean;
@@ -658,7 +656,7 @@ export interface Options<T> {
 		});
 		```
 	*/
-	migrations?: Migrations;
+	migrations?: Migrations<T>;
 
 	/**
 		You only need to specify this if you don't have a package.json file in your project or if it doesn't have a name defined within it.

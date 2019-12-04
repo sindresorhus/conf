@@ -248,12 +248,12 @@ test('`serialize` and `deserialize` options', t => {
 	t.plan(4);
 	const serialized = `foo:${fixture}`;
 	const deserialized = {foo: fixture};
-	const serialize = (value: any): string => {
+	const serialize = (value: unknown): string => {
 		t.is(value, deserialized);
 		return serialized;
 	};
 
-	const deserialize = (value: any): any => {
+	const deserialize = (value: unknown): unknown => {
 		t.is(value, serialized);
 		return deserialized;
 	};
@@ -311,28 +311,26 @@ test('automatic `projectName` inference', t => {
 test('`cwd` option overrides `projectName` option', t => {
 	const cwd = tempy.directory();
 
-	let config: any;
 	t.notThrows(() => {
-		config = new Conf({cwd, projectName: ''});
+		const config: Conf = new Conf({cwd, projectName: ''});
+		t.true(config.path.startsWith(cwd));
+		t.is(config.get('foo'), undefined);
+		config.set('foo', fixture);
+		t.is(config.get('foo'), fixture);
+		del.sync(config.path, {force: true});
 	});
-
-	t.true(config.path.startsWith(cwd));
-	t.is(config.get('foo'), undefined);
-	config.set('foo', fixture);
-	t.is(config.get('foo'), fixture);
-	del.sync(config.path, {force: true});
 });
 
 test('safely handle missing package.json', t => {
 	const pkgUpSyncOrig = pkgUp.sync;
 	pkgUp.sync = () => null;
 
-	let config: any;
+	let config: Conf;
 	t.notThrows(() => {
 		config = new Conf({projectName: 'conf-fixture-project-name'});
+		del.sync(config.path, {force: true});
 	});
 
-	del.sync(config.path, {force: true});
 	pkgUp.sync = pkgUpSyncOrig;
 });
 
@@ -340,30 +338,27 @@ test('handle `cwd` being set and `projectName` not being set', t => {
 	const pkgUpSyncOrig = pkgUp.sync;
 	pkgUp.sync = () => null;
 
-	let config: any;
+	let config: Conf;
 	t.notThrows(() => {
 		config = new Conf({cwd: 'conf-fixture-cwd'});
+		del.sync(path.dirname(config.path));
 	});
 
-	del.sync(path.dirname(config.path));
 	pkgUp.sync = pkgUpSyncOrig;
 });
 
 // See #11
 test('fallback to cwd if `module.filename` is `null`', t => {
 	const preservedFilename: string = module.filename;
-	const filename: any = null;
-	module.filename = filename;
+	module.filename = '';
 	clearModule('.');
 
-	let config: any;
 	t.notThrows(() => {
 		const Conf = require('../dist').default;
-		config = new Conf({cwd: 'conf-fixture-fallback-module-filename-null'});
+		const config: Conf = new Conf({cwd: 'conf-fixture-fallback-module-filename-null'});
+		del.sync(path.dirname(config.path));
+		module.filename = preservedFilename;
 	});
-
-	module.filename = preservedFilename;
-	del.sync(path.dirname(config.path));
 });
 
 test('encryption', t => {
@@ -416,12 +411,12 @@ test('onDidChange()', t => {
 
 	t.plan(8);
 
-	const checkFoo = (newValue: any, oldValue: any): void => {
+	const checkFoo = (newValue: unknown, oldValue: unknown): void => {
 		t.is(newValue, '🐴');
 		t.is(oldValue, fixture);
 	};
 
-	const checkBaz = (newValue: any, oldValue: any): void => {
+	const checkBaz = (newValue: unknown, oldValue: unknown): void => {
 		t.is(newValue, '🐴');
 		t.is(oldValue, fixture);
 	};
@@ -438,12 +433,12 @@ test('onDidChange()', t => {
 	unsubscribe();
 	config.set('baz.boo', fixture);
 
-	const checkUndefined = (newValue: any, oldValue: any): void => {
+	const checkUndefined = (newValue: unknown, oldValue: unknown): void => {
 		t.is(oldValue, fixture);
 		t.is(newValue, undefined);
 	};
 
-	const checkSet = (newValue: any, oldValue: any): void => {
+	const checkSet = (newValue: unknown, oldValue: unknown): void => {
 		t.is(oldValue, undefined);
 		t.is(newValue, '🐴');
 	};
@@ -462,12 +457,12 @@ test('onDidAnyChange()', t => {
 
 	t.plan(8);
 
-	const checkFoo = (newValue: any, oldValue: any): void => {
+	const checkFoo = (newValue: unknown, oldValue: unknown): void => {
 		t.deepEqual(newValue, {foo: '🐴'});
 		t.deepEqual(oldValue, {foo: fixture});
 	};
 
-	const checkBaz = (newValue: any, oldValue: any): void => {
+	const checkBaz = (newValue: unknown, oldValue: unknown): void => {
 		t.deepEqual(newValue, {
 			foo: fixture,
 			baz: {boo: '🐴'}
@@ -490,7 +485,7 @@ test('onDidAnyChange()', t => {
 	unsubscribe();
 	config.set('baz.boo', fixture);
 
-	const checkUndefined = (newValue: any, oldValue: any): void => {
+	const checkUndefined = (newValue: unknown, oldValue: unknown): void => {
 		t.deepEqual(oldValue, {
 			foo: '🦄',
 			baz: {boo: '🦄'}
@@ -501,7 +496,7 @@ test('onDidAnyChange()', t => {
 		});
 	};
 
-	const checkSet = (newValue: any, oldValue: any): void => {
+	const checkSet = (newValue: unknown, oldValue: unknown): void => {
 		t.deepEqual(oldValue, {
 			baz: {boo: fixture}
 		});
@@ -771,7 +766,7 @@ test('`watch` option watches for config file changes by another process', async 
 
 	t.plan(4);
 
-	const checkFoo = (newValue: any, oldValue: any): void => {
+	const checkFoo = (newValue: unknown, oldValue: unknown): void => {
 		t.is(newValue, '🐴');
 		t.is(oldValue, '👾');
 	};
@@ -785,7 +780,7 @@ test('`watch` option watches for config file changes by another process', async 
 		conf2.set('foo', '🐴');
 	})();
 
-	const {events}: any = conf1;
+	const {events} = conf1;
 
 	await pEvent(events, 'change');
 });
@@ -803,7 +798,7 @@ test('`watch` option watches for config file changes by file write', async t => 
 
 	t.plan(2);
 
-	const checkFoo = (newValue: any, oldValue: any): void => {
+	const checkFoo = (newValue: unknown, oldValue: unknown): void => {
 		t.is(newValue, '🦄');
 		t.is(oldValue, '🐴');
 	};
@@ -815,7 +810,7 @@ test('`watch` option watches for config file changes by file write', async t => 
 		fs.writeFileSync(path.join(cwd, 'config.json'), JSON.stringify({foo: '🦄'}));
 	})();
 
-	const {events}: any = conf;
+	const {events} = conf;
 
 	await pEvent(events, 'change');
 });
@@ -832,7 +827,7 @@ test('migrations - should save the project version when a migration occurs', t =
 	const cwd = tempy.directory();
 
 	const migrations = {
-		'0.0.3': (store: any) => {
+		'0.0.3': (store: Conf) => {
 			store.set('foo', 'cool stuff');
 		}
 	};
@@ -851,7 +846,7 @@ test('migrations - should NOT run the migration when the version doesn\'t change
 	const cwd = tempy.directory();
 
 	const migrations = {
-		'1.0.0': (store: any) => {
+		'1.0.0': (store: Conf) => {
 			store.set('foo', 'cool stuff');
 		}
 	};
@@ -870,7 +865,7 @@ test('migrations - should run the migration when the version changes', t => {
 	const cwd = tempy.directory();
 
 	const migrations = {
-		'1.0.0': (store: any) => {
+		'1.0.0': (store: Conf) => {
 			store.set('foo', 'cool stuff');
 		}
 	};
@@ -889,7 +884,7 @@ test('migrations - should run the migration when the version changes', t => {
 test('migrations - should run the migration when the version uses semver comparisons', t => {
 	const cwd = tempy.directory();
 	const migrations = {
-		'>=1.0': (store: any) => {
+		'>=1.0': (store: Conf) => {
 			store.set('foo', 'cool stuff');
 		}
 	};
@@ -902,10 +897,10 @@ test('migrations - should run the migration when the version uses semver compari
 test('migrations - should run the migration when the version uses multiple semver comparisons', t => {
 	const cwd = tempy.directory();
 	const migrations = {
-		'>=1.0': (store: any) => {
+		'>=1.0': (store: Conf) => {
 			store.set('foo', 'cool stuff');
 		},
-		'>2.0.0': (store: any) => {
+		'>2.0.0': (store: Conf) => {
 			store.set('foo', 'modern cool stuff');
 		}
 	};
@@ -922,14 +917,14 @@ test('migrations - should run the migration when the version uses multiple semve
 test('migrations - should run all valid migrations when the version uses multiple semver comparisons', t => {
 	const cwd = tempy.directory();
 	const migrations = {
-		'>=1.0': (store: any) => {
+		'>=1.0': (store: Conf) => {
 			store.set('foo', 'cool stuff');
 		},
-		'>2.0.0': (store: any) => {
+		'>2.0.0': (store: Conf) => {
 			store.set('woof', 'oof');
 			store.set('medium', 'yes');
 		},
-		'<3.0.0': (store: any) => {
+		'<3.0.0': (store: Conf) => {
 			store.set('woof', 'woof');
 			store.set('heart', '❤');
 		}
@@ -946,14 +941,14 @@ test('migrations - should run all valid migrations when the version uses multipl
 test('migrations - should cleanup migrations with non-numeric values', t => {
 	const cwd = tempy.directory();
 	const migrations = {
-		'1.0.1-alpha': (store: any) => {
+		'1.0.1-alpha': (store: Conf) => {
 			store.set('foo', 'cool stuff');
 		},
-		'>2.0.0-beta': (store: any) => {
+		'>2.0.0-beta': (store: Conf) => {
 			store.set('woof', 'oof');
 			store.set('medium', 'yes');
 		},
-		'<3.0.0': (store: any) => {
+		'<3.0.0': (store: Conf) => {
 			store.set('woof', 'woof');
 			store.set('heart', '❤');
 		}
@@ -971,7 +966,7 @@ test('migrations - should infer the applicationVersion from the package.json whe
 	const cwd = tempy.directory();
 
 	const conf = new Conf({cwd, migrations: {
-		'2000.0.0': (store: any) => {
+		'2000.0.0': (store: Conf) => {
 			store.set('foo', 'bar');
 		}
 	}});
@@ -1000,10 +995,10 @@ test('migrations error handling - should rollback changes if a migration failed'
 	const cwd = tempy.directory();
 
 	const failingMigrations = {
-		'1.0.0': (store: any) => {
+		'1.0.0': (store: Conf) => {
 			store.set('foo', 'initial update');
 		},
-		'1.0.1': (store: any) => {
+		'1.0.1': (store: Conf) => {
 			store.set('foo', 'updated before crash');
 
 			throw new Error('throw the migration and rollback');
@@ -1014,7 +1009,7 @@ test('migrations error handling - should rollback changes if a migration failed'
 	};
 
 	const passingMigrations = {
-		'1.0.0': (store: any) => {
+		'1.0.0': (store: Conf) => {
 			store.set('foo', 'initial update');
 		}
 	};
