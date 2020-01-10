@@ -49,6 +49,7 @@ class Conf {
 			serialize: value => JSON.stringify(value, null, '\t'),
 			deserialize: JSON.parse,
 			accessPropertiesByDotNotation: true,
+			restrictKeys: false
 			...options
 		};
 
@@ -85,7 +86,8 @@ class Conf {
 				allErrors: true,
 				format: 'full',
 				useDefaults: true,
-				errorDataPath: 'property'
+				errorDataPath: 'property',
+				removeAdditional: options.restrictKeys? 'all' : false,
 			});
 			const schema = {
 				type: 'object',
