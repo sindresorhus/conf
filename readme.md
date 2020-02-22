@@ -315,10 +315,12 @@ Delete all items.
 
 Watches the given `key`, calling `callback` on any changes. When a key is first set `oldValue` will be `undefined`, and when a key is deleted `newValue` will be `undefined`.
 
-The `onDidChange` method returns a function which you can use to unsubscribe.
+Returns a function which you can use to unsubscribe:
+
 ```js
-const unsubscribe = conf.onDidChange(key, callback)
-unsubscribe()
+const unsubscribe = conf.onDidChange(key, callback);
+
+unsubscribe();
 ```
 
 #### .onDidAnyChange(callback)
@@ -327,10 +329,12 @@ unsubscribe()
 
 Watches the whole config object, calling `callback` on any changes. `oldValue` and `newValue` will be the config object before and after the change, respectively. You must compare `oldValue` to `newValue` to find out what changed.
 
-The `onDidAnyChange` method returns a function which you can use to unsubscribe.
+Returns a function which you can use to unsubscribe:
+
 ```js
-const unsubscribe = conf.onDidAnyChange(key, callback)
-unsubscribe()
+const unsubscribe = conf.onDidAnyChange(key, callback);
+
+unsubscribe();
 ```
 
 #### .size
