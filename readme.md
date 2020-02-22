@@ -129,7 +129,6 @@ const store = new Conf({
 		}
 	}
 });
-
 ```
 
 > Note: The version the migrations use refers to the **project version** by default. If you want to change this behavior, specify a [`projectVersion`](#projectVersion).
