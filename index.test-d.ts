@@ -1,4 +1,4 @@
-import {expectType, expectError} from 'tsd';
+import {expectType, expectError, expectAssignable} from 'tsd';
 import Conf = require('.');
 
 type UnicornFoo = {
@@ -70,8 +70,8 @@ conf.delete('foo');
 expectType<boolean>(conf.has('foo'));
 conf.clear();
 const off = conf.onDidChange('foo', (oldValue, newValue) => {
-	expectType<UnicornFoo[keyof UnicornFoo]>(oldValue);
-	expectType<UnicornFoo[keyof UnicornFoo]>(newValue);
+	expectAssignable<UnicornFoo[keyof UnicornFoo]>(oldValue);
+	expectAssignable<UnicornFoo[keyof UnicornFoo]>(newValue);
 });
 
 expectType<() => void>(off);

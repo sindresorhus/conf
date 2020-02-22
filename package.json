@@ -4,10 +4,11 @@
 	"description": "Simple config handling for your app or module",
 	"license": "MIT",
 	"repository": "sindresorhus/conf",
+	"funding": "https://github.com/sponsors/sindresorhus",
 	"author": {
 		"name": "Sindre Sorhus",
 		"email": "sindresorhus@gmail.com",
-		"url": "sindresorhus.com"
+		"url": "https://sindresorhus.com"
 	},
 	"engines": {
 		"node": ">=8"
@@ -58,7 +59,7 @@
 		"delay": "^4.3.0",
 		"p-event": "^4.1.0",
 		"tempy": "^0.3.0",
-		"tsd": "^0.7.4",
+		"tsd": "^0.11.0",
 		"xo": "^0.24.0"
 	}
 }

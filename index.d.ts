@@ -73,11 +73,11 @@ declare namespace Conf {
 		readonly projectVersion?: string;
 
 		/*
-		_Don't use this feature until [this issue](https://github.com/sindresorhus/conf/issues/92) has been fixed._
-
 		You can use migrations to perform operations to the store whenever a version is changed.
 
 		The `migrations` object should consist of a key-value pair of `'version': handler`. The `version` can also be a [semver range](https://github.com/npm/node-semver#ranges).
+
+		Note: The version the migrations use refers to the __project version__ by default. If you want to change this behavior, specify the `projectVersion` option.
 
 		@example
 		```
@@ -312,6 +312,7 @@ declare class Conf<T = any> implements Iterable<[keyof T, T[keyof T]]> {
 
 	@param key - The key wo watch.
 	@param callback - A callback function that is called on any changes. When a `key` is first set `oldValue` will be `undefined`, and when a key is deleted `newValue` will be `undefined`.
+	@returns A function, that when called, will unsubscribe.
 	*/
 	onDidChange<K extends keyof T>(
 		key: K,
@@ -322,6 +323,7 @@ declare class Conf<T = any> implements Iterable<[keyof T, T[keyof T]]> {
 	Watches the whole config object, calling `callback` on any changes.
 
 	@param callback - A callback function that is called on any changes. When a `key` is first set `oldValue` will be `undefined`, and when a key is deleted `newValue` will be `undefined`.
+	@returns A function, that when called, will unsubscribe.
 	*/
 	onDidAnyChange(
 		callback: (newValue?: Readonly<T>, oldValue?: Readonly<T>) => void

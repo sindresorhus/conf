@@ -193,6 +193,7 @@ test('`configName` option', t => {
 	config.set('foo', fixture);
 	t.is(config.get('foo'), fixture);
 	t.is(path.basename(config.path, '.json'), configName);
+	t.true(fs.existsSync(config.path));
 });
 
 test('no `suffix` option', t => {

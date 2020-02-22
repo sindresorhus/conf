@@ -6,13 +6,11 @@ All you have to care about is what to persist. This module will handle all the d
 
 *If you need this for Electron, check out [`electron-store`](https://github.com/sindresorhus/electron-store) instead.*
 
-
 ## Install
 
 ```
 $ npm install conf
 ```
-
 
 ## Usage
 
@@ -36,7 +34,6 @@ console.log(config.get('unicorn'));
 ```
 
 Or [create a subclass](https://github.com/sindresorhus/electron-store/blob/master/index.js).
-
 
 ## API
 
@@ -101,8 +98,6 @@ config.set('foo', '1');
 
 Type: `object`
 
-**Don't use this feature until [this issue](https://github.com/sindresorhus/conf/issues/92) has been fixed.**
-
 You can use migrations to perform operations to the store whenever a **project version** is upgraded.
 
 The `migrations` object should consist of a key-value pair of `'version': handler`. The `version` can also be a [semver range](https://github.com/npm/node-semver#ranges).
@@ -131,12 +126,12 @@ const store = new Conf({
 });
 ```
 
-> Note: The version the migrations use refers to the **project version** by default. If you want to change this behavior, specify a [`projectVersion`](#projectVersion).
+> Note: The version the migrations use refers to the **project version** by default. If you want to change this behavior, specify the [`projectVersion`](#projectVersion) option.
 
 #### configName
 
-Type: `string`<br>
-Default: `config`
+Type: `string`\
+Default: `'config'`
 
 Name of the config file (without extension).
 
@@ -144,21 +139,21 @@ Useful if you need multiple config files for your app or module. For example, di
 
 #### projectName
 
-Type: `string`<br>
+Type: `string`\
 Default: The `name` field in the package.json closest to where `conf` is imported.
 
 You only need to specify this if you don't have a package.json file in your project or if it doesn't have a name defined within it.
 
 #### projectVersion
 
-Type: `string`<br>
+Type: `string`\
 Default: The `version` field in the package.json closest to where `conf` is imported.
 
 You only need to specify this if you don't have a package.json file in your project or if it doesn't have a version defined within it.
 
 #### cwd
 
-Type: `string`<br>
+Type: `string`\
 Default: System default [user config directory](https://github.com/sindresorhus/env-paths#pathsconfig)
 
 **You most likely don't need this. Please don't use it unless you really have to. By default, it will pick the optimal location by adhering to system conventions. You are very likely to get this wrong and annoy users.**
@@ -169,7 +164,7 @@ The only use-case I can think of is having the config located in the app directo
 
 #### encryptionKey
 
-Type: `string | Buffer | TypedArray | DataView`<br>
+Type: `string | Buffer | TypedArray | DataView`\
 Default: `undefined`
 
 This can be used to secure sensitive data **if** the encryption key is stored in a secure manner (not plain-text) in the Node.js app. For example, by using [`node-keytar`](https://github.com/atom/node-keytar) to store the encryption key securely, or asking the encryption key from the user (a password) and then storing it in a variable.
@@ -182,8 +177,8 @@ When specified, the store will be encrypted using the [`aes-256-cbc`](https://en
 
 #### fileExtension
 
-Type: `string`<br>
-Default: `json`
+Type: `string`\
+Default: `'json'`
 
 Extension of the config file.
 
@@ -191,14 +186,14 @@ You would usually not need this, but could be useful if you want to interact wit
 
 #### clearInvalidConfig
 
-Type: `boolean`<br>
+Type: `boolean`\
 Default: `true`
 
 The config is cleared if reading the config file causes a `SyntaxError`. This is a good default, as the config file is not intended to be hand-edited, so it usually means the config is corrupt and there's nothing the user can do about it anyway. However, if you let the user edit the config file directly, mistakes might happen and it could be more useful to throw an error when the config is invalid instead of clearing. Disabling this option will make it throw a `SyntaxError` on invalid config instead of clearing.
 
 #### serialize
 
-Type: `Function`<br>
+Type: `Function`\
 Default: `value => JSON.stringify(value, null, '\t')`
 
 Function to serialize the config object to a UTF-8 string when writing the config file.
@@ -207,7 +202,7 @@ You would usually not need this, but it could be useful if you want to use a for
 
 #### deserialize
 
-Type: `Function`<br>
+Type: `Function`\
 Default: `JSON.parse`
 
 Function to deserialize the config object from a UTF-8 string when reading the config file.
@@ -216,8 +211,8 @@ You would usually not need this, but it could be useful if you want to use a for
 
 #### projectSuffix
 
-Type: `string`<br>
-Default: `nodejs`
+Type: `string`\
+Default: `'nodejs'`
 
 **You most likely don't need this. Please don't use it unless you really have to.**
 
@@ -229,7 +224,7 @@ For example, on macOS, the config file will be stored in the `~/Library/Preferen
 
 #### accessPropertiesByDotNotation
 
-Type: `boolean`<br>
+Type: `boolean`\
 Default: `true`
 
 Accessing nested properties by dot notation. For example:
@@ -268,7 +263,7 @@ console.log(config.get('foo.bar.foobar'));
 
 #### watch
 
-type: `boolean`<br>
+type: `boolean`\
 Default: `false`
 
 Watch for any changes in the config file and call the callback for `onDidChange` if set. This is useful if there are multiple processes changing the same config file.
@@ -291,7 +286,7 @@ The `value` must be JSON serializable. Trying to set the type `undefined`, `func
 
 Set multiple items at once.
 
-#### .get(key, [defaultValue])
+#### .get(key, defaultValue?)
 
 Get an item or `defaultValue` if the item does not exist.
 
@@ -315,7 +310,9 @@ Delete all items.
 
 `callback`: `(newValue, oldValue) => {}`
 
-Watches the given `key`, calling `callback` on any changes. When a key is first set `oldValue` will be `undefined`, and when a key is deleted `newValue` will be `undefined`.
+Watches the given `key`, calling `callback` on any changes.
+
+When a key is first set `oldValue` will be `undefined`, and when a key is deleted `newValue` will be `undefined`.
 
 Returns a function which you can use to unsubscribe:
 
@@ -329,7 +326,9 @@ unsubscribe();
 
 `callback`: `(newValue, oldValue) => {}`
 
-Watches the whole config object, calling `callback` on any changes. `oldValue` and `newValue` will be the config object before and after the change, respectively. You must compare `oldValue` to `newValue` to find out what changed.
+Watches the whole config object, calling `callback` on any changes.
+
+`oldValue` and `newValue` will be the config object before and after the change, respectively. You must compare `oldValue` to `newValue` to find out what changed.
 
 Returns a function which you can use to unsubscribe:
 
@@ -357,7 +356,6 @@ conf.store = {
 
 Get the path to the config file.
 
-
 ## FAQ
 
 ### How is this different from [`configstore`](https://github.com/yeoman/configstore)?
@@ -380,7 +378,6 @@ const config = new Conf({
 	deserialize: yaml.safeLoad
 });
 ```
-
 
 ## Related
 
