@@ -1,4 +1,7 @@
 {
     "extends": ["xo", "xo-typescript"],
-    "parser": "@typescript-eslint/parser"
+    "parser": "@typescript-eslint/parser",
+    "rules": {
+        "@typescript-eslint/no-dynamic-delete":"off"
+    }
 }
