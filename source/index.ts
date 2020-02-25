@@ -17,7 +17,7 @@ import {JSONSchema} from 'json-schema-typed';
 
 const encryptionAlgorithm = 'aes-256-cbc';
 
-const createPlainObject = <T = any>(): T => {
+const createPlainObject = <T = unknown>(): T => {
 	return Object.create(null);
 };
 
@@ -26,7 +26,7 @@ const createPlainObject = <T = any>(): T => {
 delete require.cache[__filename];
 const parentDir = path.dirname((module.parent && module.parent.filename) || '.');
 
-const checkValueType = <Key = any>(key: string, value: Key): void => {
+const checkValueType = <Key = unknown>(key: string, value: Key): void => {
 	const nonJsonTypes = [
 		'undefined',
 		'symbol',
@@ -179,8 +179,10 @@ export class Conf<T extends any = any> implements Iterable<[keyof T, T[keyof T]]
 
 	@param {key|object} - You can use [dot-notation](https://github.com/sindresorhus/dot-prop) in a key to access nested properties. Or a hashmap of items to set at once.
 	@param value - Must be JSON serializable. Trying to set the type `undefined`, `function`, or `symbol` will result in a `TypeError`.
-	*/
-	set<Key extends keyof T>(key: Partial<T> | Key | string, value?: T[Key] | any): void {
+    */
+	set(object: Partial<T>): void;
+	set<K extends keyof T>(key: K, value: T[K]): void;
+	set<Key extends keyof T>(key: Partial<T> | Key | string, value?: T[Key] | unknown): void {
 		if (typeof key !== 'string' && typeof key !== 'object') {
 			throw new TypeError(`Expected \`key\` to be of type \`string\` or \`object\`, got ${typeof key}`);
 		}
@@ -372,7 +374,7 @@ export class Conf<T extends any = any> implements Iterable<[keyof T, T[keyof T]]
 
 	private _handleChange<Key extends keyof T>(
 		getter: () => T | T[Key] | undefined,
-		callback: OnDidAnyChangeCallback<any>
+		callback: OnDidAnyChangeCallback<T> | OnDidChangeCallback<T[Key]>
 	): Unsubscribe {
 		let currentValue = getter();
 
@@ -528,11 +530,13 @@ export class Conf<T extends any = any> implements Iterable<[keyof T, T[keyof T]]
 		return true;
 	}
 
+	private _get<Key extends keyof T>(key: Key): T[Key] | undefined;
+	private _get<Key extends keyof T, Default = unknown>(key: Key, defaultValue?: Default | string): Exclude<T[Key], undefined> | Default;
 	private _get<Key extends keyof T, Default = unknown>(key: Key, defaultValue?: Default | string): Exclude<T[Key], undefined> | Default {
 		return dotProp.get<T[Key]>(this.store, key as string, defaultValue);
 	}
 
-	private _set(key: string, value: any): void {
+	private _set(key: string, value: unknown): void {
 		const {store} = this;
 		dotProp.set(store, key, value);
 
