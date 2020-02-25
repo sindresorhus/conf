@@ -10,7 +10,7 @@ import delay = require('delay');
 import anyTest, {TestInterface} from 'ava';
 import {version as packageVersion} from '../package.json';
 // eslint-disable-next-line import/no-named-as-default
-import Conf, {ConfSchema} from '../source';
+import Conf, {Schema} from '../source';
 
 const test = anyTest as TestInterface<{
 	config: Conf;
@@ -66,7 +66,7 @@ test('.set() - with undefined', t => {
 
 test('.set() - with unsupported values', t => {
 	t.throws(() => {
-		t.context.config.set('a', () => {});
+		t.context.config.set('a', () => { });
 	}, {message: /not supported by JSON/});
 
 	t.throws(() => {
@@ -194,11 +194,11 @@ test('`defaults` option', t => {
 
 test('`configName` option', t => {
 	const configName = 'alt-config';
-	const config = new Conf({
+	const config = new Conf<{ foo: string }>({
 		cwd: tempy.directory(),
 		configName
 	});
-	t.is(config.get('foo'), undefined);
+	t.is(config.get('foo', 4), undefined);
 	config.set('foo', fixture);
 	t.is(config.get('foo'), fixture);
 	t.is(path.basename(config.path, '.json'), configName);
@@ -561,7 +561,7 @@ test('schema - should be an object', t => {
 });
 
 test('schema - valid set', t => {
-	const schema: ConfSchema<{ foo: { bar: number; foobar: number } }> = {
+	const schema: Schema<{ foo: { bar: number; foobar: number } }> = {
 		foo: {
 			type: 'object',
 			properties: {
@@ -596,7 +596,7 @@ test('schema - one violation', t => {
 });
 
 test('schema - multiple violations', t => {
-	const schema: ConfSchema<{ foo: { bar: number; foobar: number } }> = {
+	const schema: Schema<{ foo: { bar: number; foobar: number } }> = {
 		foo: {
 			type: 'object',
 			properties: {
@@ -617,7 +617,7 @@ test('schema - multiple violations', t => {
 });
 
 test('schema - complex schema', t => {
-	const schema: ConfSchema<{ foo: string; bar: number[] }> = {
+	const schema: Schema<{ foo: string; bar: number[] }> = {
 		foo: {
 			type: 'string',
 			maxLength: 3,
@@ -642,7 +642,7 @@ test('schema - complex schema', t => {
 });
 
 test('schema - invalid write to config file', t => {
-	const schema: ConfSchema<{ foo: string }> = {
+	const schema: Schema<{ foo: string }> = {
 		foo: {
 			type: 'string'
 		}
@@ -657,7 +657,7 @@ test('schema - invalid write to config file', t => {
 });
 
 test('schema - default', t => {
-	const schema: ConfSchema<{ foo: string }> = {
+	const schema: Schema<{ foo: string }> = {
 		foo: {
 			type: 'string',
 			default: 'bar'
@@ -667,11 +667,13 @@ test('schema - default', t => {
 		cwd: tempy.directory(),
 		schema
 	});
-	t.is(config.get('foo'), 'bar');
+
+	const foo: string = config.get('foo');
+	t.is(foo, 'bar');
 });
 
 test('schema - Conf defaults overwrites schema default', t => {
-	const schema: ConfSchema<{ foo: string }> = {
+	const schema: Schema<{ foo: string }> = {
 		foo: {
 			type: 'string',
 			default: 'bar'
@@ -688,7 +690,7 @@ test('schema - Conf defaults overwrites schema default', t => {
 });
 
 test('schema - validate Conf default', t => {
-	const schema: ConfSchema<{ foo: string }> = {
+	const schema: Schema<{ foo: string }> = {
 		foo: {
 			type: 'string'
 		}

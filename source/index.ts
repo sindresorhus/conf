@@ -12,7 +12,7 @@ import Ajv = require('ajv');
 import debounceFn = require('debounce-fn');
 import semver = require('semver');
 import onetime = require('onetime');
-import {Deserialize, Migrations, OnDidChangeCallback, Options, Serialize, Unregister, ConfSchema, OnDidAnyChangeCallback} from './types';
+import {Deserialize, Migrations, OnDidChangeCallback, Options, Serialize, Unsubscribe, Schema, OnDidAnyChangeCallback} from './types';
 import {JSONSchema} from 'json-schema-typed';
 
 const encryptionAlgorithm = 'aes-256-cbc';
@@ -164,7 +164,9 @@ export class Conf<T extends any = any> implements Iterable<[keyof T, T[keyof T]]
 	@param key - The key of the item to get.
 	@param defaultValue - The default value if the item does not exist.
 	*/
-	get<Key extends keyof T, TDefault>(key: Key, defaultValue?: TDefault): Exclude<T[Key], undefined> | TDefault {
+	get<Key extends keyof T>(key: Key): T[Key];
+	get<Key extends keyof T, Default = unknown>(key: Key, defaultValue?: Default): T[Key] | Default;
+	get<Key extends keyof T, Default = unknown>(key: Key, defaultValue?: Default): T[Key] | Default {
 		if (this.#options.accessPropertiesByDotNotation) {
 			return this._get(key, defaultValue);
 		}
@@ -274,7 +276,7 @@ export class Conf<T extends any = any> implements Iterable<[keyof T, T[keyof T]]
 	onDidChange<Key extends keyof T>(
 		key: Key,
 		callback: OnDidChangeCallback<T[Key]>
-	): Unregister {
+	): Unsubscribe {
 		if (typeof key !== 'string') {
 			throw new TypeError(`Expected \`key\` to be of type \`string\`, got ${typeof key}`);
 		}
@@ -294,7 +296,7 @@ export class Conf<T extends any = any> implements Iterable<[keyof T, T[keyof T]]
 	*/
 	onDidAnyChange(
 		callback: OnDidAnyChangeCallback<T>
-	): Unregister {
+	): Unsubscribe {
 		if (typeof callback !== 'function') {
 			throw new TypeError(`Expected \`callback\` to be of type \`function\`, got ${typeof callback}`);
 		}
@@ -371,7 +373,7 @@ export class Conf<T extends any = any> implements Iterable<[keyof T, T[keyof T]]
 	private _handleChange<Key extends keyof T>(
 		getter: () => T | T[Key] | undefined,
 		callback: OnDidAnyChangeCallback<any>
-	): Unregister {
+	): Unsubscribe {
 		let currentValue = getter();
 
 		const onChange = (): void => {
@@ -526,7 +528,7 @@ export class Conf<T extends any = any> implements Iterable<[keyof T, T[keyof T]]
 		return true;
 	}
 
-	private _get<Key extends keyof T, TDefault>(key: Key, defaultValue?: TDefault | string): Exclude<T[Key], undefined> | TDefault {
+	private _get<Key extends keyof T, Default = unknown>(key: Key, defaultValue?: Default | string): Exclude<T[Key], undefined> | Default {
 		return dotProp.get<T[Key]>(this.store, key as string, defaultValue);
 	}
 
@@ -538,7 +540,7 @@ export class Conf<T extends any = any> implements Iterable<[keyof T, T[keyof T]]
 	}
 }
 
-export {ConfSchema};
+export {Schema};
 
 export default Conf;
 

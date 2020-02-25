@@ -47,7 +47,7 @@ export interface Options<T> {
 
 	**Note:** The `default` value will be overwritten by the `defaults` option if set.
 	*/
-	schema?: ConfSchema<T>;
+	schema?: Schema<T>;
 
 	/**
 	Name of the config file (without extension).
@@ -221,7 +221,7 @@ export type Migrations<T> = {
 	[semverSpecifier: string]: (store: Conf<T>) => void;
 };
 
-export type ConfSchema<T> = { [Property in keyof T]: ValueSchema };
+export type Schema<T> = { [Property in keyof T]: ValueSchema };
 export type ValueSchema = TypedJSONSchema;
 
 export type Serialize<T> = (value: T) => string;
@@ -230,4 +230,4 @@ export type Deserialize<T> = (text: string) => T;
 export type OnDidChangeCallback<T> = (newValue?: T, oldValue?: T) => void;
 export type OnDidAnyChangeCallback<T> = (newValue?: Readonly<T>, oldValue?: Readonly<T>) => void;
 
-export type Unregister = () => EventEmitter;
+export type Unsubscribe = () => EventEmitter;
