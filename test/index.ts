@@ -8,9 +8,7 @@ import clearModule = require('clear-module');
 import pEvent = require('p-event');
 import delay = require('delay');
 import anyTest, {TestInterface} from 'ava';
-import {version as packageVersion} from '../package.json';
-// eslint-disable-next-line import/no-named-as-default
-import Conf, {Schema} from '../source';
+import {Conf, Schema} from '../source';
 
 const test = anyTest as TestInterface<{
 	config: Conf;
@@ -260,7 +258,7 @@ test('`serialize` and `deserialize` options', t => {
 		return serialized;
 	};
 
-	const deserialize = (value: unknown): unknown => {
+	const deserialize = (value: unknown): object => {
 		t.is(value, serialized);
 		return deserialized;
 	};
@@ -270,6 +268,7 @@ test('`serialize` and `deserialize` options', t => {
 		serialize,
 		deserialize
 	});
+
 	t.deepEqual(config.store, {});
 	config.store = deserialized;
 	t.deepEqual(config.store, deserialized);
@@ -612,6 +611,9 @@ test('schema - multiple violations', t => {
 	};
 	const config = new Conf({cwd: tempy.directory(), schema});
 	t.throws(() => {
+		// For our tests to fail and typescript to compile, we'll ignore this ts error.
+		// This error is not bad and means the package is well typed.
+		// @ts-ignore
 		config.set('foo', {bar: '1', foobar: 101});
 	}, {message: 'Config schema violation: `foo.bar` should be number; `foo.foobar` should be <= 100'});
 });
@@ -637,6 +639,9 @@ test('schema - complex schema', t => {
 		config.set('foo', 'abca');
 	}, {message: 'Config schema violation: `foo` should NOT be longer than 3 characters; `foo` should match pattern "[def]+"'});
 	t.throws(() => {
+		// For our tests to fail and typescript to compile, we'll ignore this ts error.
+		// This error is not bad and means the package is well typed.
+		// @ts-ignore
 		config.set('bar', [1, 1, 2, 'a']);
 	}, {message: 'Config schema violation: `bar` should NOT have more than 3 items; `bar[3]` should be integer; `bar` should NOT have duplicate items (items ## 1 and 0 are identical)'});
 });
@@ -668,7 +673,7 @@ test('schema - default', t => {
 		schema
 	});
 
-	const foo: string = config.get('foo');
+	const foo: string = config.get('foo', '');
 	t.is(foo, 'bar');
 });
 
@@ -987,7 +992,7 @@ test('migrations - should infer the applicationVersion from the package.json whe
 	});
 
 	t.false(conf.has('foo'));
-	t.is(conf.get('__internal__.migrations.version'), packageVersion);
+	t.is(conf.get('__internal__.migrations.version'), require('../package.json').version);
 });
 
 test('migrations - should NOT throw an error when project version is unspecified but there are no migrations', t => {

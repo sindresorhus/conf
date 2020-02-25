@@ -46,13 +46,7 @@
 	"ava": {
 		"files": [
 			"test/*"
-		],
-		"timeout": "1m",
-		"typescript": {
-			"rewritePaths": {
-				"test/": "dist/test/"
-			}
-		}
+		]
 	},
 	"nyc": {
 		"extension": [

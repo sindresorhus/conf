@@ -26,7 +26,7 @@ const createPlainObject = <T = unknown>(): T => {
 delete require.cache[__filename];
 const parentDir = path.dirname((module.parent && module.parent.filename) || '.');
 
-const checkValueType = <Key = unknown>(key: string, value: Key): void => {
+const checkValueType = (key: string, value: unknown): void => {
 	const nonJsonTypes = [
 		'undefined',
 		'symbol',
@@ -43,13 +43,13 @@ const checkValueType = <Key = unknown>(key: string, value: Key): void => {
 const INTERNAL_KEY = '__internal__';
 const MIGRATION_KEY = `${INTERNAL_KEY}.migrations.version`;
 
-export class Conf<T extends any = any> implements Iterable<[keyof T, T[keyof T]]> {
+export class Conf<T extends { [key: string]: any } = any> implements Iterable<[keyof T, T[keyof T]]> {
 	readonly path: string;
 	readonly events: EventEmitter;
 	readonly #validator?: Ajv.ValidateFunction;
 	readonly #encryptionKey?: string | Buffer | NodeJS.TypedArray | DataView;
 	readonly #options: Readonly<Partial<Options<T>>>;
-	readonly #defaultValues: any = {};
+	readonly #defaultValues: Partial<T> = {};
 
 	constructor(partialOptions: Readonly<Partial<Options<T>>> = {}) {
 		const options: Partial<Options<T>> = {
@@ -105,7 +105,7 @@ export class Conf<T extends any = any> implements Iterable<[keyof T, T[keyof T]]
 
 			for (const [key, value] of Object.entries<JSONSchema>(options.schema)) {
 				if (value?.default) {
-					this.#defaultValues[key] = value.default;
+					this.#defaultValues[key as keyof T] = value.default;
 				}
 			}
 		}
@@ -164,9 +164,9 @@ export class Conf<T extends any = any> implements Iterable<[keyof T, T[keyof T]]
 	@param key - The key of the item to get.
 	@param defaultValue - The default value if the item does not exist.
 	*/
-	get<Key extends keyof T>(key: Key): T[Key];
-	get<Key extends keyof T, Default = unknown>(key: Key, defaultValue?: Default): T[Key] | Default;
-	get<Key extends keyof T, Default = unknown>(key: Key, defaultValue?: Default): T[Key] | Default {
+	get<Key extends keyof T>(key: Key | string): T[Key] | undefined;
+	get<Key extends keyof T, Default = unknown>(key: Key | string, defaultValue?: Default): T[Key] | Default;
+	get<Key extends keyof T, Default = unknown>(key: Key | string, defaultValue?: Default): T[Key] | Default | undefined {
 		if (this.#options.accessPropertiesByDotNotation) {
 			return this._get(key, defaultValue);
 		}
@@ -180,8 +180,8 @@ export class Conf<T extends any = any> implements Iterable<[keyof T, T[keyof T]]
 	@param {key|object} - You can use [dot-notation](https://github.com/sindresorhus/dot-prop) in a key to access nested properties. Or a hashmap of items to set at once.
 	@param value - Must be JSON serializable. Trying to set the type `undefined`, `function`, or `symbol` will result in a `TypeError`.
     */
+	set<Key extends keyof T>(key: Key | string, value: T[Key] | unknown): void;
 	set(object: Partial<T>): void;
-	set<K extends keyof T>(key: K, value: T[K]): void;
 	set<Key extends keyof T>(key: Partial<T> | Key | string, value?: T[Key] | unknown): void {
 		if (typeof key !== 'string' && typeof key !== 'object') {
 			throw new TypeError(`Expected \`key\` to be of type \`string\` or \`object\`, got ${typeof key}`);
@@ -197,12 +197,12 @@ export class Conf<T extends any = any> implements Iterable<[keyof T, T[keyof T]]
 
 		const {store} = this;
 
-		const set = (key: string, value?: T[Key] | T): void => {
+		const set = (key: string, value?: T[Key] | T | unknown): void => {
 			checkValueType(key, value);
 			if (this.#options.accessPropertiesByDotNotation) {
 				dotProp.set(store, key, value);
 			} else {
-				store[key] = value as T;
+				store[key as Key] = value as T[Key];
 			}
 		};
 
@@ -236,7 +236,7 @@ export class Conf<T extends any = any> implements Iterable<[keyof T, T[keyof T]]
 
 	@param keys - The keys of the items to reset.
 	*/
-	reset<Key extends keyof T>(...keys: Array<Key | string>): void {
+	reset<Key extends keyof T>(...keys: Key[]): void {
 		for (const key of keys) {
 			if (this.#defaultValues[key]) {
 				this.set(key, this.#defaultValues[key]);
@@ -316,7 +316,7 @@ export class Conf<T extends any = any> implements Iterable<[keyof T, T[keyof T]]
 			const dataString = this._encryptData(data);
 			const deserializedData = this._deserialize(dataString);
 			this._validate(deserializedData);
-			return Object.assign(createPlainObject(), deserializedData);
+			return Object.assign(createPlainObject(), deserializedData) as T;
 		} catch (error) {
 			if (error.code === 'ENOENT') {
 				this._ensureDirectory();
@@ -340,7 +340,7 @@ export class Conf<T extends any = any> implements Iterable<[keyof T, T[keyof T]]
 		this.events.emit('change');
 	}
 
-	* [Symbol.iterator](): Iterator<[keyof T, T[keyof T]]> {
+	* [Symbol.iterator](): IterableIterator<[keyof T, T[keyof T]]> {
 		for (const [key, value] of Object.entries(this.store)) {
 			yield [key, value];
 		}
@@ -374,7 +374,7 @@ export class Conf<T extends any = any> implements Iterable<[keyof T, T[keyof T]]
 
 	private _handleChange<Key extends keyof T>(
 		getter: () => T | T[Key] | undefined,
-		callback: OnDidAnyChangeCallback<T> | OnDidChangeCallback<T[Key]>
+		callback: OnDidAnyChangeCallback<any> | OnDidChangeCallback<any>
 	): Unsubscribe {
 		let currentValue = getter();
 
@@ -398,7 +398,7 @@ export class Conf<T extends any = any> implements Iterable<[keyof T, T[keyof T]]
 	private readonly _deserialize: Deserialize<T> = value => JSON.parse(value);
 	private readonly _serialize: Serialize<T> = value => JSON.stringify(value, null, '\t');
 
-	private _validate(data: T): void {
+	private _validate(data: T | unknown): void {
 		if (!this.#validator) {
 			return;
 		}
@@ -531,9 +531,9 @@ export class Conf<T extends any = any> implements Iterable<[keyof T, T[keyof T]]
 	}
 
 	private _get<Key extends keyof T>(key: Key): T[Key] | undefined;
-	private _get<Key extends keyof T, Default = unknown>(key: Key, defaultValue?: Default | string): Exclude<T[Key], undefined> | Default;
-	private _get<Key extends keyof T, Default = unknown>(key: Key, defaultValue?: Default | string): Exclude<T[Key], undefined> | Default {
-		return dotProp.get<T[Key]>(this.store, key as string, defaultValue);
+	private _get<Key extends keyof T, Default = unknown>(key: Key, defaultValue?: Default): T[Key]| Default;
+	private _get<Key extends keyof T, Default = unknown>(key: Key, defaultValue?: Default): T[Key] | Default | undefined {
+		return dotProp.get<T[Key] | Default | undefined>(this.store, key as string, defaultValue);
 	}
 
 	private _set(key: string, value: unknown): void {
