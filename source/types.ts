@@ -1,7 +1,8 @@
-import {JSONSchema} from 'json-schema-typed';
-import {Conf} from './conf';
 
-export type Schema = JSONSchema;
+import {JSONSchema as TypedJSONSchema} from 'json-schema-typed';
+// eslint-disable unicorn/import-index
+import {Conf} from '.';
+import {EventEmitter} from 'events';
 
 export interface Options<T> {
 	/**
@@ -46,7 +47,7 @@ export interface Options<T> {
 
 	**Note:** The `default` value will be overwritten by the `defaults` option if set.
 	*/
-	schema?: { [TProp in keyof T]: Schema; };
+	schema?: ConfSchema<T>;
 
 	/**
 	Name of the config file (without extension).
@@ -71,7 +72,7 @@ export interface Options<T> {
 	*/
 	projectVersion?: string;
 
-	/*
+	/**
 	_Don't use this feature until [this issue](https://github.com/sindresorhus/conf/issues/92) has been fixed._
 
 	You can use migrations to perform operations to the store whenever a version is changed.
@@ -217,10 +218,16 @@ export interface Options<T> {
 }
 
 export type Migrations<T> = {
-	[key: string]: (store: Conf<T>) => void;
+	[semverSpecifier: string]: (store: Conf<T>) => void;
 };
+
+export type ConfSchema<T> = { [Property in keyof T]: ValueSchema };
+export type ValueSchema = TypedJSONSchema;
 
 export type Serialize<T> = (value: T) => string;
 export type Deserialize<T> = (text: string) => T;
 
-export type OnDidChangeCallback<T> = (newValue?: Readonly<T>, oldValue?: Readonly<T>) => void;
+export type OnDidChangeCallback<T> = (newValue?: T, oldValue?: T) => void;
+export type OnDidAnyChangeCallback<T> = (newValue?: Readonly<T>, oldValue?: Readonly<T>) => void;
+
+export type Unregister = () => EventEmitter;

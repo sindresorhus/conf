@@ -2,13 +2,13 @@
 	"extends": "@sindresorhus/tsconfig",
 	"compilerOptions": {
 		"outDir": "dist",
-		"target": "es2017",
+		"target": "es2018",
 		"lib": [
-			"es2017"
+			"es2018"
 		]
 	},
 	"include": [
-		"source/*.ts"
-	],
-	"exclude": ["node_modules", "dist"],
+		"source",
+		"test"
+	]
 }
