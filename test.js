@@ -90,6 +90,15 @@ test('.set() - with Date in a nested array', t => {
 	t.true(myDateArray[3] instanceof Date);
 });
 
+test('.set()  - with circular objects', t => {
+	const circular = {myDate: new Date(), circulation: null};
+	circular.circulation = circular;
+	t.context.config.set('circular', circular);
+	const getCircular = t.context.config.get('circular');
+	t.true(getCircular.myDate instanceof Date);
+	t.true(getCircular.circulation.myDate instanceof Date);
+});
+
 test('.set() - with undefined', t => {
 	t.throws(() => {
 		t.context.config.set('foo', undefined);

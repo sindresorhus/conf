@@ -39,6 +39,7 @@ const checkValueType = (key, value) => {
 const INTERNAL_KEY = '__internal__';
 const MIGRATION_KEY = `${INTERNAL_KEY}.migrations.version`;
 const TYPE_KEY = `${INTERNAL_KEY}.type`;
+const CIRCULAR_REF_KEY = `${INTERNAL_KEY}.cirularReference`;
 
 class Conf {
 	constructor(options) {
@@ -312,12 +313,30 @@ class Conf {
 		// Sub-object handling of extra types
 		const stack = [];
 		const objectSeenList = [];
-		stack.push(value);
+
+		// AAstack.push(value);
+		stack.push({current: value, parent: null, key: null});
+		let circularReferenceCounter = 1;
 		while (stack.length > 0) {
-			const current = stack.pop();
+			const {current, parent, key} = stack.pop();
 			if (objectSeenList.indexOf(current) === -1) {
 				objectSeenList.push(current);
 			} else {
+				// Current object is reference to an object already parsed
+				// current is the circular reference
+				// seenList.indexOf(current) is the object it's pointing to
+				parent[key] = {
+					[TYPE_KEY]: 'circularObject',
+					value: parent[CIRCULAR_REF_KEY] || circularReferenceCounter
+				};
+				if (parent[CIRCULAR_REF_KEY] === undefined) {
+					parent[CIRCULAR_REF_KEY] = circularReferenceCounter;
+					circularReferenceCounter++;
+				} else {
+					console.log(parent[CIRCULAR_REF_KEY]);
+				}
+
+				console.log('skipping pontentially circulation');
 				continue;
 			}
 
@@ -337,7 +356,7 @@ class Conf {
 
 					if (!didConvert) {
 						// Check sub-objects
-						stack.push(current[currentItemKey]);
+						stack.push({current: current[currentItemKey], parent: current, key: currentItemKey});
 					}
 				}
 			}
@@ -362,6 +381,7 @@ class Conf {
 		// Sub-object handling of extra types
 		const stack = [];
 		const objectSeenList = [];
+		const circularReferences = {};
 		stack.push(value);
 		while (stack.length > 0) {
 			const current = stack.pop();
@@ -371,10 +391,19 @@ class Conf {
 				continue;
 			}
 
+			if (current[CIRCULAR_REF_KEY]) {
+				circularReferences[current[CIRCULAR_REF_KEY]] = current;
+			}
+
 			for (const [currentItemKey, currentItemValue] of Object.entries(current)) {
 				if (currentItemValue[TYPE_KEY] !== undefined) {
-					const currentType = this.extraTypes.find(typeInfo => typeInfo.name === currentItemValue[TYPE_KEY]);
-					current[currentItemKey] = currentType.convertTo(currentItemValue.value);
+					if (currentItemValue[TYPE_KEY] === 'circularObject') {
+						console.log('Circular handing magic');
+						current[currentItemKey] = circularReferences[currentItemValue.value];
+					} else {
+						const currentType = this.extraTypes.find(typeInfo => typeInfo.name === currentItemValue[TYPE_KEY]);
+						current[currentItemKey] = currentType.convertTo(currentItemValue.value);
+					}
 				} else if (typeof currentItemValue === 'object') {
 					stack.push(current[currentItemKey]);
 				}
