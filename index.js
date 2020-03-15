@@ -56,9 +56,9 @@ class Conf {
 		this.extraTypes = [
 			{
 				name: 'Date',
-				instance: Date,
-				convertFrom: val => val.getTime(),
-				convertTo: val => new Date(val)
+				isInstance: object => object instanceof Date,
+				convertFrom: value => value.getTime(),
+				convertTo: value => new Date(value)
 			}
 		];
 
@@ -296,28 +296,39 @@ class Conf {
 	_serializeExtraTypes(value) {
 		// Base cases
 		for (const type of this.extraTypes) {
-			if (value instanceof type.instance) {
+			if (type.isInstance(value)) {
 				return {
 					[TYPE_KEY]: type.name,
-					val: type.convertFrom(value)
+					value: type.convertFrom(value)
 				};
 			}
 		}
 
+		// Value is a base type
+		if (typeof value !== 'object') {
+			return value;
+		}
+
 		// Sub-object handling of extra types
 		const stack = [];
+		const objectSeenList = [];
 		stack.push(value);
 		while (stack.length > 0) {
 			const current = stack.pop();
-			Object.keys(current).forEach(currentItemKey => {
-				const currentItemValue = current[currentItemKey];
+			if (objectSeenList.indexOf(current) === -1) {
+				objectSeenList.push(current);
+			} else {
+				continue;
+			}
+
+			for (const [currentItemKey, currentItemValue] of Object.entries(current)) {
 				if (typeof currentItemValue === 'object') {
 					let didConvert = false;
 					for (const type of this.extraTypes) {
-						if (currentItemValue instanceof type.instance) {
+						if (type.isInstance(currentItemValue)) {
 							current[currentItemKey] = {
 								[TYPE_KEY]: type.name,
-								val: type.convertFrom(currentItemValue)
+								value: type.convertFrom(currentItemValue)
 							};
 							didConvert = true;
 							break;
@@ -329,7 +340,7 @@ class Conf {
 						stack.push(current[currentItemKey]);
 					}
 				}
-			});
+			}
 		}
 
 		return value;
@@ -343,20 +354,31 @@ class Conf {
 			}
 		}
 
+		// Value is a base type
+		if (typeof value !== 'object') {
+			return value;
+		}
+
 		// Sub-object handling of extra types
 		const stack = [];
+		const objectSeenList = [];
 		stack.push(value);
 		while (stack.length > 0) {
 			const current = stack.pop();
-			Object.keys(current).forEach(currentItemKey => {
-				const currentItemValue = current[currentItemKey];
+			if (objectSeenList.indexOf(current) === -1) {
+				objectSeenList.push(current);
+			} else {
+				continue;
+			}
+
+			for (const [currentItemKey, currentItemValue] of Object.entries(current)) {
 				if (currentItemValue[TYPE_KEY] !== undefined) {
 					const currentType = this.extraTypes.find(typeInfo => typeInfo.name === currentItemValue[TYPE_KEY]);
-					current[currentItemKey] = currentType.convertTo(currentItemValue.val);
+					current[currentItemKey] = currentType.convertTo(currentItemValue.value);
 				} else if (typeof currentItemValue === 'object') {
 					stack.push(current[currentItemKey]);
 				}
-			});
+			}
 		}
 
 		return value;

@@ -61,6 +61,35 @@ test('.set() - with Date in a nested object', t => {
 	t.true(myDate instanceof Date);
 });
 
+test('.set() - with Date in a array', t => {
+	t.context.config.set('datearray', [new Date(), 'asd', 1337, new Date()]);
+	const myDateArray = t.context.config.get('datearray');
+	t.true(myDateArray[0] instanceof Date);
+	t.true(myDateArray[3] instanceof Date);
+});
+
+test('.set() - with Date in a object inside array', t => {
+	t.context.config.set('datearray', [{date: new Date(), dummy: 'dummy', num: -1337}, 'asd', 1337, new Date()]);
+	const myDateArray = t.context.config.get('datearray');
+	t.true(myDateArray[0].date instanceof Date);
+	t.true(myDateArray[3] instanceof Date);
+});
+
+test('.set() - with Date in a nested object inside array', t => {
+	t.context.config.set('datearray', [{nested: {date: new Date(), nestedDummy: 'nested dummy'}, dummy: 'dummy', num: -1337}, 'asd', 1337, new Date()]);
+	const myDateArray = t.context.config.get('datearray');
+	t.true(myDateArray[0].nested.date instanceof Date);
+	t.true(myDateArray[3] instanceof Date);
+});
+
+test('.set() - with Date in a nested array', t => {
+	t.context.config.set('datearray', [[1, 2, 3], 'asd', [new Date(), 1337, new Date()], new Date()]);
+	const myDateArray = t.context.config.get('datearray');
+	t.true(myDateArray[2][0] instanceof Date);
+	t.true(myDateArray[2][2] instanceof Date);
+	t.true(myDateArray[3] instanceof Date);
+});
+
 test('.set() - with undefined', t => {
 	t.throws(() => {
 		t.context.config.set('foo', undefined);

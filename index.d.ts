@@ -1,8 +1,29 @@
 /// <reference types="node"/>
-import {JSONSchema} from 'json-schema-typed';
+import { JSONSchema } from 'json-schema-typed';
 
 declare namespace Conf {
 	type Schema = JSONSchema;
+
+	/**
+	 * Matches a JSON object
+	 */
+	type JsonObject = { [key: string]: JsonValue };
+
+	/**
+	 * Matches any valid JSON value
+	 */
+	type JsonValue = string | number | boolean | null | JsonObject | JsonArray;
+
+	/**
+	 * A list of currently supported extra types
+	 */
+	type SupportedExtraTypes = Date;
+
+	/**
+	 * Matches a JSON array
+	 */
+	interface JsonArray extends Array<JsonValue> { }
+
 
 	interface Options<T> {
 		/**
@@ -47,7 +68,7 @@ declare namespace Conf {
 
 		**Note:** The `default` value will be overwritten by the `defaults` option if set.
 		*/
-		readonly schema?: {[P in keyof T]: Schema};
+		readonly schema?: { [P in keyof T]: Schema };
 
 		/**
 		Name of the config file (without extension).
@@ -102,7 +123,7 @@ declare namespace Conf {
 		});
 		```
 		*/
-		readonly migrations?: {[version: string]: (store: Conf<T>) => void};
+		readonly migrations?: { [version: string]: (store: Conf<T>) => void };
 
 		/**
 		__You most likely don't need this. Please don't use it unless you really have to.__
@@ -224,11 +245,26 @@ declare namespace Conf {
 		convertTo: (val: string) => T
 	}
 
+	/**
+	 * Defines a type, that's (de)serialization is automatically handled
+	 */
 	interface ExtraType<T> {
+		/**
+		 * The name of the type, this will be used to detect the type of the stored value
+		 */
 		name: string,
-		instance: T,
-		convertFrom: (val: T) => string | number,
-		convertTo: (val: string) => T
+		/**
+		 * Check if the given value's type matches with the this type
+		 */
+		isInstance: (value: T) => boolean,
+		/**
+		 * Convert a value with this type to JsonValue
+		 */
+		convertFrom: (value: T) => JsonValue,
+		/**
+		 * Convert the stored JsonValue to this type
+		 */
+		convertTo: (value: string) => T
 	}
 }
 
@@ -239,7 +275,10 @@ declare class Conf<T = any> implements Iterable<[keyof T, T[keyof T]]> {
 	store: T;
 	readonly path: string;
 	readonly size: number;
-	readonly extraTypes: Conf.ExtraType<any>[];
+	/**
+	 * Conf can automatically (de)serialize some objects/types, for more information please visit [Supported Types](https://https://github.com/sindresorhus/conf#Supported-Types)
+	 */
+	readonly extraTypes: Conf.ExtraType<Conf.SupportedExtraTypes>[];
 
 	/**
 	Changes are written to disk atomically, so if the process crashes during a write, it will not corrupt the existing config.
@@ -277,7 +316,7 @@ declare class Conf<T = any> implements Iterable<[keyof T, T[keyof T]]> {
 	Set an item.
 
 	@param key - You can use [dot-notation](https://github.com/sindresorhus/dot-prop) in a key to access nested properties.
-	@param value - Must be JSON serializable. Trying to set the type `undefined`, `function`, or `symbol` will result in a `TypeError`. Additionally Conf automatically seralizes and deserializes `Date` objects
+	@param value - Must be JSON serializable. Trying to set the type `undefined`, `function`, or `symbol` will result in a `TypeError`.
 	*/
 	set<K extends keyof T>(key: K, value: T[K]): void;
 
