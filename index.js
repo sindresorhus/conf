@@ -314,7 +314,6 @@ class Conf {
 		const stack = [];
 		const objectSeenList = [];
 
-		// AAstack.push(value);
 		stack.push({current: value, parent: null, key: null});
 		let circularReferenceCounter = 1;
 		while (stack.length > 0) {
@@ -325,15 +324,16 @@ class Conf {
 				// Current object is reference to an object already parsed
 				// current is the circular reference
 				// seenList.indexOf(current) is the object it's pointing to
+				const referenceTarget = objectSeenList[objectSeenList.indexOf(current)];
 				parent[key] = {
 					[TYPE_KEY]: 'circularObject',
-					value: parent[CIRCULAR_REF_KEY] || circularReferenceCounter
+					value: referenceTarget[CIRCULAR_REF_KEY] || circularReferenceCounter
 				};
-				if (parent[CIRCULAR_REF_KEY] === undefined) {
-					parent[CIRCULAR_REF_KEY] = circularReferenceCounter;
+				if (referenceTarget[CIRCULAR_REF_KEY] === undefined) {
+					referenceTarget[CIRCULAR_REF_KEY] = circularReferenceCounter;
 					circularReferenceCounter++;
 				} else {
-					console.log(parent[CIRCULAR_REF_KEY]);
+					console.log(referenceTarget[CIRCULAR_REF_KEY]);
 				}
 
 				console.log('skipping pontentially circulation');
@@ -393,6 +393,7 @@ class Conf {
 
 			if (current[CIRCULAR_REF_KEY]) {
 				circularReferences[current[CIRCULAR_REF_KEY]] = current;
+				delete current[CIRCULAR_REF_KEY];
 			}
 
 			for (const [currentItemKey, currentItemValue] of Object.entries(current)) {

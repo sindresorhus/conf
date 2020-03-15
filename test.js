@@ -90,13 +90,33 @@ test('.set() - with Date in a nested array', t => {
 	t.true(myDateArray[3] instanceof Date);
 });
 
-test('.set()  - with circular objects', t => {
+test('.set()  - with Date and circular object', t => {
 	const circular = {myDate: new Date(), circulation: null};
 	circular.circulation = circular;
 	t.context.config.set('circular', circular);
 	const getCircular = t.context.config.get('circular');
 	t.true(getCircular.myDate instanceof Date);
 	t.true(getCircular.circulation.myDate instanceof Date);
+});
+
+test('.set() - with Date and 2 level deep circular object', t => {
+	const circular = {myDate: new Date(), circulationl1: {l2: null}};
+	circular.circulationl1.l2 = circular;
+	t.context.config.set('circular', circular);
+	const getCircular = t.context.config.get('circular');
+	t.true(getCircular.myDate instanceof Date);
+	t.true(getCircular.circulationl1.l2.myDate instanceof Date);
+});
+
+test('.set() - with Date and multiple circular objects', t => {
+	const circular = {myDate: new Date(), c1: null, c2: null};
+	circular.c1 = circular;
+	circular.c2 = circular;
+	t.context.config.set('circular', circular);
+	const getCircular = t.context.config.get('circular');
+	t.true(getCircular.myDate instanceof Date);
+	t.true(getCircular.c1.myDate instanceof Date);
+	t.true(getCircular.c2.myDate instanceof Date);
 });
 
 test('.set() - with undefined', t => {
