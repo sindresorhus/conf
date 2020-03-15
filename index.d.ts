@@ -238,13 +238,6 @@ declare namespace Conf {
 		readonly watch?: boolean;
 	}
 
-	interface ExtraType<T> {
-		name: string,
-		instance: T,
-		convertFrom: (val: T) => string | number,
-		convertTo: (val: string) => T
-	}
-
 	/**
 	 * Defines a type, that's (de)serialization is automatically handled
 	 */
@@ -264,7 +257,7 @@ declare namespace Conf {
 		/**
 		 * Convert the stored JsonValue to this type
 		 */
-		convertTo: (value: string) => T
+		convertTo: (value: JsonValue) => T
 	}
 }
 
