@@ -176,7 +176,19 @@ class Conf {
 		if (process.env.SNAP) {
 			fs.writeFileSync(this.path, data);
 		} else {
-			writeFileAtomic.sync(this.path, data);
+			try {
+				writeFileAtomic.sync(this.path, data);
+			} catch (error) {
+				// Fix for https://github.com/sindresorhus/electron-store/issues/106
+				// Sometimes on Windows, we will get an EXDEV error when atomic writing
+				// (even though to the same directory), so we fall back to non atomic write
+				if (error.code === 'EXDEV') {
+					fs.writeFileSync(this.path, data);
+					return;
+				}
+
+				throw error;
+			}
 		}
 	}
 
