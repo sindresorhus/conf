@@ -179,11 +179,14 @@ class Conf {
 			} else {
 				writeFileAtomic.sync(this.path, data);
 			}
-		} catch (err) {
-		// Fix for https://github.com/sindresorhus/electron-store/issues/106
-		// Sometimes on Windows, we will get an EXDEV error when atomic writing
-		// (even though to the same directory), so we fall back to non atomic write
-		if (err.code !== 'EXDEV') throw err;
+		} catch (error) {
+			// Fix for https://github.com/sindresorhus/electron-store/issues/106
+			// Sometimes on Windows, we will get an EXDEV error when atomic writing
+			// (even though to the same directory), so we fall back to non atomic write
+			if (error.code !== 'EXDEV') {
+				throw error;
+			}
+
 			fs.writeFileSync(this.path, data);
 		}
 	}
