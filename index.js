@@ -318,9 +318,7 @@ class Conf {
 		let circularReferenceCounter = 1;
 		while (stack.length > 0) {
 			const {current, parent, key} = stack.pop();
-			if (objectSeenList.indexOf(current) === -1) {
-				objectSeenList.push(current);
-			} else {
+			if (objectSeenList.includes(current)) {
 				// Current object is reference to an object already parsed
 				// current is the circular reference
 				// seenList.indexOf(current) is the object it's pointing to
@@ -329,15 +327,15 @@ class Conf {
 					[TYPE_KEY]: 'circularObject',
 					value: referenceTarget[CIRCULAR_REF_KEY] || circularReferenceCounter
 				};
+
 				if (referenceTarget[CIRCULAR_REF_KEY] === undefined) {
 					referenceTarget[CIRCULAR_REF_KEY] = circularReferenceCounter;
 					circularReferenceCounter++;
-				} else {
-					console.log(referenceTarget[CIRCULAR_REF_KEY]);
 				}
 
-				console.log('skipping pontentially circulation');
 				continue;
+			} else {
+				objectSeenList.push(current);
 			}
 
 			for (const [currentItemKey, currentItemValue] of Object.entries(current)) {
@@ -385,10 +383,10 @@ class Conf {
 		stack.push(value);
 		while (stack.length > 0) {
 			const current = stack.pop();
-			if (objectSeenList.indexOf(current) === -1) {
-				objectSeenList.push(current);
-			} else {
+			if (objectSeenList.includes(current)) {
 				continue;
+			} else {
+				objectSeenList.push(current);
 			}
 
 			if (current[CIRCULAR_REF_KEY]) {
@@ -399,7 +397,6 @@ class Conf {
 			for (const [currentItemKey, currentItemValue] of Object.entries(current)) {
 				if (currentItemValue[TYPE_KEY] !== undefined) {
 					if (currentItemValue[TYPE_KEY] === 'circularObject') {
-						console.log('Circular handing magic');
 						current[currentItemKey] = circularReferences[currentItemValue.value];
 					} else {
 						const currentType = this.extraTypes.find(typeInfo => typeInfo.name === currentItemValue[TYPE_KEY]);

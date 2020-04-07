@@ -5,23 +5,23 @@ declare namespace Conf {
 	type Schema = JSONSchema;
 
 	/**
-	 * Matches a JSON object
-	 */
+	Matches a JSON object.
+	*/
 	type JsonObject = { [key: string]: JsonValue };
 
 	/**
-	 * Matches any valid JSON value
-	 */
+	Matches any valid JSON value.
+	*/
 	type JsonValue = string | number | boolean | null | JsonObject | JsonArray;
 
 	/**
-	 * A list of currently supported extra types
-	 */
+	A list of currently supported extra types.
+	*/
 	type SupportedExtraTypes = Date;
 
 	/**
-	 * Matches a JSON array
-	 */
+	Matches a JSON array.
+	*/
 	interface JsonArray extends Array<JsonValue> { }
 
 
@@ -239,24 +239,24 @@ declare namespace Conf {
 	}
 
 	/**
-	 * Defines a type, that's (de)serialization is automatically handled
-	 */
+	Defines a type, that's (de)serialization is automatically handled.
+	*/
 	interface ExtraType<T> {
 		/**
-		 * The name of the type, this will be used to detect the type of the stored value
-		 */
+		The name of the type, this will be used to detect the type of the stored value.
+		*/
 		name: string,
 		/**
-		 * Check if the given value's type matches with the this type
-		 */
+		Check if the given value's type matches with the this type.
+		*/
 		isInstance: (value: T) => boolean,
 		/**
-		 * Convert a value with this type to JsonValue
-		 */
+		Convert a value with this type to JsonValue.
+		*/
 		convertFrom: (value: T) => JsonValue,
 		/**
-		 * Convert the stored JsonValue to this type
-		 */
+		Convert the stored JsonValue to this type.
+		*/
 		convertTo: (value: JsonValue) => T
 	}
 }
@@ -269,8 +269,14 @@ declare class Conf<T = any> implements Iterable<[keyof T, T[keyof T]]> {
 	readonly path: string;
 	readonly size: number;
 	/**
-	 * Conf can automatically (de)serialize some objects/types, for more information please visit [Supported Types](https://https://github.com/sindresorhus/conf#Supported-Types)
-	 */
+	Conf can automatically (de)serialize some objects/types.
+	As stated before `.set()` only accepts JSON serializable values, so you can't use `undefined`, `function` or `symbol`.
+	Additionally Conf has the ability to automatically serialize and deserialize pre-configured objects.
+	Currently supported objects are:
+	- `Date` - serializes the Date to milliseconds, then back to a `Date` object when the getter is called
+
+	If you want support for a new object/type please open a new issue for discussion.
+	*/
 	readonly extraTypes: Conf.ExtraType<Conf.SupportedExtraTypes>[];
 
 	/**
