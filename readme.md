@@ -365,7 +365,70 @@ Additionally Conf has the ability to automatically serialize and deserialize pre
 Currently supported objects are:
 - `Date` - serializes the Date to milliseconds, then back to a `Date` object when the getter is called
 
-If you want support for a new object/type please open a new issue for discussion.
+### Configure types for serialization
+Extra types can be added to a Conf instance via the `extraTypes` array.
+Each element of the array defines an extra type that is going to be automatically serialized when stored and deserialized when retrieved.
+Once you've created an extra type object you need to `push` it to the extraTypes array.
+
+#### Extra type object
+
+Type: `object`
+
+Defines a type, that's (de)serialization is automatically handled.
+
+##### name
+
+Type: `string`
+
+The unique name describing the new type. This name identifies the custom type internally when (de)serializing the object.
+
+##### isInstance
+
+Type: `Function`
+
+Determines whether an object is of the defined type.
+
+- It has signature `isInstance(object)`, where object is of type `object`.
+- It must return a `boolean`, true if the object is of the defined type, otherwise false.
+
+##### convertFrom
+
+Type: `Function`
+
+Takes the object of the defined type and deserializes it.
+
+- It has signature `convertFrom(value)`, where value is of the type that is defined.
+- It must return a JSON serializable representation of the custom type.
+
+##### convertTo
+
+Type: `Function`
+
+Takes the serialized value and deserializes it.
+
+- It has signature `convertTo(value)`, where value is a JSON serializable type.
+- It must return the type that is defined.
+
+#### Example
+The following example demonstrates the configuration of the `Date` type, that is internally supported by default.
+
+```js
+const Conf = new require('conf');
+
+const config = new Conf();
+const extraTypeDate = {
+	name: 'Date',
+	isInstance: object => object instanceof Date,
+	convertFrom: value => value.getTime(),
+	convertTo: value = new Date(value)
+};
+
+config.extraTypes.push(extraTypeDate);
+config.set('myDate', new Date());
+const myDate = config.get('myDate');
+console.log(myDate.toDateString());
+//=> Tue Apr 07 2020
+```
 
 ## FAQ
 

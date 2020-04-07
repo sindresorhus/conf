@@ -15,11 +15,6 @@ declare namespace Conf {
 	type JsonValue = string | number | boolean | null | JsonObject | JsonArray;
 
 	/**
-	A list of currently supported extra types.
-	*/
-	type SupportedExtraTypes = Date;
-
-	/**
 	Matches a JSON array.
 	*/
 	interface JsonArray extends Array<JsonValue> { }
@@ -243,19 +238,19 @@ declare namespace Conf {
 	*/
 	interface ExtraType<T> {
 		/**
-		The name of the type, this will be used to detect the type of the stored value.
+		The unique name describing the new type. This name identifies the custom type internally when (de)serializing the object.
 		*/
 		name: string,
 		/**
-		Check if the given value's type matches with the this type.
+		Determines whether an object is of the defined type.
 		*/
 		isInstance: (value: T) => boolean,
 		/**
-		Convert a value with this type to JsonValue.
+		Takes the object of the defined type and deserializes it.
 		*/
 		convertFrom: (value: T) => JsonValue,
 		/**
-		Convert the stored JsonValue to this type.
+		Takes the serialized value and deserializes it.
 		*/
 		convertTo: (value: JsonValue) => T
 	}
@@ -274,10 +269,30 @@ declare class Conf<T = any> implements Iterable<[keyof T, T[keyof T]]> {
 	Additionally Conf has the ability to automatically serialize and deserialize pre-configured objects.
 	Currently supported objects are:
 	- `Date` - serializes the Date to milliseconds, then back to a `Date` object when the getter is called
+	Extra types can be added to a Conf instance via the `extraTypes` array.
+	Each element of the array defines an extra type, that is going to be automatically serialized when stored and deserialized when retrieved.
+	Once you've created an extra type object you can `push` it to the extraTypes array.
 
-	If you want support for a new object/type please open a new issue for discussion.
+	@example
+	```
+		const Conf = new require('conf');
+
+		const config = new Conf();
+		const extraTypeDate = {
+			name: 'Date',
+			isInstance: object => object instanceof Date,
+			convertFrom: value => value.getTime(),
+			convertTo: value = new Date(value)
+		};
+
+		config.extraTypes.push(extraTypeDate);
+		config.set('myDate', new Date());
+		const myDate = config.get('myDate');
+		console.log(myDate.toDateString());
+		//=> Tue Apr 07 2020
+	```
 	*/
-	readonly extraTypes: Conf.ExtraType<Conf.SupportedExtraTypes>[];
+	extraTypes: Conf.ExtraType<unknown>[];
 
 	/**
 	Changes are written to disk atomically, so if the process crashes during a write, it will not corrupt the existing config.
