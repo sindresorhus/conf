@@ -294,8 +294,7 @@ class Conf {
 		this.store = store;
 	}
 
-	_serializeExtraTypes(value) {
-		// Base cases
+	_serializeExtra(value) {
 		for (const type of this.extraTypes) {
 			if (type.isInstance(value)) {
 				return {
@@ -305,57 +304,71 @@ class Conf {
 			}
 		}
 
+		return undefined;
+	}
+
+	_deserializeExtra(value) {
+		if (value[TYPE_KEY] === undefined) {
+			return value;
+		}
+
+		for (const type of this.extraTypes) {
+			return type.convertTo(value);
+		}
+	}
+
+	_serializeCircular(parent, key, referenceTarget, referenceCounter) {
+		parent[key] = {
+			[TYPE_KEY]: 'circularObject',
+			value: referenceTarget[CIRCULAR_REF_KEY] || referenceCounter
+		};
+
+		if (referenceTarget[CIRCULAR_REF_KEY] === undefined) {
+			referenceTarget[CIRCULAR_REF_KEY] = referenceCounter;
+		}
+	}
+
+	_serializeExtraTypes(value) {
+		// Base cases
+
 		// Value is a base type
 		if (typeof value !== 'object') {
 			return value;
 		}
 
-		// Sub-object handling of extra types
-		const stack = [];
-		const objectSeenList = [];
+		// Value is defined in extraTypes
+		const serializedValue = this._serializeExtra(value);
+		if (serializedValue !== undefined) {
+			return serializedValue;
+		}
 
-		stack.push({current: value, parent: null, key: null});
+		// Sub-object handling of extra types
+		const stack = [{current: value, parent: null, key: null}];
+		const objectSeenList = [];
 		let circularReferenceCounter = 1;
+
 		while (stack.length > 0) {
 			const {current, parent, key} = stack.pop();
+
 			if (objectSeenList.includes(current)) {
 				// Current object is reference to an object already parsed
 				// current is the circular reference
 				// seenList.indexOf(current) is the object it's pointing to
 				const referenceTarget = objectSeenList[objectSeenList.indexOf(current)];
-				parent[key] = {
-					[TYPE_KEY]: 'circularObject',
-					value: referenceTarget[CIRCULAR_REF_KEY] || circularReferenceCounter
-				};
-
-				if (referenceTarget[CIRCULAR_REF_KEY] === undefined) {
-					referenceTarget[CIRCULAR_REF_KEY] = circularReferenceCounter;
-					circularReferenceCounter++;
-				}
-
+				this._serializeCircular(parent, key, referenceTarget, circularReferenceCounter);
+				circularReferenceCounter++;
 				continue;
 			} else {
 				objectSeenList.push(current);
 			}
 
-			for (const [currentItemKey, currentItemValue] of Object.entries(current)) {
-				if (typeof currentItemValue === 'object') {
-					let didConvert = false;
-					for (const type of this.extraTypes) {
-						if (type.isInstance(currentItemValue)) {
-							current[currentItemKey] = {
-								[TYPE_KEY]: type.name,
-								value: type.convertFrom(currentItemValue)
-							};
-							didConvert = true;
-							break;
-						}
-					}
-
-					if (!didConvert) {
-						// Check sub-objects
-						stack.push({current: current[currentItemKey], parent: current, key: currentItemKey});
-					}
+			for (const [currentItemKey, currentItemValue] of Object.entries(current).filter(entry => typeof entry[1] === 'object')) {
+				const serialized = this._serializeExtra(currentItemValue);
+				if (serialized === undefined) {
+					// Check sub-objects
+					stack.push({current: current[currentItemKey], parent: current, key: currentItemKey});
+				} else {
+					current[currentItemKey] = serialized;
 				}
 			}
 		}
@@ -365,45 +378,37 @@ class Conf {
 
 	_deserializeExtraTypes(value) {
 		// Base cases
-		for (const type of this.extraTypes) {
-			if (value[TYPE_KEY] !== undefined) {
-				return type.convertFrom(value);
-			}
-		}
 
 		// Value is a base type
 		if (typeof value !== 'object') {
 			return value;
 		}
 
+		// Value is an extra type
+		const deserializedValue = this._deserializeExtra(value);
+		if (deserializedValue !== value) {
+			return deserializedValue;
+		}
+
 		// Sub-object handling of extra types
-		const stack = [];
-		const objectSeenList = [];
+		const stack = [value];
 		const circularReferences = {};
-		stack.push(value);
 		while (stack.length > 0) {
 			const current = stack.pop();
-			if (objectSeenList.includes(current)) {
-				continue;
-			} else {
-				objectSeenList.push(current);
-			}
 
 			if (current[CIRCULAR_REF_KEY]) {
 				circularReferences[current[CIRCULAR_REF_KEY]] = current;
 				delete current[CIRCULAR_REF_KEY];
 			}
 
-			for (const [currentItemKey, currentItemValue] of Object.entries(current)) {
-				if (currentItemValue[TYPE_KEY] !== undefined) {
-					if (currentItemValue[TYPE_KEY] === 'circularObject') {
-						current[currentItemKey] = circularReferences[currentItemValue.value];
-					} else {
-						const currentType = this.extraTypes.find(typeInfo => typeInfo.name === currentItemValue[TYPE_KEY]);
-						current[currentItemKey] = currentType.convertTo(currentItemValue.value);
-					}
-				} else if (typeof currentItemValue === 'object') {
+			for (const [currentItemKey, currentItemValue] of Object.entries(current).filter(entry => typeof entry[1] === 'object')) {
+				if (currentItemValue[TYPE_KEY] === undefined) {
 					stack.push(current[currentItemKey]);
+				} else if (currentItemValue[TYPE_KEY] === 'circularObject') {
+					current[currentItemKey] = circularReferences[currentItemValue.value];
+				} else {
+					const deserialized = this._deserializeExtra(currentItemValue);
+					current[currentItemKey] = deserialized;
 				}
 			}
 		}
