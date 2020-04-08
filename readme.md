@@ -366,9 +366,9 @@ Currently supported objects are:
 - `Date` - serializes the Date to milliseconds, then back to a `Date` object when the getter is called
 
 ### Configure types for serialization
-Extra types can be added to a Conf instance via the `extraTypes` array.
-Each element of the array defines an extra type that is going to be automatically serialized when stored and deserialized when retrieved.
-Once you've created an extra type object you need to `push` it to the extraTypes array.
+
+Extra types can be added to a Conf instance via passing the `extraTypes` option to the constructor.
+Each element of the array defines an extra type, that is going to be automatically serialized when stored and deserialized when retrieved.
 
 #### Extra type object
 
@@ -415,15 +415,14 @@ The following example demonstrates the configuration of the `Date` type, that is
 ```js
 const Conf = new require('conf');
 
-const config = new Conf();
 const extraTypeDate = {
 	name: 'Date',
 	isInstance: object => object instanceof Date,
 	convertFrom: value => value.getTime(),
 	convertTo: value = new Date(value)
 };
+const config = new Conf({extraTypes: [extraTypeDate]});
 
-config.extraTypes.push(extraTypeDate);
 config.set('myDate', new Date());
 const myDate = config.get('myDate');
 console.log(myDate.toDateString());

@@ -231,6 +231,35 @@ declare namespace Conf {
 		@default false
 		*/
 		readonly watch?: boolean;
+
+		/**
+		Conf can automatically (de)serialize some objects/types.
+		As stated before `.set()` only accepts JSON serializable values, so you can't use `undefined`, `function` or `symbol`.
+		Additionally Conf has the ability to automatically serialize and deserialize pre-configured objects.
+		Currently supported objects are:
+		- `Date` - serializes the Date to milliseconds, then back to a `Date` object when the getter is called
+		Extra types can be added to a Conf instance via passing the `extraTypes` option to the constructor.
+		Each element of the array defines an extra type, that is going to be automatically serialized when stored and deserialized when retrieved.
+
+		@example
+		```
+		const Conf = new require('conf');
+
+		const extraTypeDate = {
+			name: 'Date',
+			isInstance: object => object instanceof Date,
+			convertFrom: value => value.getTime(),
+			convertTo: value = new Date(value)
+		};
+		const config = new Conf({extraTypes: [extraTypeDate]});
+
+		config.set('myDate', new Date());
+		const myDate = config.get('myDate');
+		console.log(myDate.toDateString());
+		//=> Tue Apr 07 2020
+		```
+		*/
+		readonly extraTypes?: Conf.ExtraType<unknown>[];
 	}
 
 	/**
@@ -263,36 +292,7 @@ declare class Conf<T = any> implements Iterable<[keyof T, T[keyof T]]> {
 	store: T;
 	readonly path: string;
 	readonly size: number;
-	/**
-	Conf can automatically (de)serialize some objects/types.
-	As stated before `.set()` only accepts JSON serializable values, so you can't use `undefined`, `function` or `symbol`.
-	Additionally Conf has the ability to automatically serialize and deserialize pre-configured objects.
-	Currently supported objects are:
-	- `Date` - serializes the Date to milliseconds, then back to a `Date` object when the getter is called
-	Extra types can be added to a Conf instance via the `extraTypes` array.
-	Each element of the array defines an extra type, that is going to be automatically serialized when stored and deserialized when retrieved.
-	Once you've created an extra type object you can `push` it to the extraTypes array.
-
-	@example
-	```
-		const Conf = new require('conf');
-
-		const config = new Conf();
-		const extraTypeDate = {
-			name: 'Date',
-			isInstance: object => object instanceof Date,
-			convertFrom: value => value.getTime(),
-			convertTo: value = new Date(value)
-		};
-
-		config.extraTypes.push(extraTypeDate);
-		config.set('myDate', new Date());
-		const myDate = config.get('myDate');
-		console.log(myDate.toDateString());
-		//=> Tue Apr 07 2020
-	```
-	*/
-	extraTypes: Conf.ExtraType<unknown>[];
+	readonly extraTypes: Conf.ExtraType<unknown>[];
 
 	/**
 	Changes are written to disk atomically, so if the process crashes during a write, it will not corrupt the existing config.

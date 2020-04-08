@@ -51,6 +51,7 @@ class Conf {
 			serialize: value => JSON.stringify(value, null, '\t'),
 			deserialize: JSON.parse,
 			accessPropertiesByDotNotation: true,
+			extraTypes: [],
 			...options
 		};
 
@@ -60,7 +61,8 @@ class Conf {
 				isInstance: object => object instanceof Date,
 				convertFrom: value => value.getTime(),
 				convertTo: value => new Date(value)
-			}
+			},
+			...options.extraTypes
 		];
 
 		const getPackageData = onetime(() => {
@@ -312,9 +314,8 @@ class Conf {
 			return value;
 		}
 
-		for (const type of this.extraTypes) {
-			return type.convertTo(value);
-		}
+		const currentType = this.extraTypes.find(type => type.name === value[TYPE_KEY]);
+		return currentType.convertTo(value.value);
 	}
 
 	_serializeCircular(parent, key, referenceTarget, referenceCounter) {
