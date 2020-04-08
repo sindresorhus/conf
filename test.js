@@ -14,6 +14,21 @@ const fixture = '🦄';
 test.beforeEach(t => {
 	t.context.config = new Conf({cwd: tempy.directory()});
 	t.context.configWithoutDotNotation = new Conf({cwd: tempy.directory(), accessPropertiesByDotNotation: false});
+	t.context.configWithCustomType = new Conf({
+		extraTypes: [{
+			name: 'signedInt',
+			isInstance: object => object.sign !== undefined && object.value !== undefined,
+			convertFrom: signedInt => signedInt.value * (signedInt.sign === '-' ? -1 : 1),
+			convertTo: int => {
+				const sign = int < 0;
+				return {
+					sign: sign ? '-' : '+',
+					value: sign ? -1 * int : int
+				};
+			}
+		}],
+		cwd: tempy.directory()
+	});
 });
 
 test('.get()', t => {
@@ -88,6 +103,14 @@ test('.set() - with Date in a nested array', t => {
 	t.true(myDateArray[2][0] instanceof Date);
 	t.true(myDateArray[2][2] instanceof Date);
 	t.true(myDateArray[3] instanceof Date);
+});
+
+test('.set() - with custom type defined at runtime', t => {
+	const mySignedInt = {sign: '-', value: 1337};
+	t.context.configWithCustomType.set('mySignedInt', mySignedInt);
+	const storedSignedInt = t.context.configWithCustomType.get('mySignedInt');
+	t.true(storedSignedInt.value === mySignedInt.value);
+	t.true(storedSignedInt.sign === mySignedInt.sign);
 });
 
 test('.set()  - with normal types and circular object', t => {
