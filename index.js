@@ -53,7 +53,7 @@ class Conf {
 		};
 
 		const getPackageData = onetime(() => {
-			const packagePath = pkgUp.sync(parentDir);
+			const packagePath = pkgUp.sync({cwd: parentDir});
 			// Can't use `require` because of Webpack being annoying:
 			// https://github.com/webpack/webpack/issues/196
 			const packageData = packagePath && JSON.parse(fs.readFileSync(packagePath, 'utf8'));
