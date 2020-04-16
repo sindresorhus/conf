@@ -18,7 +18,7 @@ new Conf<UnicornFoo>({configName: ''});
 new Conf<UnicornFoo>({projectName: 'foo'});
 new Conf<UnicornFoo>({cwd: ''});
 new Conf<UnicornFoo>({encryptionKey: ''});
-new Conf<UnicornFoo>({encryptionKey: new Buffer('')});
+new Conf<UnicornFoo>({encryptionKey: Buffer.from('')});
 new Conf<UnicornFoo>({encryptionKey: new Uint8Array([1])});
 new Conf<UnicornFoo>({encryptionKey: new DataView(new ArrayBuffer(2))});
 new Conf<UnicornFoo>({fileExtension: '.foo'});
