@@ -233,7 +233,6 @@ declare namespace Conf {
 		readonly watch?: boolean;
 
 		/**
-		Conf can automatically (de)serialize some objects/types.
 		As stated before `.set()` only accepts JSON serializable values, so you can't use `undefined`, `function` or `symbol`.
 		Additionally Conf has the ability to automatically serialize and deserialize pre-configured objects.
 		Currently supported objects are:
@@ -241,22 +240,22 @@ declare namespace Conf {
 		Extra types can be added to a Conf instance via passing the `extraTypes` option to the constructor.
 		Each element of the array defines an extra type, that is going to be automatically serialized when stored and deserialized when retrieved.
 
-		@example
+		@example ````The following example demonstrates the configuration of the `RegExp` type.
 		```
 		const Conf = new require('conf');
 
-		const extraTypeDate = {
-			name: 'Date',
-			isInstance: object => object instanceof Date,
-			convertFrom: value => value.getTime(),
-			convertTo: value = new Date(value)
+		const extraTypeRegExp = {
+			name: 'regex',
+			isInstance: object => object instanceof RegExp,
+			convertFrom: value => {pattern: value.source, flags: value.flags},
+			convertTo: value => new RegExp(value.pattern, value.flags)
 		};
-		const config = new Conf({extraTypes: [extraTypeDate]});
+		const config = new Conf({extraTypes: [extraTypeRegExp]});
 
-		config.set('myDate', new Date());
-		const myDate = config.get('myDate');
-		console.log(myDate.toDateString());
-		//=> Tue Apr 07 2020
+		config.set('myRegex', new RegExp('as.*', 'gi'));
+		const myRegex = config.get('myRegex');
+		console.log(myRegex.exec('asdfgh'));
+		//=> ['asdfgh']
 		```
 		*/
 		readonly extraTypes?: Conf.ExtraType<unknown>[];
@@ -272,14 +271,20 @@ declare namespace Conf {
 		name: string,
 		/**
 		Determines whether an object is of the defined type.
+
+		@returns True if the object is of the defined type, otherwise false.
 		*/
 		isInstance: (value: T) => boolean,
 		/**
 		Takes the object of the defined type and deserializes it.
+
+		@returns A JSON serializable representation of the custom type.
 		*/
 		convertFrom: (value: T) => JsonValue,
 		/**
 		Takes the serialized value and deserializes it.
+
+		@returns The type that is defined.
 		*/
 		convertTo: (value: JsonValue) => T
 	}

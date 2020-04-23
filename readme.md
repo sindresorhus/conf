@@ -410,23 +410,23 @@ Takes the serialized value and deserializes it.
 - It must return the type that is defined.
 
 #### Example
-The following example demonstrates the configuration of the `Date` type, that is internally supported by default.
+The following example demonstrates the configuration of the `RegExp` type.
 
 ```js
 const Conf = new require('conf');
 
-const extraTypeDate = {
-	name: 'Date',
-	isInstance: object => object instanceof Date,
-	convertFrom: value => value.getTime(),
-	convertTo: value = new Date(value)
+const extraTypeRegExp = {
+	name: 'regex',
+	isInstance: object => object instanceof RegExp,
+	convertFrom: value => {pattern: value.source, flags: value.flags},
+	convertTo: value => new RegExp(value.pattern, value.flags)
 };
-const config = new Conf({extraTypes: [extraTypeDate]});
+const config = new Conf({extraTypes: [extraTypeRegExp]});
 
-config.set('myDate', new Date());
-const myDate = config.get('myDate');
-console.log(myDate.toDateString());
-//=> Tue Apr 07 2020
+config.set('myRegex', new RegExp('as.*', 'gi'));
+const myRegex = config.get('myRegex');
+console.log(myRegex.exec('asdfgh'));
+//=> ['asdfgh']
 ```
 
 ## FAQ
