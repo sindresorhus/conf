@@ -1,8 +1,24 @@
 /// <reference types="node"/>
-import {JSONSchema} from 'json-schema-typed';
+import { JSONSchema } from 'json-schema-typed';
 
 declare namespace Conf {
 	type Schema = JSONSchema;
+
+	/**
+	Matches a JSON object.
+	*/
+	type JsonObject = { [key: string]: JsonValue };
+
+	/**
+	Matches any valid JSON value.
+	*/
+	type JsonValue = string | number | boolean | null | JsonObject | JsonArray;
+
+	/**
+	Matches a JSON array.
+	*/
+	interface JsonArray extends Array<JsonValue> { }
+
 
 	interface Options<T> {
 		/**
@@ -47,7 +63,7 @@ declare namespace Conf {
 
 		**Note:** The `default` value will be overwritten by the `defaults` option if set.
 		*/
-		readonly schema?: {[P in keyof T]: Schema};
+		readonly schema?: { [P in keyof T]: Schema };
 
 		/**
 		Name of the config file (without extension).
@@ -102,7 +118,7 @@ declare namespace Conf {
 		});
 		```
 		*/
-		readonly migrations?: {[version: string]: (store: Conf<T>) => void};
+		readonly migrations?: { [version: string]: (store: Conf<T>) => void };
 
 		/**
 		__You most likely don't need this. Please don't use it unless you really have to.__
@@ -215,6 +231,62 @@ declare namespace Conf {
 		@default false
 		*/
 		readonly watch?: boolean;
+
+		/**
+		As stated before `.set()` only accepts JSON serializable values, so you can't use `undefined`, `function` or `symbol`.
+		Additionally Conf has the ability to automatically serialize and deserialize pre-configured objects.
+		Currently supported objects are:
+		- `Date` - serializes the Date to milliseconds, then back to a `Date` object when the getter is called
+		Extra types can be added to a Conf instance via passing the `extraTypes` option to the constructor.
+		Each element of the array defines an extra type, that is going to be automatically serialized when stored and deserialized when retrieved.
+
+		@example ````The following example demonstrates the configuration of the `RegExp` type.
+		```
+		const Conf = new require('conf');
+
+		const extraTypeRegExp = {
+			name: 'regex',
+			isInstance: object => object instanceof RegExp,
+			convertFrom: value => {pattern: value.source, flags: value.flags},
+			convertTo: value => new RegExp(value.pattern, value.flags)
+		};
+		const config = new Conf({extraTypes: [extraTypeRegExp]});
+
+		config.set('myRegex', new RegExp('as.*', 'gi'));
+		const myRegex = config.get('myRegex');
+		console.log(myRegex.exec('asdfgh'));
+		//=> ['asdfgh']
+		```
+		*/
+		readonly extraTypes?: Conf.ExtraType<unknown>[];
+	}
+
+	/**
+	Defines a type, that's (de)serialization is automatically handled.
+	*/
+	interface ExtraType<T> {
+		/**
+		The unique name describing the new type. This name identifies the custom type internally when (de)serializing the object.
+		*/
+		name: string,
+		/**
+		Determines whether an object is of the defined type.
+
+		@returns True if the object is of the defined type, otherwise false.
+		*/
+		isInstance: (value: T) => boolean,
+		/**
+		Takes the object of the defined type and deserializes it.
+
+		@returns A JSON serializable representation of the custom type.
+		*/
+		convertFrom: (value: T) => JsonValue,
+		/**
+		Takes the serialized value and deserializes it.
+
+		@returns The type that is defined.
+		*/
+		convertTo: (value: JsonValue) => T
 	}
 }
 
@@ -225,6 +297,7 @@ declare class Conf<T = any> implements Iterable<[keyof T, T[keyof T]]> {
 	store: T;
 	readonly path: string;
 	readonly size: number;
+	readonly extraTypes: Conf.ExtraType<unknown>[];
 
 	/**
 	Changes are written to disk atomically, so if the process crashes during a write, it will not corrupt the existing config.

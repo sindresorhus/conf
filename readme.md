@@ -276,6 +276,8 @@ You can use [dot-notation](https://github.com/sindresorhus/dot-prop) in a `key` 
 
 The instance is [`iterable`](https://developer.mozilla.org/en/docs/Web/JavaScript/Reference/Iteration_protocols) so you can use it directly in a [`for…of`](https://developer.mozilla.org/en/docs/Web/JavaScript/Reference/Statements/for...of) loop.
 
+Please see the [Supported Types](#Supported-Types) section for more information about the (de)serialization of pre-configured objects.
+
 #### .set(key, value)
 
 Set an item.
@@ -355,6 +357,77 @@ conf.store = {
 #### .path
 
 Get the path to the config file.
+
+## Supported Types
+
+As stated before `.set()` only accepts JSON serializable values, so you can't use `undefined`, `function` or `symbol`.
+Additionally Conf has the ability to automatically serialize and deserialize pre-configured objects.
+Currently supported objects are:
+- `Date` - serializes the Date to milliseconds, then back to a `Date` object when the getter is called
+
+### Configure types for serialization
+
+Extra types can be added to a Conf instance via passing the `extraTypes` option to the constructor.
+Each element of the array defines an extra type, that is going to be automatically serialized when stored and deserialized when retrieved.
+
+#### Extra type object
+
+Type: `object`
+
+Defines a type, that's (de)serialization is automatically handled.
+
+##### name
+
+Type: `string`
+
+The unique name describing the new type. This name identifies the custom type internally when (de)serializing the object.
+
+##### isInstance
+
+Type: `Function`
+
+Determines whether an object is of the defined type.
+
+- It has signature `isInstance(object)`, where object is of type `object`.
+- It must return a `boolean`, true if the object is of the defined type, otherwise false.
+
+##### convertFrom
+
+Type: `Function`
+
+Takes the object of the defined type and deserializes it.
+
+- It has signature `convertFrom(value)`, where value is of the type that is defined.
+- It must return a JSON serializable representation of the custom type.
+
+##### convertTo
+
+Type: `Function`
+
+Takes the serialized value and deserializes it.
+
+- It has signature `convertTo(value)`, where value is a JSON serializable type.
+- It must return the type that is defined.
+
+#### Example
+The following example demonstrates the configuration of the `RegExp` type.
+
+```js
+const Conf = new require('conf');
+
+const extraTypeRegExp = {
+	name: 'regex',
+	isInstance: object => object instanceof RegExp,
+	convertFrom: value => {pattern: value.source, flags: value.flags},
+	convertTo: value => new RegExp(value.pattern, value.flags)
+};
+const config = new Conf({extraTypes: [extraTypeRegExp]});
+
+config.set('myRegex', new RegExp('as.*', 'gi'));
+const myRegex = config.get('myRegex');
+console.log(myRegex.exec('asdfgh'));
+//=> ['asdfgh']
+```
 
 ## FAQ
 

@@ -5,13 +5,15 @@ type UnicornFoo = {
 	foo: string;
 	unicorn: boolean;
 	hello?: number;
+	myDate: Date;
 };
 
 const conf = new Conf<UnicornFoo>();
 new Conf<UnicornFoo>({
 	defaults: {
 		foo: 'bar',
-		unicorn: false
+		unicorn: false,
+		myDate: new Date(1990)
 	}
 });
 new Conf<UnicornFoo>({configName: ''});
@@ -24,7 +26,7 @@ new Conf<UnicornFoo>({encryptionKey: new DataView(new ArrayBuffer(2))});
 new Conf<UnicornFoo>({fileExtension: '.foo'});
 new Conf<UnicornFoo>({clearInvalidConfig: false});
 new Conf<UnicornFoo>({serialize: value => 'foo'});
-new Conf<UnicornFoo>({deserialize: string => ({foo: 'foo', unicorn: true})});
+new Conf<UnicornFoo>({deserialize: string => ({foo: 'foo', unicorn: true, myDate: new Date(1990)})});
 new Conf<UnicornFoo>({projectSuffix: 'foo'});
 new Conf<UnicornFoo>({watch: true});
 
@@ -39,6 +41,9 @@ new Conf<UnicornFoo>({
 		},
 		hello: {
 			type: 'number'
+		},
+		myDate: {
+			type: 'object'
 		}
 	}
 });
@@ -62,7 +67,9 @@ expectError(
 conf.set('hello', 1);
 conf.set('unicorn', false);
 conf.set({foo: 'nope'});
+conf.set('myDate', new Date());
 
+expectType<Date>(conf.get('myDate'));
 expectType<string>(conf.get('foo'));
 expectType<void>(conf.reset('foo', 'unicorn'));
 expectType<string>(conf.get('foo', 'bar'));
@@ -79,7 +86,8 @@ off();
 
 conf.store = {
 	foo: 'bar',
-	unicorn: false
+	unicorn: false,
+	myDate: new Date(1991)
 };
 expectType<string>(conf.path);
 expectType<number>(conf.size);

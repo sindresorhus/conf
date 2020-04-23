@@ -14,6 +14,21 @@ const fixture = '🦄';
 test.beforeEach(t => {
 	t.context.config = new Conf({cwd: tempy.directory()});
 	t.context.configWithoutDotNotation = new Conf({cwd: tempy.directory(), accessPropertiesByDotNotation: false});
+	t.context.configWithCustomType = new Conf({
+		extraTypes: [{
+			name: 'signedInt',
+			isInstance: object => object.sign !== undefined && object.value !== undefined,
+			convertFrom: signedInt => signedInt.value * (signedInt.sign === '-' ? -1 : 1),
+			convertTo: int => {
+				const sign = int < 0;
+				return {
+					sign: sign ? '-' : '+',
+					value: sign ? -1 * int : int
+				};
+			}
+		}],
+		cwd: tempy.directory()
+	});
 });
 
 test('.get()', t => {
@@ -47,6 +62,127 @@ test('.set() - with object', t => {
 	t.is(t.context.config.get('baz.boo'), 'foo');
 	t.deepEqual(t.context.config.get('baz.foo'), {bar: 'baz'});
 	t.is(t.context.config.get('baz.foo.bar'), 'baz');
+});
+
+test('.set() - with Date', t => {
+	t.context.config.set('dateobj', new Date());
+	const myDate = t.context.config.get('dateobj');
+	t.true(myDate instanceof Date);
+});
+
+test('.set() - with Date in a nested object', t => {
+	t.context.config.set('dateobj', {str: 'this is a string', date: new Date()});
+	const myDate = t.context.config.get('dateobj').date;
+	t.true(myDate instanceof Date);
+});
+
+test('.set() - with Date in a array', t => {
+	t.context.config.set('datearray', [new Date(), 'asd', 1337, new Date()]);
+	const myDateArray = t.context.config.get('datearray');
+	t.true(myDateArray[0] instanceof Date);
+	t.true(myDateArray[3] instanceof Date);
+});
+
+test('.set() - with Date in a object inside array', t => {
+	t.context.config.set('datearray', [{date: new Date(), dummy: 'dummy', num: -1337}, 'asd', 1337, new Date()]);
+	const myDateArray = t.context.config.get('datearray');
+	t.true(myDateArray[0].date instanceof Date);
+	t.true(myDateArray[3] instanceof Date);
+});
+
+test('.set() - with Date in a nested object inside array', t => {
+	t.context.config.set('datearray', [{nested: {date: new Date(), nestedDummy: 'nested dummy'}, dummy: 'dummy', num: -1337}, 'asd', 1337, new Date()]);
+	const myDateArray = t.context.config.get('datearray');
+	t.true(myDateArray[0].nested.date instanceof Date);
+	t.true(myDateArray[3] instanceof Date);
+});
+
+test('.set() - with Date in a nested array', t => {
+	t.context.config.set('datearray', [[1, 2, 3], 'asd', [new Date(), 1337, new Date()], new Date()]);
+	const myDateArray = t.context.config.get('datearray');
+	t.true(myDateArray[2][0] instanceof Date);
+	t.true(myDateArray[2][2] instanceof Date);
+	t.true(myDateArray[3] instanceof Date);
+});
+
+test('.set() - with custom type defined at runtime', t => {
+	const mySignedInt = {sign: '-', value: 1337};
+	t.context.configWithCustomType.set('mySignedInt', mySignedInt);
+	const storedSignedInt = t.context.configWithCustomType.get('mySignedInt');
+	t.true(storedSignedInt.value === mySignedInt.value);
+	t.true(storedSignedInt.sign === mySignedInt.sign);
+});
+
+test('.set()  - with normal types and circular object', t => {
+	const circular = {myString: 'this is a string', myInt: 5, myBoolean: true, circulation: null};
+	circular.circulation = circular;
+	t.context.config.set('circular', circular);
+	const getCircular = t.context.config.get('circular');
+	t.true(typeof getCircular.myString === 'string');
+	t.true(typeof getCircular.circulation.myString === 'string');
+	t.true(typeof getCircular.myInt === 'number');
+	t.true(typeof getCircular.circulation.myInt === 'number');
+	t.true(typeof getCircular.myBoolean === 'boolean');
+	t.true(typeof getCircular.circulation.myBoolean === 'boolean');
+});
+
+test('.set()  - with Date and circular object', t => {
+	const circular = {myDate: new Date(), circulation: null};
+	circular.circulation = circular;
+	t.context.config.set('circular', circular);
+	const getCircular = t.context.config.get('circular');
+	t.true(getCircular.myDate instanceof Date);
+	t.true(getCircular.circulation.myDate instanceof Date);
+});
+
+test('.set() - with normal types and 2 level deep circular object', t => {
+	const circular = {myString: 'this is a string', myInt: 5, myBoolean: true, circulationl1: {l2: null}};
+	circular.circulationl1.l2 = circular;
+	t.context.config.set('circular', circular);
+	const getCircular = t.context.config.get('circular');
+	t.true(typeof getCircular.myString === 'string');
+	t.true(typeof getCircular.circulationl1.l2.myString === 'string');
+	t.true(typeof getCircular.myInt === 'number');
+	t.true(typeof getCircular.circulationl1.l2.myInt === 'number');
+	t.true(typeof getCircular.myBoolean === 'boolean');
+	t.true(typeof getCircular.circulationl1.l2.myBoolean === 'boolean');
+});
+
+test('.set() - with Date and 2 level deep circular object', t => {
+	const circular = {myDate: new Date(), circulationl1: {l2: null}};
+	circular.circulationl1.l2 = circular;
+	t.context.config.set('circular', circular);
+	const getCircular = t.context.config.get('circular');
+	t.true(getCircular.myDate instanceof Date);
+	t.true(getCircular.circulationl1.l2.myDate instanceof Date);
+});
+
+test('.set() - with normal types and multiple circular objects', t => {
+	const circular = {myString: 'this is a string', myInt: 5, myBoolean: true, c1: null, c2: null};
+	circular.c1 = circular;
+	circular.c2 = circular;
+	t.context.config.set('circular', circular);
+	const getCircular = t.context.config.get('circular');
+	t.true(typeof getCircular.myString === 'string');
+	t.true(typeof getCircular.c1.myString === 'string');
+	t.true(typeof getCircular.c2.myString === 'string');
+	t.true(typeof getCircular.myInt === 'number');
+	t.true(typeof getCircular.c1.myInt === 'number');
+	t.true(typeof getCircular.c2.myInt === 'number');
+	t.true(typeof getCircular.myBoolean === 'boolean');
+	t.true(typeof getCircular.c1.myBoolean === 'boolean');
+	t.true(typeof getCircular.c2.myBoolean === 'boolean');
+});
+
+test('.set() - with Date and multiple circular objects', t => {
+	const circular = {myDate: new Date(), c1: null, c2: null};
+	circular.c1 = circular;
+	circular.c2 = circular;
+	t.context.config.set('circular', circular);
+	const getCircular = t.context.config.get('circular');
+	t.true(getCircular.myDate instanceof Date);
+	t.true(getCircular.c1.myDate instanceof Date);
+	t.true(getCircular.c2.myDate instanceof Date);
 });
 
 test('.set() - with undefined', t => {
