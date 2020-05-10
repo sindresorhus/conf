@@ -43,7 +43,7 @@ const checkValueType = (key: string, value: unknown): void => {
 const INTERNAL_KEY = '__internal__';
 const MIGRATION_KEY = `${INTERNAL_KEY}.migrations.version`;
 
-export class Conf<T extends { [key: string]: any } = any> implements Iterable<[keyof T, T[keyof T]]> {
+export class Conf<T extends { [key: string]: any } = {[key: string]: any}> implements Iterable<[keyof T, T[keyof T]]> {
 	readonly path: string;
 	readonly events: EventEmitter;
 	readonly #validator?: Ajv.ValidateFunction;
@@ -180,7 +180,8 @@ export class Conf<T extends { [key: string]: any } = any> implements Iterable<[k
 	@param {key|object} - You can use [dot-notation](https://github.com/sindresorhus/dot-prop) in a key to access nested properties. Or a hashmap of items to set at once.
 	@param value - Must be JSON serializable. Trying to set the type `undefined`, `function`, or `symbol` will result in a `TypeError`.
     */
-	set<Key extends keyof T>(key: Key | string, value: T[Key] | unknown): void;
+	set<Key extends keyof T>(key: Key, value?: T[Key]): void;
+	set<Key extends keyof T>(key: string, value: unknown): void;
 	set(object: Partial<T>): void;
 	set<Key extends keyof T>(key: Partial<T> | Key | string, value?: T[Key] | unknown): void {
 		if (typeof key !== 'string' && typeof key !== 'object') {
@@ -316,7 +317,7 @@ export class Conf<T extends { [key: string]: any } = any> implements Iterable<[k
 			const dataString = this._encryptData(data);
 			const deserializedData = this._deserialize(dataString);
 			this._validate(deserializedData);
-			return Object.assign(createPlainObject(), deserializedData) as T;
+			return Object.assign(createPlainObject(), deserializedData);
 		} catch (error) {
 			if (error.code === 'ENOENT') {
 				this._ensureDirectory();
@@ -373,8 +374,18 @@ export class Conf<T extends { [key: string]: any } = any> implements Iterable<[k
 	}
 
 	private _handleChange<Key extends keyof T>(
+		getter: () => T | undefined,
+		callback: OnDidAnyChangeCallback<T[Key]>
+	): Unsubscribe;
+
+	private _handleChange<Key extends keyof T>(
+		getter: () => T[Key] | undefined,
+		callback: OnDidChangeCallback<T[Key]>
+	): Unsubscribe;
+
+	private _handleChange<Key extends keyof T>(
 		getter: () => T | T[Key] | undefined,
-		callback: OnDidAnyChangeCallback<any> | OnDidChangeCallback<any>
+		callback: OnDidAnyChangeCallback<T | T[Key]> | OnDidChangeCallback<T | T[Key]>
 	): Unsubscribe {
 		let currentValue = getter();
 
@@ -531,7 +542,7 @@ export class Conf<T extends { [key: string]: any } = any> implements Iterable<[k
 	}
 
 	private _get<Key extends keyof T>(key: Key): T[Key] | undefined;
-	private _get<Key extends keyof T, Default = unknown>(key: Key, defaultValue?: Default): T[Key]| Default;
+	private _get<Key extends keyof T, Default = unknown>(key: Key, defaultValue?: Default): T[Key] | Default;
 	private _get<Key extends keyof T, Default = unknown>(key: Key, defaultValue?: Default): T[Key] | Default | undefined {
 		return dotProp.get<T[Key] | Default | undefined>(this.store, key as string, defaultValue);
 	}

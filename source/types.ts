@@ -225,7 +225,7 @@ export type Schema<T> = { [Property in keyof T]: ValueSchema };
 export type ValueSchema = TypedJSONSchema;
 
 export type Serialize<T> = (value: T) => string;
-export type Deserialize<T> = (text: string) => T | { [key: string]: any };
+export type Deserialize<T> = (text: string) => T;
 
 export type OnDidChangeCallback<T> = (newValue?: T, oldValue?: T) => void;
 export type OnDidAnyChangeCallback<T> = (newValue?: Readonly<T>, oldValue?: Readonly<T>) => void;
