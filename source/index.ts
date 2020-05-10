@@ -43,7 +43,7 @@ const checkValueType = (key: string, value: unknown): void => {
 const INTERNAL_KEY = '__internal__';
 const MIGRATION_KEY = `${INTERNAL_KEY}.migrations.version`;
 
-export class Conf<T extends { [key: string]: any } = {[key: string]: any}> implements Iterable<[keyof T, T[keyof T]]> {
+export class Conf<T extends { [key: string]: any } = { [key: string]: any }> implements Iterable<[keyof T, T[keyof T]]> {
 	readonly path: string;
 	readonly events: EventEmitter;
 	readonly #validator?: Ajv.ValidateFunction;
@@ -445,7 +445,19 @@ export class Conf<T extends { [key: string]: any } = {[key: string]: any}> imple
 		if (process.env.SNAP) {
 			fs.writeFileSync(this.path, data);
 		} else {
-			writeFileAtomic.sync(this.path, data);
+			try {
+				writeFileAtomic.sync(this.path, data);
+			} catch (error) {
+				// Fix for https://github.com/sindresorhus/electron-store/issues/106
+				// Sometimes on Windows, we will get an EXDEV error when atomic writing
+				// (even though to the same directory), so we fall back to non atomic write
+				if (error.code === 'EXDEV') {
+					fs.writeFileSync(this.path, data);
+					return;
+				}
+
+				throw error;
+			}
 		}
 	}
 
