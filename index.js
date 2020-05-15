@@ -266,7 +266,7 @@ class Conf {
 
 	_shouldPerformMigration(candidateVersion, previousMigratedVersion, versionToMigrate) {
 		if (this._isVersionInRangeFormat(candidateVersion)) {
-			if (previousMigratedVersion !== '0.0.0' && semver.satisfies(previousMigratedVersion, candidateVersion)) {
+			if (previousMigratedVersion !== '0.0.0' && !semver.satisfies(previousMigratedVersion, candidateVersion)) {
 				return false;
 			}
 
