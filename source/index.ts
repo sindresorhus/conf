@@ -43,7 +43,7 @@ const checkValueType = (key: string, value: unknown): void => {
 const INTERNAL_KEY = '__internal__';
 const MIGRATION_KEY = `${INTERNAL_KEY}.migrations.version`;
 
-export class Conf<T extends { [key: string]: any } = { [key: string]: any }> implements Iterable<[keyof T, T[keyof T]]> {
+export class Conf<T extends Record<string, any> = Record<string, unknown>> implements Iterable<[keyof T, T[keyof T]]> {
 	readonly path: string;
 	readonly events: EventEmitter;
 	readonly #validator?: Ajv.ValidateFunction;
