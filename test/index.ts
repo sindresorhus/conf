@@ -8,12 +8,13 @@ import clearModule = require('clear-module');
 import pEvent = require('p-event');
 import delay = require('delay');
 import anyTest, {TestInterface} from 'ava';
-import {Conf, Schema} from '../source';
+import Conf, {Schema} from '../source';
+import packageJson = require('../package.json');
 
 const test = anyTest as TestInterface<{
 	config: Conf;
 	configWithoutDotNotation: Conf;
-	configWithSchema: Conf;
+	configWithSchema: Conf<{ foo: unknown; bar: unknown }>;
 	configWithDefaults: Conf;
 }>;
 const fixture = '🦄';
@@ -92,6 +93,9 @@ test('.set() - with unsupported values', t => {
 
 test('.set() - invalid key', t => {
 	t.throws(() => {
+		// For our tests to fail and typescript to compile, we'll ignore this ts error.
+		// This error is not bad and means the package is well typed.
+		// @ts-expect-error
 		t.context.config.set(1, 'unicorn');
 	}, {message: 'Expected `key` to be of type `string` or `object`, got number'});
 });
@@ -196,7 +200,7 @@ test('`configName` option', t => {
 		cwd: tempy.directory(),
 		configName
 	});
-	t.is(config.get('foo', 4), undefined);
+	t.is(config.get('foo'), undefined);
 	config.set('foo', fixture);
 	t.is(config.get('foo'), fixture);
 	t.is(path.basename(config.path, '.json'), configName);
@@ -258,7 +262,7 @@ test('`serialize` and `deserialize` options', t => {
 		return serialized;
 	};
 
-	const deserialize = (value: unknown): object => {
+	const deserialize = (value: unknown) => {
 		t.is(value, serialized);
 		return deserialized;
 	};
@@ -269,7 +273,7 @@ test('`serialize` and `deserialize` options', t => {
 		deserialize
 	});
 
-	t.deepEqual(config.store, {});
+	t.deepEqual(config.store, {} as any);
 	config.store = deserialized;
 	t.deepEqual(config.store, deserialized);
 });
@@ -611,9 +615,6 @@ test('schema - multiple violations', t => {
 	};
 	const config = new Conf({cwd: tempy.directory(), schema});
 	t.throws(() => {
-		// For our tests to fail and typescript to compile, we'll ignore this ts error.
-		// This error is not bad and means the package is well typed.
-		// @ts-ignore
 		config.set('foo', {bar: '1', foobar: 101});
 	}, {message: 'Config schema violation: `foo.bar` should be number; `foo.foobar` should be <= 100'});
 });
@@ -639,9 +640,6 @@ test('schema - complex schema', t => {
 		config.set('foo', 'abca');
 	}, {message: 'Config schema violation: `foo` should NOT be longer than 3 characters; `foo` should match pattern "[def]+"'});
 	t.throws(() => {
-		// For our tests to fail and typescript to compile, we'll ignore this ts error.
-		// This error is not bad and means the package is well typed.
-		// @ts-ignore
 		config.set('bar', [1, 1, 2, 'a']);
 	}, {message: 'Config schema violation: `bar` should NOT have more than 3 items; `bar[3]` should be integer; `bar` should NOT have duplicate items (items ## 1 and 0 are identical)'});
 });
@@ -706,7 +704,7 @@ test('schema - validate Conf default', t => {
 			defaults: {
 				// For our tests to fail and typescript to compile, we'll ignore this ts error.
 				// This error is not bad and means the package is well typed.
-				// @ts-ignore
+				// @ts-expect-error
 				foo: 1
 			},
 			schema
@@ -992,7 +990,7 @@ test('migrations - should infer the applicationVersion from the package.json whe
 	});
 
 	t.false(conf.has('foo'));
-	t.is(conf.get('__internal__.migrations.version'), require('../package.json').version);
+	t.is(conf.get('__internal__.migrations.version'), packageJson.version);
 });
 
 test('migrations - should NOT throw an error when project version is unspecified but there are no migrations', t => {

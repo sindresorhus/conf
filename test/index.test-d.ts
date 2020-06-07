@@ -1,6 +1,6 @@
 /* eslint-disable no-new */
 import {expectType, expectError, expectAssignable} from 'tsd';
-import {Conf} from '../source';
+import Conf from '../source';
 
 type UnicornFoo = {
 	foo: string;
@@ -43,6 +43,14 @@ new Conf<UnicornFoo>({
 		},
 		hello: {
 			type: 'number'
+		},
+		nested: {
+			type: 'object',
+			properties: {
+				prop: {
+					type: 'number'
+				}
+			}
 		}
 	}
 });
@@ -51,15 +59,15 @@ expectError(
 	new Conf<UnicornFoo>({
 		schema: {
 			foo: {
-				// @ts-ignore
+				// @ts-expect-error
 				type: 'nope'
 			},
 			unicorn: {
-				// @ts-ignore
+				// @ts-expect-error
 				type: 'nope'
 			},
 			hello: {
-				// @ts-ignore
+				// @ts-expect-error
 				type: 'nope'
 			}
 		}
@@ -79,7 +87,6 @@ conf.set({
 });
 
 expectType<string | undefined>(conf.get('foo'));
-expectType<void>(conf.reset('foo', 'unicorn'));
 expectType<string>(conf.get('foo', 'bar'));
 conf.delete('foo');
 expectType<boolean>(conf.has('foo'));

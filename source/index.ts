@@ -27,15 +27,15 @@ delete require.cache[__filename];
 const parentDir = path.dirname((module.parent && module.parent.filename) || '.');
 
 const checkValueType = (key: string, value: unknown): void => {
-	const nonJsonTypes = [
+	const nonJsonTypes = new Set([
 		'undefined',
 		'symbol',
 		'function'
-	];
+	]);
 
 	const type = typeof value;
 
-	if (nonJsonTypes.includes(type)) {
+	if (nonJsonTypes.has(type)) {
 		throw new TypeError(`Setting a value of type \`${type}\` for key \`${key}\` is not allowed as it's not supported by JSON`);
 	}
 };
@@ -43,7 +43,7 @@ const checkValueType = (key: string, value: unknown): void => {
 const INTERNAL_KEY = '__internal__';
 const MIGRATION_KEY = `${INTERNAL_KEY}.migrations.version`;
 
-export class Conf<T extends Record<string, any> = Record<string, unknown>> implements Iterable<[keyof T, T[keyof T]]> {
+class Conf<T extends Record<string, any> = Record<string, unknown>> implements Iterable<[keyof T, T[keyof T]]> {
 	readonly path: string;
 	readonly events: EventEmitter;
 	readonly #validator?: Ajv.ValidateFunction;
@@ -137,7 +137,8 @@ export class Conf<T extends Record<string, any> = Record<string, unknown>> imple
 
 		try {
 			assert.deepEqual(fileStore, store);
-		} catch {
+		// eslint-disable-next-line unicorn/prefer-optional-catch-binding
+		} catch (_) {
 			this.store = store;
 		}
 
@@ -159,14 +160,14 @@ export class Conf<T extends Record<string, any> = Record<string, unknown>> imple
 	}
 
 	/**
-    Get an item.
+	Get an item.
 
 	@param key - The key of the item to get.
 	@param defaultValue - The default value if the item does not exist.
 	*/
 	get<Key extends keyof T>(key: Key | string): T[Key] | undefined;
-	get<Key extends keyof T, Default = unknown>(key: Key | string, defaultValue?: Default): T[Key] | Default;
-	get<Key extends keyof T, Default = unknown>(key: Key | string, defaultValue?: Default): T[Key] | Default | undefined {
+	get<Key extends keyof T, Default = T[Key]>(key: Key | string, defaultValue: Default): T[Key] | Default;
+	get<Key extends keyof T, Default = T[Key]>(key: Key | string, defaultValue?: Default): Default | undefined {
 		if (this.#options.accessPropertiesByDotNotation) {
 			return this._get(key, defaultValue);
 		}
@@ -181,7 +182,7 @@ export class Conf<T extends Record<string, any> = Record<string, unknown>> imple
 	@param value - Must be JSON serializable. Trying to set the type `undefined`, `function`, or `symbol` will result in a `TypeError`.
     */
 	set<Key extends keyof T>(key: Key, value?: T[Key]): void;
-	set<Key extends keyof T>(key: string, value: unknown): void;
+	set(key: string, value: unknown): void;
 	set(object: Partial<T>): void;
 	set<Key extends keyof T>(key: Partial<T> | Key | string, value?: T[Key] | unknown): void {
 		if (typeof key !== 'string' && typeof key !== 'object') {
@@ -365,9 +366,11 @@ export class Conf<T extends Record<string, any> = Record<string, unknown>> imple
 						const decipher = crypto.createDecipher(encryptionAlgorithm, this.#encryptionKey);
 						data = Buffer.concat([decipher.update(Buffer.from(data)), decipher.final()]).toString('utf8');
 					}
+				// eslint-disable-next-line unicorn/prefer-optional-catch-binding
 				} catch (_) { }
 			}
-		} catch {
+		// eslint-disable-next-line unicorn/prefer-optional-catch-binding
+		} catch (_) {
 		}
 
 		return data.toString();
@@ -396,7 +399,8 @@ export class Conf<T extends Record<string, any> = Record<string, unknown>> imple
 			try {
 				// TODO: Use `util.isDeepStrictEqual` when targeting Node.js 10
 				assert.deepEqual(newValue, oldValue);
-			} catch {
+			// eslint-disable-next-line unicorn/prefer-optional-catch-binding
+			} catch (_) {
 				currentValue = newValue;
 				callback.call(this, newValue, oldValue);
 			}
@@ -419,6 +423,7 @@ export class Conf<T extends Record<string, any> = Record<string, unknown>> imple
 			return;
 		}
 
+		// eslint-disable-next-line unicorn/no-reduce
 		const errors = this.#validator.errors.reduce((error, {dataPath, message = ''}) =>
 			error + ` \`${dataPath.slice(1)}\` ${message};`, '');
 		throw new Error('Config schema violation:' + errors.slice(0, -1));
@@ -554,9 +559,9 @@ export class Conf<T extends Record<string, any> = Record<string, unknown>> imple
 	}
 
 	private _get<Key extends keyof T>(key: Key): T[Key] | undefined;
-	private _get<Key extends keyof T, Default = unknown>(key: Key, defaultValue?: Default): T[Key] | Default;
-	private _get<Key extends keyof T, Default = unknown>(key: Key, defaultValue?: Default): T[Key] | Default | undefined {
-		return dotProp.get<T[Key] | Default | undefined>(this.store, key as string, defaultValue);
+	private _get<Key extends keyof T, Default = unknown>(key: Key, defaultValue: Default): T[Key] | Default;
+	private _get<Key extends keyof T, Default = unknown>(key: Key | string, defaultValue?: Default): Default | undefined {
+		return dotProp.get<T[Key] | undefined>(this.store, key as string, defaultValue as T[Key]);
 	}
 
 	private _set(key: string, value: unknown): void {
