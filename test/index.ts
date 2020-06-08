@@ -14,7 +14,7 @@ import packageJson = require('../package.json');
 const test = anyTest as TestInterface<{
 	config: Conf;
 	configWithoutDotNotation: Conf;
-	configWithSchema: Conf<{ foo: unknown; bar: unknown }>;
+	configWithSchema: Conf<{foo: unknown; bar: unknown}>;
 	configWithDefaults: Conf;
 }>;
 const fixture = '🦄';
@@ -65,7 +65,7 @@ test('.set() - with undefined', t => {
 
 test('.set() - with unsupported values', t => {
 	t.throws(() => {
-		t.context.config.set('a', () => { });
+		t.context.config.set('a', () => {});
 	}, {message: /not supported by JSON/});
 
 	t.throws(() => {
@@ -80,7 +80,7 @@ test('.set() - with unsupported values', t => {
 
 	t.throws(() => {
 		t.context.config.set({
-			a: () => { }
+			a: () => {}
 		});
 	}, {message: /not supported by JSON/});
 
@@ -93,8 +93,7 @@ test('.set() - with unsupported values', t => {
 
 test('.set() - invalid key', t => {
 	t.throws(() => {
-		// For our tests to fail and typescript to compile, we'll ignore this ts error.
-		// This error is not bad and means the package is well typed.
+		// For our tests to fail and TypeScript to compile, we'll ignore this TS error.
 		// @ts-expect-error
 		t.context.config.set(1, 'unicorn');
 	}, {message: 'Expected `key` to be of type `string` or `object`, got number'});
@@ -196,7 +195,7 @@ test('`defaults` option', t => {
 
 test('`configName` option', t => {
 	const configName = 'alt-config';
-	const config = new Conf<{ foo: string }>({
+	const config = new Conf<{foo: string}>({
 		cwd: tempy.directory(),
 		configName
 	});
@@ -564,7 +563,7 @@ test('schema - should be an object', t => {
 });
 
 test('schema - valid set', t => {
-	const schema: Schema<{ foo: { bar: number; foobar: number } }> = {
+	const schema: Schema<{foo: {bar: number; foobar: number}}> = {
 		foo: {
 			type: 'object',
 			properties: {
@@ -599,7 +598,7 @@ test('schema - one violation', t => {
 });
 
 test('schema - multiple violations', t => {
-	const schema: Schema<{ foo: { bar: number; foobar: number } }> = {
+	const schema: Schema<{foo: {bar: number; foobar: number}}> = {
 		foo: {
 			type: 'object',
 			properties: {
@@ -620,7 +619,7 @@ test('schema - multiple violations', t => {
 });
 
 test('schema - complex schema', t => {
-	const schema: Schema<{ foo: string; bar: number[] }> = {
+	const schema: Schema<{foo: string; bar: number[]}> = {
 		foo: {
 			type: 'string',
 			maxLength: 3,
@@ -645,7 +644,7 @@ test('schema - complex schema', t => {
 });
 
 test('schema - invalid write to config file', t => {
-	const schema: Schema<{ foo: string }> = {
+	const schema: Schema<{foo: string}> = {
 		foo: {
 			type: 'string'
 		}
@@ -660,7 +659,7 @@ test('schema - invalid write to config file', t => {
 });
 
 test('schema - default', t => {
-	const schema: Schema<{ foo: string }> = {
+	const schema: Schema<{foo: string}> = {
 		foo: {
 			type: 'string',
 			default: 'bar'
@@ -676,7 +675,7 @@ test('schema - default', t => {
 });
 
 test('schema - Conf defaults overwrites schema default', t => {
-	const schema: Schema<{ foo: string }> = {
+	const schema: Schema<{foo: string}> = {
 		foo: {
 			type: 'string',
 			default: 'bar'
@@ -693,7 +692,7 @@ test('schema - Conf defaults overwrites schema default', t => {
 });
 
 test('schema - validate Conf default', t => {
-	const schema: Schema<{ foo: string }> = {
+	const schema: Schema<{foo: string}> = {
 		foo: {
 			type: 'string'
 		}
