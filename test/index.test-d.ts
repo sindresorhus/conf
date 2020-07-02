@@ -1,5 +1,5 @@
 /* eslint-disable no-new */
-import {expectType, expectError, expectAssignable} from 'tsd';
+import {expectType, expectAssignable} from 'tsd';
 import Conf from '../source';
 
 type UnicornFoo = {
@@ -54,25 +54,6 @@ new Conf<UnicornFoo>({
 		}
 	}
 });
-
-expectError(
-	new Conf<UnicornFoo>({
-		schema: {
-			foo: {
-				// @ts-expect-error
-				type: 'nope'
-			},
-			unicorn: {
-				// @ts-expect-error
-				type: 'nope'
-			},
-			hello: {
-				// @ts-expect-error
-				type: 'nope'
-			}
-		}
-	})
-);
 
 conf.set('hello', 1);
 conf.set('unicorn', false);
@@ -130,6 +111,8 @@ const config = new Conf<StoreType>({
 config.get('isRainbow');
 //=> true
 
+expectType<string>(conf.get('foo', 'bar'));
+
 config.set('unicorn', '🦄');
 console.log(config.get('unicorn'));
 //=> '🦄'
@@ -137,6 +120,13 @@ console.log(config.get('unicorn'));
 config.delete('unicorn');
 console.log(config.get('unicorn'));
 //=> undefined
+
+// Should be stored type or default
+expectType<boolean | undefined>(config.get('isRainbow'));
+expectType<boolean>(config.get('isRainbow', false));
+
+expectType<string | undefined>(config.get('unicorn'));
+expectType<string | undefined | number>(config.get('unicorn', 1));
 
 // --
 
