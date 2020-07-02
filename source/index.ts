@@ -24,7 +24,7 @@ const createPlainObject = <T = unknown>(): T => {
 // Prevent caching of this module so module.parent is always accurate
 // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
 delete require.cache[__filename];
-const parentDir = path.dirname((module.parent && module.parent.filename) || '.');
+const parentDir = path.dirname(module.parent?.filename ?? '.');
 
 const checkValueType = (key: string, value: unknown): void => {
 	const nonJsonTypes = new Set([

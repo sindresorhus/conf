@@ -10,7 +10,6 @@
 		"email": "sindresorhus@gmail.com",
 		"url": "https://sindresorhus.com"
 	},
-	"main": "dist/source",
 	"engines": {
 		"node": ">=8.3.0"
 	},
@@ -21,7 +20,8 @@
 		"prepublishOnly": "npm run build"
 	},
 	"files": [
-		"dist/source"
+		"dist/source/index.js",
+		"dist/source/index.d.ts"
 	],
 	"keywords": [
 		"config",
@@ -68,14 +68,14 @@
 		"nyc": "^15.1.0",
 		"p-event": "^4.2.0",
 		"tempy": "^0.4.0",
-		"tsd": "^0.11.0",
+		"tsd": "^0.12.1",
 		"typescript": "3.9.5",
 		"xo": "^0.32.0"
 	},
 	"types": "dist/source",
 	"ava": {
 		"files": [
-			"test/*"
+			"test/index.ts"
 		],
 		"timeout": "1m",
 		"typescript": {
