@@ -8,8 +8,8 @@ import clearModule = require('clear-module');
 import pEvent = require('p-event');
 import delay = require('delay');
 import anyTest, {TestInterface} from 'ava';
+import readPkgUp = require('read-pkg-up');
 import Conf, {Schema} from '../source';
-import packageJson = require('../package.json');
 
 const test = anyTest as TestInterface<{
 	config: Conf;
@@ -968,7 +968,7 @@ test('migrations - should cleanup migrations with non-numeric values', t => {
 	t.is(conf.get('heart'), '❤');
 });
 
-test('migrations - should infer the applicationVersion from the package.json when it isn\'t specified', t => {
+test('migrations - should infer the applicationVersion from the package.json when it isn\'t specified', async t => {
 	const cwd = tempy.directory();
 
 	const conf = new Conf({
@@ -980,6 +980,8 @@ test('migrations - should infer the applicationVersion from the package.json whe
 	});
 
 	t.false(conf.has('foo'));
+
+	const {packageJson} = (await readPkgUp())!;
 	t.is(conf.get('__internal__.migrations.version'), packageJson.version);
 });
 
