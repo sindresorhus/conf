@@ -7,9 +7,8 @@
 			"es2018"
 		]
 	},
-	"files": [
-		"source/index.ts",
-		"source/types.ts",
-		"test/index.ts"
+	"include": [
+		"source",
+		"test"
 	]
 }

@@ -768,12 +768,9 @@ test('.delete() - without dot notation', t => {
 	t.deepEqual(configWithoutDotNotation.get('foo.bar.zoo'), {awesome: 'redpanda'});
 });
 
-test('`watch` option watches for config file changes by another process', async t => {
-	if (process.platform === 'darwin' && process.version.split('.')[0] === 'v8') {
-		t.plan(0);
-		return;
-	}
+const test2 = process.platform === 'darwin' ? test.failing : test;
 
+test2('`watch` option watches for config file changes by another process', async t => {
 	const cwd = tempy.directory();
 	const conf1 = new Conf({cwd, watch: true});
 	const conf2 = new Conf({cwd});
@@ -800,13 +797,7 @@ test('`watch` option watches for config file changes by another process', async 
 	await pEvent(_events, 'change');
 });
 
-test('`watch` option watches for config file changes by file write', async t => {
-	// TODO: Remove this when targeting Node.js 10.
-	if (process.platform === 'darwin' && process.version.split('.')[0] === 'v8') {
-		t.plan(0);
-		return;
-	}
-
+test2('`watch` option watches for config file changes by file write', async t => {
 	const cwd = tempy.directory();
 	const conf = new Conf({cwd, watch: true});
 	conf.set('foo', '🐴');

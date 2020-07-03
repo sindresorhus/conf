@@ -1,4 +1,4 @@
-# conf [![Build Status](https://travis-ci.com/sindresorhus/conf.svg?branch=master)](https://travis-ci.com/sindresorhus/conf)
+# conf [![Build Status](https://travis-ci.com/sindresorhus/conf.svg?branch=master)](https://travis-ci.com/github/sindresorhus/conf)
 
 > Simple config handling for your app or module
 

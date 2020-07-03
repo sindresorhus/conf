@@ -2,7 +2,7 @@ import fs = require('fs');
 import path = require('path');
 import crypto = require('crypto');
 import assert = require('assert');
-import EventEmitter = require('events');
+import {EventEmitter} from 'events';
 import dotProp = require('dot-prop');
 import makeDir = require('make-dir');
 import pkgUp = require('pkg-up');
