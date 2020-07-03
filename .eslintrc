@@ -1,4 +1,0 @@
-{
-    "extends": ["xo", "xo-typescript"],
-    "parser": "@typescript-eslint/parser"
-}
