@@ -1,13 +1,17 @@
-import {expectType, expectError, expectAssignable} from 'tsd';
-import Conf = require('.');
+/* eslint-disable no-new */
+import {expectType, expectAssignable} from 'tsd';
+import Conf from '../source';
 
 type UnicornFoo = {
 	foo: string;
 	unicorn: boolean;
+	nested?: {
+		prop: number;
+	};
 	hello?: number;
 };
 
-const conf = new Conf<UnicornFoo>();
+const conf = new Conf<UnicornFoo>({accessPropertiesByDotNotation: true});
 new Conf<UnicornFoo>({
 	defaults: {
 		foo: 'bar',
@@ -23,8 +27,8 @@ new Conf<UnicornFoo>({encryptionKey: new Uint8Array([1])});
 new Conf<UnicornFoo>({encryptionKey: new DataView(new ArrayBuffer(2))});
 new Conf<UnicornFoo>({fileExtension: '.foo'});
 new Conf<UnicornFoo>({clearInvalidConfig: false});
-new Conf<UnicornFoo>({serialize: value => 'foo'});
-new Conf<UnicornFoo>({deserialize: string => ({foo: 'foo', unicorn: true})});
+new Conf<UnicornFoo>({serialize: () => 'foo'});
+new Conf<UnicornFoo>({deserialize: () => ({foo: 'foo', unicorn: true})});
 new Conf<UnicornFoo>({projectSuffix: 'foo'});
 new Conf<UnicornFoo>({watch: true});
 
@@ -39,32 +43,31 @@ new Conf<UnicornFoo>({
 		},
 		hello: {
 			type: 'number'
+		},
+		nested: {
+			type: 'object',
+			properties: {
+				prop: {
+					type: 'number'
+				}
+			}
 		}
 	}
 });
-
-expectError(
-	new Conf<UnicornFoo>({
-		schema: {
-			foo: {
-				type: 'nope'
-			},
-			unicorn: {
-				type: 'nope'
-			},
-			hello: {
-				type: 'nope'
-			}
-		}
-	})
-);
 
 conf.set('hello', 1);
 conf.set('unicorn', false);
 conf.set({foo: 'nope'});
 
-expectType<string>(conf.get('foo'));
-expectType<void>(conf.reset('foo', 'unicorn'));
+conf.set('nested.prop', 3);
+
+conf.set({
+	nested: {
+		prop: 3
+	}
+});
+
+expectType<string | undefined>(conf.get('foo'));
 expectType<string>(conf.get('foo', 'bar'));
 conf.delete('foo');
 expectType<boolean>(conf.has('foo'));
@@ -92,13 +95,12 @@ for (const [key, value] of conf) {
 	expectType<UnicornFoo[keyof UnicornFoo]>(value);
 }
 
-
 // -- Docs examples --
 
 type StoreType = {
-	isRainbow: boolean,
-	unicorn?: string
-}
+	isRainbow: boolean;
+	unicorn?: string;
+};
 
 const config = new Conf<StoreType>({
 	defaults: {
@@ -109,6 +111,8 @@ const config = new Conf<StoreType>({
 config.get('isRainbow');
 //=> true
 
+expectType<string>(conf.get('foo', 'bar'));
+
 config.set('unicorn', '🦄');
 console.log(config.get('unicorn'));
 //=> '🦄'
@@ -117,11 +121,17 @@ config.delete('unicorn');
 console.log(config.get('unicorn'));
 //=> undefined
 
+// Should be stored type or default
+expectType<boolean | undefined>(config.get('isRainbow'));
+expectType<boolean>(config.get('isRainbow', false));
+
+expectType<string | undefined>(config.get('unicorn'));
+expectType<string | undefined | number>(config.get('unicorn', 1));
+
 // --
 
-
 // -- Migrations --
-const store = new Conf({
+new Conf({
 	migrations: {
 		'0.0.1': store => {
 			store.set('debug phase', true);
