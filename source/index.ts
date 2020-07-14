@@ -7,7 +7,7 @@ import dotProp = require('dot-prop');
 import makeDir = require('make-dir');
 import pkgUp = require('pkg-up');
 import envPaths = require('env-paths');
-import writeFileAtomic = require('write-file-atomic');
+import writeFileAtomic = require('atomically');
 import Ajv = require('ajv');
 import debounceFn = require('debounce-fn');
 import semver = require('semver');
@@ -451,7 +451,7 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 			fs.writeFileSync(this.path, data);
 		} else {
 			try {
-				writeFileAtomic.sync(this.path, data);
+				writeFileAtomic.writeFileSync(this.path, data);
 			} catch (error) {
 				// Fix for https://github.com/sindresorhus/electron-store/issues/106
 				// Sometimes on Windows, we will get an EXDEV error when atomic writing
