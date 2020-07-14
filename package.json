@@ -1,14 +1,14 @@
 {
-	"name": "conf-atomically",
-	"version": "0.0.1",
-	"description": "Simple config handling for your app or module with atomically",
+	"name": "conf",
+	"version": "7.0.1",
+	"description": "Simple config handling for your app or module",
 	"license": "MIT",
-	"repository": "jurepetrovic/conf-atomically",
-	"funding": "https://github.com/sponsors/jurepetrovic",
+	"repository": "sindresorhus/conf",
+	"funding": "https://github.com/sponsors/sindresorhus",
 	"author": {
-		"name": "Jure Petrovic",
-		"email": "jurep2006@gmail.com",
-		"url": "https://www.enerco.si"
+		"name": "Sindre Sorhus",
+		"email": "sindresorhus@gmail.com",
+		"url": "https://sindresorhus.com"
 	},
 	"main": "dist/source",
 	"engines": {
