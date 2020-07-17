@@ -1,6 +1,5 @@
 # conf [![Build Status](https://travis-ci.com/sindresorhus/conf.svg?branch=master)](https://travis-ci.com/github/sindresorhus/conf)
 
-
 > Simple config handling for your app or module
 
 All you have to care about is what to persist. This module will handle all the dull details like where and how.
