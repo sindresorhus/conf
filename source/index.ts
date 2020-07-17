@@ -572,7 +572,7 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 	}
 }
 
-export {Schema};
+export {Schema, Options};
 
 export default Conf;
 
