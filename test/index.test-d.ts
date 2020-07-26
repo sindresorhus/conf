@@ -67,7 +67,7 @@ conf.set({
 	}
 });
 
-expectType<string | undefined>(conf.get('foo'));
+expectType<string>(conf.get('foo'));
 expectType<string>(conf.get('foo', 'bar'));
 conf.delete('foo');
 expectType<boolean>(conf.has('foo'));
@@ -122,11 +122,11 @@ console.log(config.get('unicorn'));
 //=> undefined
 
 // Should be stored type or default
-expectType<boolean | undefined>(config.get('isRainbow'));
+expectType<boolean>(config.get('isRainbow'));
 expectType<boolean>(config.get('isRainbow', false));
 
 expectType<string | undefined>(config.get('unicorn'));
-expectType<string | undefined | number>(config.get('unicorn', 1));
+expectType<string | number>(config.get('unicorn', 1));
 
 // --
 
