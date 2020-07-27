@@ -127,6 +127,8 @@ expectType<boolean>(config.get('isRainbow', false));
 
 expectType<string | undefined>(config.get('unicorn'));
 expectType<string>(config.get('unicorn', 'rainbow'));
+// @ts-expect-error
+expectType<number>(config.get('unicorn', 1));
 
 // --
 
