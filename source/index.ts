@@ -166,9 +166,9 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 	@param defaultValue - The default value if the item does not exist.
 	*/
 	get<Key extends keyof T>(key: Key): T[Key];
-	get<T = unknown>(key: string): T;
-	get<Key extends keyof T, Default = Required<T>[Key]>(key: Key, defaultValue: Default): Required<T>[Key] | Default;
-	get<T = unknown, Default = T>(key: string, defaultValue: Default): T | Default;
+	get<Key extends string, TValue = unknown>(key: Key extends keyof T ? never : Key): TValue;
+	get<Key extends keyof T>(key: Key, defaultValue: Required<T>[Key]): Required<T>[Key];
+	get<Key extends string, TValue = unknown>(key: Key extends keyof T ? never : Key, defaultValue: TValue): TValue;
 	get(key: string, defaultValue?: any): any {
 		if (this.#options.accessPropertiesByDotNotation) {
 			return this._get(key, defaultValue);

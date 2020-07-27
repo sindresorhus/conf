@@ -126,7 +126,7 @@ expectType<boolean>(config.get('isRainbow'));
 expectType<boolean>(config.get('isRainbow', false));
 
 expectType<string | undefined>(config.get('unicorn'));
-expectType<string | number>(config.get('unicorn', 1));
+expectType<string>(config.get('unicorn', 'rainbow'));
 
 // --
 
