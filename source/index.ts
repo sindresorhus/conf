@@ -169,7 +169,7 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 	get<Key extends string, TValue = unknown>(key: Key extends keyof T ? never : Key): TValue;
 	get<Key extends keyof T>(key: Key, defaultValue: Required<T>[Key]): Required<T>[Key];
 	get<Key extends string, TValue = unknown>(key: Key extends keyof T ? never : Key, defaultValue: TValue): TValue;
-	get(key: string, defaultValue?: any): any {
+	get(key: string, defaultValue?: unknown): unknown {
 		if (this.#options.accessPropertiesByDotNotation) {
 			return this._get(key, defaultValue);
 		}
