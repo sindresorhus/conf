@@ -46,10 +46,10 @@ const MIGRATION_KEY = `${INTERNAL_KEY}.migrations.version`;
 class Conf<T extends Record<string, any> = Record<string, unknown>> implements Iterable<[keyof T, T[keyof T]]> {
 	readonly path: string;
 	readonly events: EventEmitter;
-	readonly #validator?: Ajv.ValidateFunction;
-	readonly #encryptionKey?: string | Buffer | NodeJS.TypedArray | DataView;
-	readonly #options: Readonly<Partial<Options<T>>>;
-	readonly #defaultValues: Partial<T> = {};
+	private readonly validator?: Ajv.ValidateFunction;
+	private readonly encryptionKey?: string | Buffer | NodeJS.TypedArray | DataView;
+	private readonly options: Readonly<Partial<Options<T>>>;
+	private readonly defaultValues: Partial<T> = {};
 
 	constructor(partialOptions: Readonly<Partial<Options<T>>> = {}) {
 		const options: Partial<Options<T>> = {
@@ -82,7 +82,7 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 			options.cwd = envPaths(options.projectName, {suffix: options.projectSuffix}).config;
 		}
 
-		this.#options = options;
+		this.options = options;
 
 		if (options.schema) {
 			if (typeof options.schema !== 'object') {
@@ -101,18 +101,18 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 				properties: options.schema
 			};
 
-			this.#validator = ajv.compile(schema);
+			this.validator = ajv.compile(schema);
 
 			for (const [key, value] of Object.entries<JSONSchema>(options.schema)) {
 				if (value?.default) {
-					this.#defaultValues[key as keyof T] = value.default;
+					this.defaultValues[key as keyof T] = value.default;
 				}
 			}
 		}
 
 		if (options.defaults) {
-			this.#defaultValues = {
-				...this.#defaultValues,
+			this.defaultValues = {
+				...this.defaultValues,
 				...options.defaults
 			};
 		}
@@ -126,7 +126,7 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 		}
 
 		this.events = new EventEmitter();
-		this.#encryptionKey = options.encryptionKey;
+		this.encryptionKey = options.encryptionKey;
 
 		const fileExtension = options.fileExtension ? `.${options.fileExtension}` : '';
 		this.path = path.resolve(options.cwd, `${options.configName ?? 'config'}${fileExtension}`);
@@ -168,7 +168,7 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 	get<Key extends keyof T>(key: Key | string): T[Key] | undefined;
 	get<Key extends keyof T, Default = T[Key]>(key: Key | string, defaultValue: Default): T[Key] | Default;
 	get<Key extends keyof T, Default = T[Key]>(key: Key | string, defaultValue?: Default): Default | undefined {
-		if (this.#options.accessPropertiesByDotNotation) {
+		if (this.options.accessPropertiesByDotNotation) {
 			return this._get(key, defaultValue);
 		}
 
@@ -201,7 +201,7 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 
 		const set = (key: string, value?: T[Key] | T | unknown): void => {
 			checkValueType(key, value);
-			if (this.#options.accessPropertiesByDotNotation) {
+			if (this.options.accessPropertiesByDotNotation) {
 				dotProp.set(store, key, value);
 			} else {
 				store[key as Key] = value as T[Key];
@@ -226,7 +226,7 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 	@param key - The key of the item to check.
 	*/
 	has<Key extends keyof T>(key: Key | string): boolean {
-		if (this.#options.accessPropertiesByDotNotation) {
+		if (this.options.accessPropertiesByDotNotation) {
 			return dotProp.has(this.store, key as string);
 		}
 
@@ -240,8 +240,8 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 	*/
 	reset<Key extends keyof T>(...keys: Key[]): void {
 		for (const key of keys) {
-			if (this.#defaultValues[key]) {
-				this.set(key, this.#defaultValues[key]);
+			if (this.defaultValues[key]) {
+				this.set(key, this.defaultValues[key]);
 			}
 		}
 	}
@@ -253,7 +253,7 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 	*/
 	delete<Key extends keyof T>(key: Key): void {
 		const {store} = this;
-		if (this.#options.accessPropertiesByDotNotation) {
+		if (this.options.accessPropertiesByDotNotation) {
 			dotProp.delete(store, key as string);
 		} else {
 			// eslint-disable-next-line @typescript-eslint/no-dynamic-delete
@@ -314,7 +314,7 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 
 	get store(): T {
 		try {
-			const data = fs.readFileSync(this.path, this.#encryptionKey ? null : 'utf8');
+			const data = fs.readFileSync(this.path, this.encryptionKey ? null : 'utf8');
 			const dataString = this._encryptData(data);
 			const deserializedData = this._deserialize(dataString);
 			this._validate(deserializedData);
@@ -325,7 +325,7 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 				return createPlainObject();
 			}
 
-			if (this.#options.clearInvalidConfig && error.name === 'SyntaxError') {
+			if (this.options.clearInvalidConfig && error.name === 'SyntaxError') {
 				return createPlainObject();
 			}
 
@@ -349,21 +349,21 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 	}
 
 	private _encryptData(data: string | Buffer): string {
-		if (!this.#encryptionKey) {
+		if (!this.encryptionKey) {
 			return data.toString();
 		}
 
 		try {
 			// Check if an initialization vector has been used to encrypt the data
-			if (this.#encryptionKey) {
+			if (this.encryptionKey) {
 				try {
 					if (data.slice(16, 17).toString() === ':') {
 						const initializationVector = data.slice(0, 16);
-						const password = crypto.pbkdf2Sync(this.#encryptionKey, initializationVector.toString(), 10000, 32, 'sha512');
+						const password = crypto.pbkdf2Sync(this.encryptionKey, initializationVector.toString(), 10000, 32, 'sha512');
 						const decipher = crypto.createDecipheriv(encryptionAlgorithm, password, initializationVector);
 						data = Buffer.concat([decipher.update(Buffer.from(data.slice(17))), decipher.final()]).toString('utf8');
 					} else {
-						const decipher = crypto.createDecipher(encryptionAlgorithm, this.#encryptionKey);
+						const decipher = crypto.createDecipher(encryptionAlgorithm, this.encryptionKey);
 						data = Buffer.concat([decipher.update(Buffer.from(data)), decipher.final()]).toString('utf8');
 					}
 				// eslint-disable-next-line unicorn/prefer-optional-catch-binding
@@ -414,17 +414,17 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 	private readonly _serialize: Serialize<T> = value => JSON.stringify(value, null, '\t');
 
 	private _validate(data: T | unknown): void {
-		if (!this.#validator) {
+		if (!this.validator) {
 			return;
 		}
 
-		const valid = this.#validator(data);
-		if (valid || !this.#validator.errors) {
+		const valid = this.validator(data);
+		if (valid || !this.validator.errors) {
 			return;
 		}
 
 		// eslint-disable-next-line unicorn/no-reduce
-		const errors = this.#validator.errors.reduce((error, {dataPath, message = ''}) =>
+		const errors = this.validator.errors.reduce((error, {dataPath, message = ''}) =>
 			error + ` \`${dataPath.slice(1)}\` ${message};`, '');
 		throw new Error('Config schema violation:' + errors.slice(0, -1));
 	}
@@ -438,9 +438,9 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 	private _write(value: T): void {
 		let data: string | Buffer = this._serialize(value);
 
-		if (this.#encryptionKey) {
+		if (this.encryptionKey) {
 			const initializationVector = crypto.randomBytes(16);
-			const password = crypto.pbkdf2Sync(this.#encryptionKey, initializationVector.toString(), 10000, 32, 'sha512');
+			const password = crypto.pbkdf2Sync(this.encryptionKey, initializationVector.toString(), 10000, 32, 'sha512');
 			const cipher = crypto.createCipheriv(encryptionAlgorithm, password, initializationVector);
 			data = Buffer.concat([initializationVector, Buffer.from(':'), cipher.update(Buffer.from(data)), cipher.final()]);
 		}
@@ -523,7 +523,7 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 			return false;
 		}
 
-		if (this.#options.accessPropertiesByDotNotation) {
+		if (this.options.accessPropertiesByDotNotation) {
 			if (key.startsWith(`${INTERNAL_KEY}.`)) {
 				return true;
 			}
