@@ -55,6 +55,30 @@ new Conf<UnicornFoo>({
 	}
 });
 
+const schema = {
+	foo: {
+		type: 'string',
+		default: 'foobar'
+	},
+	unicorn: {
+		type: 'boolean'
+	},
+	hello: {
+		type: 'number'
+	},
+	nested: {
+		type: 'object',
+		properties: {
+			prop: {
+				type: 'number'
+			}
+		}
+	}
+}
+new Conf<UnicornFoo>({
+	schema
+});
+
 conf.set('hello', 1);
 conf.set('unicorn', false);
 conf.set({foo: 'nope'});
