@@ -167,7 +167,9 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 	*/
 	get<Key extends keyof T>(key: Key): T[Key];
 	get<Key extends keyof T>(key: Key, defaultValue: Required<T>[Key]): Required<T>[Key];
-	get<Key extends string, Value = unknown>(key: Key extends keyof T ? never : Key, defaultValue?: Value): Value;
+	// this overload is used to access via dot-notation
+	// exclude `keyof T`, incorect type for default value should not fallthrough to this overload
+	get<Key extends string, Value = unknown>(key: Exclude<Key, keyof T>, defaultValue?: Value): Value;
 	get(key: string, defaultValue?: unknown): unknown {
 		if (this.#options.accessPropertiesByDotNotation) {
 			return this._get(key, defaultValue);
