@@ -46,7 +46,7 @@ export interface Options<T> {
 
 	**Note:** The `default` value will be overwritten by the `defaults` option if set.
 	*/
-	schema?: Schema<T>;
+	schema?: Schema<T> | object;
 
 	/**
 	Name of the config file (without extension).

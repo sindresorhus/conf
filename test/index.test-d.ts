@@ -1,6 +1,6 @@
 /* eslint-disable no-new */
 import {expectType, expectAssignable} from 'tsd';
-import Conf from '../source';
+import Conf, { Schema } from '../source';
 
 type UnicornFoo = {
 	foo: string;
@@ -53,6 +53,56 @@ new Conf<UnicornFoo>({
 			}
 		}
 	}
+});
+
+const schemaWithType: Schema<UnicornFoo> = {
+	foo: {
+		type: 'string',
+		default: 'foobar'
+	},
+	unicorn: {
+		type: 'boolean'
+	},
+	hello: {
+		type: 'number'
+	},
+	nested: {
+		type: 'object',
+		properties: {
+			prop: {
+				type: 'number'
+			}
+		}
+	}
+}
+
+new Conf<UnicornFoo>({
+	schema:schemaWithType,
+});
+
+const schema = {
+	foo: {
+		type: 'string',
+		default: 'foobar'
+	},
+	unicorn: {
+		type: 'boolean'
+	},
+	hello: {
+		type: 'number'
+	},
+	nested: {
+		type: 'object',
+		properties: {
+			prop: {
+				type: 'number'
+			}
+		}
+	}
+}
+
+new Conf<UnicornFoo>({
+	schema
 });
 
 conf.set('hello', 1);
