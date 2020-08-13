@@ -1,5 +1,5 @@
 /* eslint-disable no-new */
-import {expectType, expectAssignable} from 'tsd';
+import {expectType, expectAssignable, expectError} from 'tsd';
 import Conf from '../source';
 
 type UnicornFoo = {
@@ -67,7 +67,7 @@ conf.set({
 	}
 });
 
-expectType<string | undefined>(conf.get('foo'));
+expectType<string>(conf.get('foo'));
 expectType<string>(conf.get('foo', 'bar'));
 conf.delete('foo');
 expectType<boolean>(conf.has('foo'));
@@ -122,11 +122,13 @@ console.log(config.get('unicorn'));
 //=> undefined
 
 // Should be stored type or default
-expectType<boolean | undefined>(config.get('isRainbow'));
+expectType<boolean>(config.get('isRainbow'));
 expectType<boolean>(config.get('isRainbow', false));
 
 expectType<string | undefined>(config.get('unicorn'));
-expectType<string | undefined | number>(config.get('unicorn', 1));
+expectType<string>(config.get('unicorn', 'rainbow'));
+// @ts-expect-error
+expectError<number>(config.get('unicorn', 1));
 
 // --
 

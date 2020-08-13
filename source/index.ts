@@ -165,9 +165,12 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 	@param key - The key of the item to get.
 	@param defaultValue - The default value if the item does not exist.
 	*/
-	get<Key extends keyof T>(key: Key | string): T[Key] | undefined;
-	get<Key extends keyof T, Default = T[Key]>(key: Key | string, defaultValue: Default): T[Key] | Default;
-	get<Key extends keyof T, Default = T[Key]>(key: Key | string, defaultValue?: Default): Default | undefined {
+	get<Key extends keyof T>(key: Key): T[Key];
+	get<Key extends keyof T>(key: Key, defaultValue: Required<T>[Key]): Required<T>[Key];
+	// This overload is used for dot-notation access.
+	// We exclude `keyof T` as an incorrect type for the default value should not fall through to this overload.
+	get<Key extends string, Value = unknown>(key: Exclude<Key, keyof T>, defaultValue?: Value): Value;
+	get(key: string, defaultValue?: unknown): unknown {
 		if (this.#options.accessPropertiesByDotNotation) {
 			return this._get(key, defaultValue);
 		}
