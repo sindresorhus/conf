@@ -99,6 +99,17 @@ test('.set() - invalid key', t => {
 	}, {message: 'Expected `key` to be of type `string` or `object`, got number'});
 });
 
+test('.appendToArray()', t => {
+	t.context.config.set('foo', [fixture]);
+	t.context.config.set('baz.boo', [fixture]);
+	t.context.config.appendToArray('foo', '🐴');
+	t.context.config.appendToArray('baz.boo', '🐴');
+	t.context.config.appendToArray('bar', '🐴'); // Will create new item with array
+	t.deepEqual(t.context.config.get('foo'), [fixture, '🐴']);
+	t.deepEqual(t.context.config.get('baz.boo'), [fixture, '🐴']);
+	t.deepEqual(t.context.config.get('bar'), ['🐴']);
+});
+
 test('.has()', t => {
 	t.context.config.set('foo', fixture);
 	t.context.config.set('baz.boo', fixture);

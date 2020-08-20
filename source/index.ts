@@ -224,6 +224,25 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 	}
 
 	/**
+    Append an item or multiple items to an array
+
+	@param {key|object} - You can use [dot-notation](https://github.com/sindresorhus/dot-prop) in a key to access nested properties. Or a hashmap of items to set at once.
+	@param value - Must be JSON serializable. Trying to set the type `undefined`, `function`, or `symbol` will result in a `TypeError`.
+    */
+	appendToArray<Key extends keyof T>(key: Key, value: Required<T>[Key]): void;
+	// This overload is used for dot-notation access.
+	appendToArray<Key extends string>(key: Key, value: Required<T>[Key]): void {
+		const list = this.get(key, [] as T[Key]);
+
+		if (!Array.isArray(list)) {
+			throw new TypeError('Config param already set and is not array');
+		}
+
+		list.push(value);
+		this.set(key, list);
+	}
+
+	/**
 	Check if an item exists.
 
 	@param key - The key of the item to check.
