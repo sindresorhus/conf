@@ -338,6 +338,19 @@ const unsubscribe = conf.onDidAnyChange(key, callback);
 unsubscribe();
 ```
 
+#### .appendToArray(key, value)
+
+Append an item to array.
+
+The `value` must be JSON serializable. Trying to set the type `undefined`, `function`, or `symbol` will result in a TypeError.
+
+```js
+config.appendToArray('foo.unicorns', '🦄')
+config.appendToArray('foo.unicorns', '🦄')
+console.log(config.get('foo.unicorns'))
+//=> ['🦄', '🦄']
+```
+
 #### .size
 
 Get the item count.

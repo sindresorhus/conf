@@ -110,6 +110,35 @@ test('.appendToArray()', t => {
 	t.deepEqual(t.context.config.get('bar'), ['🐴']);
 });
 
+test('.appendToArray() - array of objects', t => {
+	t.context.config.appendToArray('foo', {name: 'a'});
+	t.context.config.appendToArray('foo', {name: 'b'});
+	t.context.config.appendToArray('foo', {name: 'c'});
+	t.deepEqual(t.context.config.get('foo'), [
+		{name: 'a'},
+		{name: 'b'},
+		{name: 'c'}
+	]);
+});
+
+test('.appendToArray() - array of arrays', t => {
+	t.context.config.appendToArray('foo', [1]);
+	t.context.config.appendToArray('foo', [1, 2]);
+	t.context.config.appendToArray('foo', [{name: 'a'}]);
+	t.deepEqual(t.context.config.get('foo'), [
+		[1],
+		[1, 2],
+		[{name: 'a'}]
+	]);
+});
+
+test('.appendToArray() - value already set', t => {
+	t.context.config.set('foo', fixture);
+	t.throws(() => {
+		t.context.config.appendToArray('foo', fixture);
+	}, {message: 'The key `foo` is already set to a non-array value'});
+});
+
 test('.has()', t => {
 	t.context.config.set('foo', fixture);
 	t.context.config.set('baz.boo', fixture);
