@@ -333,7 +333,7 @@ Watches the whole config object, calling `callback` on any changes.
 Returns a function which you can use to unsubscribe:
 
 ```js
-const unsubscribe = conf.onDidAnyChange(key, callback);
+const unsubscribe = conf.onDidAnyChange(callback);
 
 unsubscribe();
 ```
