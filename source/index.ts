@@ -166,7 +166,7 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 	@param defaultValue - The default value if the item does not exist.
 	*/
 	get<Key extends keyof T>(key: Key): T[Key];
-	get<Key extends keyof T>(key: Key, defaultValue: Required<T>[Key]): Required<T>[Key];
+	get<Key extends keyof T>(key: Key, defaultValue: Required<T>[Key] | Required<unknown>): Required<T>[Key];
 	// This overload is used for dot-notation access.
 	// We exclude `keyof T` as an incorrect type for the default value should not fall through to this overload.
 	get<Key extends string, Value = unknown>(key: Exclude<Key, keyof T>, defaultValue?: Value): Value;
@@ -224,21 +224,22 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 	}
 
 	/**
-  Append an item to array
+	Append an item to array
 
 	@param {key|object} - You can use [dot-notation](https://github.com/sindresorhus/dot-prop) in a key to access nested properties. Or a hashmap of items to set at once.
 	@param value - Must be JSON serializable. Trying to set the type `undefined`, `function`, or `symbol` will result in a `TypeError`.
   */
-	appendToArray<Key extends keyof T>(key: Key, value: Required<T>[Key]): void;
+	appendToArray<Key extends keyof T, Value = T[Key][0]>(key: Key, value: Value): void;
+	appendToArray(key: string, value: unknown): void;
 	// This overload is used for dot-notation access.
-	appendToArray<Key extends string>(key: Key, value: Required<T>[Key]): void {
-		const array: [] = this.get(key, [] as T[Key]);
+	appendToArray<Key extends string, Value = T[Key][0]>(key: Key, value: Value): void {
+		const array: [] = this.get(key, [] as Array<typeof value>);
 
 		if (!Array.isArray(array)) {
 			throw new TypeError(`The key \`${key}\` is already set to a non-array value`);
 		}
 
-		this.set(key, [...array, value]);
+		this.set(key, [...array, value] as T[Key]);
 	}
 
 	/**

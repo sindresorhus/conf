@@ -280,7 +280,7 @@ The instance is [`iterable`](https://developer.mozilla.org/en/docs/Web/JavaScrip
 
 Set an item.
 
-The `value` must be JSON serializable. Trying to set the type `undefined`, `function`, or `symbol` will result in a TypeError.
+The `value` must be JSON serializable. Trying to set the type like `undefined`, `function`, or `symbol` will result in a `TypeError`.
 
 #### .set(object)
 
@@ -340,14 +340,14 @@ unsubscribe();
 
 #### .appendToArray(key, value)
 
-Append an item to array.
+Append `value` to an array item. If the item (`key`) doesn't exist, a new array with the `value` will be created. If item exists and is not an array, it will result in a `TypeError`.
 
-The `value` must be JSON serializable. Trying to set the type `undefined`, `function`, or `symbol` will result in a TypeError.
+The `value` must be JSON serializable. Trying to set the type like `undefined`, `function`, or `symbol` will result in a `TypeError`.
 
 ```js
-config.appendToArray('foo.unicorns', '🦄')
-config.appendToArray('foo.unicorns', '🦄')
-console.log(config.get('foo.unicorns'))
+config.appendToArray('foo.unicorns', '🦄');
+config.appendToArray('foo.unicorns', '🦄');
+console.log(config.get('foo.unicorns'));
 //=> ['🦄', '🦄']
 ```
 
