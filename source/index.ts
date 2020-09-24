@@ -137,7 +137,6 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 
 		try {
 			assert.deepEqual(fileStore, store);
-		// eslint-disable-next-line unicorn/prefer-optional-catch-binding
 		} catch (_) {
 			this.store = store;
 		}
@@ -369,10 +368,8 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 						const decipher = crypto.createDecipher(encryptionAlgorithm, this.#encryptionKey);
 						data = Buffer.concat([decipher.update(Buffer.from(data)), decipher.final()]).toString('utf8');
 					}
-				// eslint-disable-next-line unicorn/prefer-optional-catch-binding
 				} catch (_) { }
 			}
-		// eslint-disable-next-line unicorn/prefer-optional-catch-binding
 		} catch (_) {
 		}
 
@@ -402,7 +399,6 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 			try {
 				// TODO: Use `util.isDeepStrictEqual` when targeting Node.js 10
 				assert.deepEqual(newValue, oldValue);
-			// eslint-disable-next-line unicorn/prefer-optional-catch-binding
 			} catch (_) {
 				currentValue = newValue;
 				callback.call(this, newValue, oldValue);
