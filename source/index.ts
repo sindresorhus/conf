@@ -427,10 +427,8 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 		}
 
 		const errors = this.#validator.errors
-			.map(({dataPath, message = ''}) => ` \`${dataPath.slice(1)}\` ${message};`)
-			.join('')
-			.slice(0, -1);
-		throw new Error('Config schema violation:' + errors);
+			.map(({dataPath, message = ''}) => `\`${dataPath.slice(1)}\` ${message}`);
+		throw new Error('Config schema violation: ' + errors.join('; '));
 	}
 
 	private _ensureDirectory(): void {
