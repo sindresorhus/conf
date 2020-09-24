@@ -426,7 +426,6 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 			return;
 		}
 
-		// eslint-disable-next-line unicorn/no-reduce
 		const errors = this.#validator.errors
 			.map(({dataPath, message = ''}) => `\`${dataPath.slice(1)}\` ${message};`);
 		throw new Error('Config schema violation:' + errors.join(' ').slice(0, -1));
