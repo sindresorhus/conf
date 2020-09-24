@@ -84,6 +84,11 @@
 			}
 		}
 	},
+	"xo": {
+		"rules": {
+			"unicorn/prefer-optional-catch-binding": "off"
+		}
+	},
 	"nyc": {
 		"extension": [
 			".ts"
