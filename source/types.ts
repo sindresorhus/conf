@@ -207,9 +207,7 @@ export interface Options<T> {
 	readonly accessPropertiesByDotNotation?: boolean;
 
 	/**
-	Watch for any changes in the config file and call the callback for `onDidChange` if set. This is useful if there are multiple processes changing the same config file.
-
-	__Currently this option doesn't work on Node.js 8 on macOS.__
+	Watch for any changes in the config file and call the callback for `onDidChange` or `onDidAnyChange` if set. This is useful if there are multiple processes changing the same config file.
 
 	@default false
 	*/

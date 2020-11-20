@@ -266,9 +266,7 @@ console.log(config.get('foo.bar.foobar'));
 type: `boolean`\
 Default: `false`
 
-Watch for any changes in the config file and call the callback for `onDidChange` if set. This is useful if there are multiple processes changing the same config file.
-
-**Currently this option doesn't work on Node.js 8 on macOS.**
+Watch for any changes in the config file and call the callback for `onDidChange` or `onDidAnyChange` if set. This is useful if there are multiple processes changing the same config file.
 
 ### Instance
 
