@@ -107,8 +107,24 @@ test('.has()', t => {
 	t.false(t.context.config.has('missing'));
 });
 
-test('.reset()', t => {
-	t.context.configWithSchema = new Conf({
+test('.reset() - `defaults` option', t => {
+	const store = new Conf({
+		cwd: tempy.directory(),
+		defaults: {
+			foo: 42,
+			bar: 99
+		}
+	});
+
+	store.set('foo', 77);
+	store.set('bar', 0);
+	store.reset('foo', 'bar');
+	t.is(store.get('foo'), 42);
+	t.is(store.get('bar'), 99);
+});
+
+test('.reset() - `schema` option', t => {
+	const store = new Conf({
 		cwd: tempy.directory(),
 		schema: {
 			foo: {
@@ -120,25 +136,11 @@ test('.reset()', t => {
 		}
 	});
 
-	t.context.configWithDefaults = new Conf({
-		cwd: tempy.directory(),
-		defaults: {
-			foo: 42,
-			bar: 99
-		}
-	});
-
-	t.context.configWithSchema.set('foo', 77);
-	t.context.configWithSchema.set('bar', 0);
-	t.context.configWithSchema.reset('foo', 'bar');
-	t.is(t.context.configWithSchema.get('foo'), 42);
-	t.is(t.context.configWithSchema.get('bar'), 99);
-
-	t.context.configWithDefaults.set('foo', 77);
-	t.context.configWithDefaults.set('bar', 0);
-	t.context.configWithDefaults.reset('foo', 'bar');
-	t.is(t.context.configWithDefaults.get('foo'), 42);
-	t.is(t.context.configWithDefaults.get('bar'), 99);
+	store.set('foo', 77);
+	store.set('bar', 0);
+	store.reset('foo', 'bar');
+	t.is(store.get('foo'), 42);
+	t.is(store.get('bar'), 99);
 });
 
 test('.delete()', t => {
@@ -164,6 +166,40 @@ test('.clear()', t => {
 	t.context.config.set('baz.boo', true);
 	t.context.config.clear();
 	t.is(t.context.config.size, 0);
+});
+
+test('.clear() - `defaults` option', t => {
+	const store = new Conf({
+		cwd: tempy.directory(),
+		defaults: {
+			foo: 42,
+			bar: 99
+		}
+	});
+
+	store.set('foo', 2);
+	store.clear();
+	t.is(store.get('foo'), 42);
+	t.is(store.get('bar'), 99);
+});
+
+test('.clear() - `schema` option', t => {
+	const store = new Conf({
+		cwd: tempy.directory(),
+		schema: {
+			foo: {
+				default: 42
+			},
+			bar: {
+				default: 99
+			}
+		}
+	});
+
+	store.set('foo', 2);
+	store.clear();
+	t.is(store.get('foo'), 42);
+	t.is(store.get('bar'), 99);
 });
 
 test('.size', t => {
