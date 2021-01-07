@@ -273,11 +273,9 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 	This resets known items to their default values, if defined by the `defaults` or `schema` option.
 	*/
 	clear(): void {
-		const keys = Object.keys(this.store);
-
 		this.store = createPlainObject();
 
-		for (const key of keys) {
+		for (const key of Object.keys(this.#defaultValues)) {
 			this.reset(key);
 		}
 	}
