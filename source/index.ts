@@ -238,6 +238,8 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 	/**
 	Reset items to their default values, as defined by the `defaults` or `schema` option.
 
+	@see `clear()` to reset all items.
+
 	@param keys - The keys of the items to reset.
 	*/
 	reset<Key extends keyof T>(...keys: Key[]): void {
@@ -267,9 +269,15 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 
 	/**
 	Delete all items.
+
+	This resets known items to their default values, if defined by the `defaults` or `schema` option.
 	*/
 	clear(): void {
 		this.store = createPlainObject();
+
+		for (const key of Object.keys(this.#defaultValues)) {
+			this.reset(key);
+		}
 	}
 
 	/**
