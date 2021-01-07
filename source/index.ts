@@ -8,12 +8,12 @@ import makeDir = require('make-dir');
 import pkgUp = require('pkg-up');
 import envPaths = require('env-paths');
 import atomically = require('atomically');
-import Ajv = require('ajv');
+import Ajv, {ValidateFunction as AjvValidateFunction} from 'ajv';
 import debounceFn = require('debounce-fn');
 import semver = require('semver');
 import onetime = require('onetime');
-import {Deserialize, Migrations, OnDidChangeCallback, Options, Serialize, Unsubscribe, Schema, OnDidAnyChangeCallback} from './types';
 import {JSONSchema} from 'json-schema-typed';
+import {Deserialize, Migrations, OnDidChangeCallback, Options, Serialize, Unsubscribe, Schema, OnDidAnyChangeCallback} from './types';
 
 const encryptionAlgorithm = 'aes-256-cbc';
 
@@ -46,7 +46,7 @@ const MIGRATION_KEY = `${INTERNAL_KEY}.migrations.version`;
 class Conf<T extends Record<string, any> = Record<string, unknown>> implements Iterable<[keyof T, T[keyof T]]> {
 	readonly path: string;
 	readonly events: EventEmitter;
-	readonly #validator?: Ajv.ValidateFunction;
+	readonly #validator?: AjvValidateFunction;
 	readonly #encryptionKey?: string | Buffer | NodeJS.TypedArray | DataView;
 	readonly #options: Readonly<Partial<Options<T>>>;
 	readonly #defaultValues: Partial<T> = {};
@@ -91,9 +91,7 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 
 			const ajv = new Ajv({
 				allErrors: true,
-				format: 'full',
-				useDefaults: true,
-				errorDataPath: 'property'
+				useDefaults: true
 			});
 
 			const schema: JSONSchema = {
@@ -137,7 +135,7 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 
 		try {
 			assert.deepEqual(fileStore, store);
-		} catch (_) {
+		} catch {
 			this.store = store;
 		}
 
@@ -232,7 +230,7 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 			return dotProp.has(this.store, key as string);
 		}
 
-		return key in this.store;
+		return (key as string) in this.store;
 	}
 
 	/**
@@ -376,10 +374,9 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 						const decipher = crypto.createDecipher(encryptionAlgorithm, this.#encryptionKey);
 						data = Buffer.concat([decipher.update(Buffer.from(data)), decipher.final()]).toString('utf8');
 					}
-				} catch (_) { }
+				} catch {}
 			}
-		} catch (_) {
-		}
+		} catch {}
 
 		return data.toString();
 	}
@@ -407,7 +404,7 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 			try {
 				// TODO: Use `util.isDeepStrictEqual` when targeting Node.js 10
 				assert.deepEqual(newValue, oldValue);
-			} catch (_) {
+			} catch {
 				currentValue = newValue;
 				callback.call(this, newValue, oldValue);
 			}

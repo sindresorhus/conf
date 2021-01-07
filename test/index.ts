@@ -651,7 +651,7 @@ test('schema - multiple violations', t => {
 	const config = new Conf({cwd: tempy.directory(), schema});
 	t.throws(() => {
 		config.set('foo', {bar: '1', foobar: 101});
-	}, {message: 'Config schema violation: `foo.bar` should be number; `foo.foobar` should be <= 100'});
+	}, {message: 'Config schema violation: `foo/bar` should be number; `foo/foobar` should be <= 100'});
 });
 
 test('schema - complex schema', t => {
@@ -673,10 +673,10 @@ test('schema - complex schema', t => {
 	const config = new Conf({cwd: tempy.directory(), schema});
 	t.throws(() => {
 		config.set('foo', 'abca');
-	}, {message: 'Config schema violation: `foo` should NOT be longer than 3 characters; `foo` should match pattern "[def]+"'});
+	}, {message: 'Config schema violation: `foo` should NOT have more than 3 characters; `foo` should match pattern "[def]+"'});
 	t.throws(() => {
 		config.set('bar', [1, 1, 2, 'a']);
-	}, {message: 'Config schema violation: `bar` should NOT have more than 3 items; `bar[3]` should be integer; `bar` should NOT have duplicate items (items ## 1 and 0 are identical)'});
+	}, {message: 'Config schema violation: `bar` should NOT have more than 3 items; `bar/3` should be integer; `bar` should NOT have duplicate items (items ## 1 and 0 are identical)'});
 });
 
 test('schema - invalid write to config file', t => {

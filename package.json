@@ -42,34 +42,34 @@
 		"cache"
 	],
 	"dependencies": {
-		"ajv": "^6.12.2",
-		"atomically": "^1.3.1",
+		"ajv": "^7.0.3",
+		"atomically": "^1.7.0",
 		"debounce-fn": "^4.0.0",
-		"dot-prop": "^5.2.0",
+		"dot-prop": "^6.0.1",
 		"env-paths": "^2.2.0",
 		"json-schema-typed": "^7.0.3",
 		"make-dir": "^3.1.0",
-		"onetime": "^5.1.0",
+		"onetime": "^5.1.2",
 		"pkg-up": "^3.1.0",
-		"semver": "^7.3.2"
+		"semver": "^7.3.4"
 	},
 	"devDependencies": {
 		"@ava/typescript": "^1.1.1",
 		"@sindresorhus/tsconfig": "^0.7.0",
-		"@types/node": "^14.0.14",
-		"@types/semver": "^7.3.1",
+		"@types/node": "^14.14.20",
+		"@types/semver": "^7.3.4",
 		"@types/write-file-atomic": "^3.0.1",
-		"ava": "^3.9.0",
+		"ava": "^3.15.0",
 		"clear-module": "^4.1.1",
-		"del": "^5.1.0",
+		"del": "^6.0.0",
 		"del-cli": "^3.0.1",
-		"delay": "^4.3.0",
+		"delay": "^4.4.0",
 		"nyc": "^15.1.0",
 		"p-event": "^4.2.0",
-		"tempy": "^0.5.0",
-		"tsd": "^0.12.1",
-		"typescript": "3.9.6",
-		"xo": "^0.32.0"
+		"tempy": "^1.0.0",
+		"tsd": "^0.14.0",
+		"typescript": "4.1.3",
+		"xo": "^0.37.1"
 	},
 	"types": "dist/source",
 	"ava": {
@@ -86,7 +86,7 @@
 	},
 	"xo": {
 		"rules": {
-			"unicorn/prefer-optional-catch-binding": "off"
+			"@typescript-eslint/no-implicit-any-catch": "off"
 		}
 	},
 	"nyc": {
