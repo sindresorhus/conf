@@ -40,8 +40,8 @@ const checkValueType = (key: string, value: unknown): void => {
 	}
 };
 
-const INTERNAL_KEY = '__internal__';
-const MIGRATION_KEY = `${INTERNAL_KEY}.migrations.version`;
+export const INTERNAL_KEY = '__internal__';
+export const MIGRATION_KEY = `${INTERNAL_KEY}.migrations.version`;
 
 class Conf<T extends Record<string, any> = Record<string, unknown>> implements Iterable<[keyof T, T[keyof T]]> {
 	readonly path: string;
