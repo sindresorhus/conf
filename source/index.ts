@@ -56,7 +56,7 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 			configName: 'config',
 			fileExtension: 'json',
 			projectSuffix: 'nodejs',
-			clearInvalidConfig: true,
+			clearInvalidConfig: false,
 			accessPropertiesByDotNotation: true,
 			...partialOptions
 		};

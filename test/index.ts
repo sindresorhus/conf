@@ -406,7 +406,11 @@ test('fallback to cwd if `module.filename` is `null`', t => {
 });
 
 test('encryption', t => {
-	const config = new Conf({cwd: tempy.directory(), encryptionKey: 'abc123'});
+	const config = new Conf({
+		cwd: tempy.directory(),
+		encryptionKey: 'abc123'
+	});
+
 	t.is(config.get('foo'), undefined);
 	t.is(config.get('foo', '🐴'), '🐴');
 	config.set('foo', fixture);
@@ -429,13 +433,23 @@ test('encryption - upgrade', t => {
 test('encryption - corrupt file', t => {
 	const cwd = tempy.directory();
 
-	const before = new Conf({cwd, encryptionKey: 'abc123'});
+	const before = new Conf({
+		cwd,
+		encryptionKey: 'abc123',
+		clearInvalidConfig: true
+	});
+
 	before.set('foo', fixture);
 	t.is(before.get('foo'), fixture);
 
 	fs.appendFileSync(path.join(cwd, 'config.json'), 'corrupt file');
 
-	const after = new Conf({cwd, encryptionKey: 'abc123'});
+	const after = new Conf({
+		cwd,
+		encryptionKey: 'abc123',
+		clearInvalidConfig: true
+	});
+
 	t.is(after.get('foo'), undefined);
 });
 
