@@ -33,7 +33,7 @@ console.log(config.get('unicorn'));
 //=> undefined
 ```
 
-Or [create a subclass](https://github.com/sindresorhus/electron-store/blob/master/index.js).
+Or [create a subclass](https://github.com/sindresorhus/electron-store/blob/main/index.js).
 
 ## API
 
