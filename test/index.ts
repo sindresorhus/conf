@@ -123,7 +123,6 @@ test('.reset() - `defaults` option', t => {
 	t.is(store.get('bar'), 99);
 });
 
-
 test('.reset() - falsy `defaults` option', t => {
 	const store = new Conf({
 		cwd: tempy.directory(),
@@ -133,7 +132,7 @@ test('.reset() - falsy `defaults` option', t => {
 			foz: undefined,
 			baz: null,
 			fox: false,
-			bax: true,
+			bax: true
 		}
 	});
 
@@ -148,8 +147,7 @@ test('.reset() - falsy `defaults` option', t => {
 
 	t.is(store.get('foo'), 0);
 	t.is(store.get('bar'), '');
-	t.is(store.get('foz'), undefined);
-	t.is(store.get('baz'), undefined);
+	t.is(store.get('foz'), undefined); // eslint-disable-line @typescript-eslint/no-confusing-void-expression
 	t.is(store.get('fox'), false);
 	t.is(store.get('bax'), true);
 });
