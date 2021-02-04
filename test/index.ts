@@ -125,11 +125,11 @@ test('.reset() - `defaults` option', t => {
 
 test('.reset() - falsy `defaults` option', t => {
 	const defaultsValue: {
-		foo: number,
-		bar: string,
-		foz: undefined | string,
-		fox: boolean,
-		bax: boolean
+		foo: number;
+		bar: string;
+		foz: undefined | string;
+		fox: boolean;
+		bax: boolean;
 	} = {
 		foo: 0,
 		bar: '',
