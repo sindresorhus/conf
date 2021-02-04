@@ -124,30 +124,35 @@ test('.reset() - `defaults` option', t => {
 });
 
 test('.reset() - falsy `defaults` option', t => {
+	const defaultsValue: {
+		foo: number,
+		bar: string,
+		foz: undefined | string,
+		fox: boolean,
+		bax: boolean
+	} = {
+		foo: 0,
+		bar: '',
+		foz: undefined,
+		fox: false,
+		bax: true
+	};
 	const store = new Conf({
 		cwd: tempy.directory(),
-		defaults: {
-			foo: 0,
-			bar: '',
-			foz: undefined,
-			baz: null,
-			fox: false,
-			bax: true
-		}
+		defaults: defaultsValue
 	});
 
 	store.set('foo', 5);
 	store.set('bar', 'exist');
 	store.set('foz', 'string');
-	store.set('baz', 99);
 	store.set('fox', true);
 	store.set('fox', false);
 
-	store.reset('foo', 'bar', 'foz', 'baz', 'fox', 'bax');
+	store.reset('foo', 'bar', 'foz', 'fox', 'bax');
 
 	t.is(store.get('foo'), 0);
 	t.is(store.get('bar'), '');
-	t.is(store.get('foz'), undefined); // eslint-disable-line @typescript-eslint/no-confusing-void-expression
+	t.is(store.get('foz'), undefined);
 	t.is(store.get('fox'), false);
 	t.is(store.get('bax'), true);
 });
