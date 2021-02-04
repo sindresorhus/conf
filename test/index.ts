@@ -127,13 +127,11 @@ test('.reset() - falsy `defaults` option', t => {
 	const defaultsValue: {
 		foo: number;
 		bar: string;
-		foz: undefined | string;
 		fox: boolean;
 		bax: boolean;
 	} = {
 		foo: 0,
 		bar: '',
-		foz: undefined,
 		fox: false,
 		bax: true
 	};
@@ -144,15 +142,13 @@ test('.reset() - falsy `defaults` option', t => {
 
 	store.set('foo', 5);
 	store.set('bar', 'exist');
-	store.set('foz', 'string');
 	store.set('fox', true);
 	store.set('fox', false);
 
-	store.reset('foo', 'bar', 'foz', 'fox', 'bax');
+	store.reset('foo', 'bar', 'fox', 'bax');
 
 	t.is(store.get('foo'), 0);
 	t.is(store.get('bar'), '');
-	t.is(store.get('foz'), undefined);
 	t.is(store.get('fox'), false);
 	t.is(store.get('bax'), true);
 });
