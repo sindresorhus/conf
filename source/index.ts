@@ -22,8 +22,8 @@ const createPlainObject = <T = unknown>(): T => {
 };
 
 const isExist = <T = unknown>(data: T): boolean => {
-	return data !== undefined && data !== null
-}
+	return data !== undefined && data !== null;
+};
 
 // Prevent caching of this module so module.parent is always accurate
 // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
