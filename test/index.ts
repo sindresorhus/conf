@@ -123,6 +123,36 @@ test('.reset() - `defaults` option', t => {
 	t.is(store.get('bar'), 99);
 });
 
+test('.reset() - falsy `defaults` option', t => {
+	const defaultsValue: {
+		foo: number;
+		bar: string;
+		fox: boolean;
+		bax: boolean;
+	} = {
+		foo: 0,
+		bar: '',
+		fox: false,
+		bax: true
+	};
+	const store = new Conf({
+		cwd: tempy.directory(),
+		defaults: defaultsValue
+	});
+
+	store.set('foo', 5);
+	store.set('bar', 'exist');
+	store.set('fox', true);
+	store.set('fox', false);
+
+	store.reset('foo', 'bar', 'fox', 'bax');
+
+	t.is(store.get('foo'), 0);
+	t.is(store.get('bar'), '');
+	t.is(store.get('fox'), false);
+	t.is(store.get('bax'), true);
+});
+
 test('.reset() - `schema` option', t => {
 	const store = new Conf({
 		cwd: tempy.directory(),

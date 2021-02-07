@@ -21,6 +21,10 @@ const createPlainObject = <T = unknown>(): T => {
 	return Object.create(null);
 };
 
+const isExist = <T = unknown>(data: T): boolean => {
+	return data !== undefined && data !== null;
+};
+
 // Prevent caching of this module so module.parent is always accurate
 // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
 delete require.cache[__filename];
@@ -242,7 +246,7 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 	*/
 	reset<Key extends keyof T>(...keys: Key[]): void {
 		for (const key of keys) {
-			if (this.#defaultValues[key]) {
+			if (isExist(this.#defaultValues[key])) {
 				this.set(key, this.#defaultValues[key]);
 			}
 		}
