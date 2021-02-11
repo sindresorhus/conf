@@ -723,6 +723,21 @@ test('schema - complex schema', t => {
 	}, {message: 'Config schema violation: `bar` should NOT have more than 3 items; `bar/3` should be integer; `bar` should NOT have duplicate items (items ## 1 and 0 are identical)'});
 });
 
+test('schema - supports formats', t => {
+	const config = new Conf({
+		cwd: tempy.directory(),
+		schema: {
+			foo: {
+				type: 'string',
+				format: 'uri'
+			}
+		}
+	});
+	t.throws(() => {
+		config.set('foo', 'bar');
+	}, {message: 'Config schema violation: `foo` should match format "uri"'});
+});
+
 test('schema - invalid write to config file', t => {
 	const schema: Schema<{foo: string}> = {
 		foo: {

@@ -9,6 +9,7 @@ import pkgUp = require('pkg-up');
 import envPaths = require('env-paths');
 import atomically = require('atomically');
 import Ajv, {ValidateFunction as AjvValidateFunction} from 'ajv';
+import ajvFormats from 'ajv-formats';
 import debounceFn = require('debounce-fn');
 import semver = require('semver');
 import onetime = require('onetime');
@@ -97,6 +98,7 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 				allErrors: true,
 				useDefaults: true
 			});
+			ajvFormats(ajv);
 
 			const schema: JSONSchema = {
 				type: 'object',

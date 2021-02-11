@@ -43,6 +43,7 @@
 	],
 	"dependencies": {
 		"ajv": "^7.0.3",
+		"ajv-formats": "^1.5.1",
 		"atomically": "^1.7.0",
 		"debounce-fn": "^4.0.0",
 		"dot-prop": "^6.0.1",
