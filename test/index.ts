@@ -848,7 +848,8 @@ test('.delete() - without dot notation', t => {
 	t.deepEqual(configWithoutDotNotation.get('foo.bar.zoo'), {awesome: 'redpanda'});
 });
 
-const test2 = process.platform === 'darwin' ? test.failing : test;
+/* eslint no-negated-condition: 0 */
+const test2 = process.platform !== 'win32' ? test.failing : test;
 
 test2('`watch` option watches for config file changes by another process', async t => {
 	const cwd = tempy.directory();
