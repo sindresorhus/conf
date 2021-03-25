@@ -26,10 +26,10 @@ const isExist = <T = unknown>(data: T): boolean => {
 	return data !== undefined && data !== null;
 };
 
-// Prevent caching of this module so module.parent is always accurate
-// eslint-disable-next-line @typescript-eslint/no-dynamic-delete
-delete require.cache[__filename];
-const parentDir = path.dirname(module.parent?.filename ?? '.');
+// get parent module directory
+const parentDir = Object.values(require.cache).filter(m => {
+	return m?.children.includes(module)
+})[0]?.path
 
 const checkValueType = (key: string, value: unknown): void => {
 	const nonJsonTypes = new Set([
