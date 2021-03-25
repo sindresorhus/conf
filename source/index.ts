@@ -26,10 +26,10 @@ const isExist = <T = unknown>(data: T): boolean => {
 	return data !== undefined && data !== null;
 };
 
-// get parent module directory
-const parentDir = Object.values(require.cache).filter(m => {
-	return m?.children.includes(module)
-})[0]?.path
+// Get parent module directory
+const parentDir = Object.values(require.cache).find(m => {
+	return m?.children.includes(module);
+})?.path;
 
 const checkValueType = (key: string, value: unknown): void => {
 	const nonJsonTypes = new Set([
