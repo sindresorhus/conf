@@ -33,7 +33,7 @@ try {
 // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
 	delete require.cache[__filename];
 	parentDir = path.dirname(module.parent?.filename ?? '.');
-}catch(e){}
+} catch {}
 
 const checkValueType = (key: string, value: unknown): void => {
 	const nonJsonTypes = new Set([
