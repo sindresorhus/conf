@@ -889,8 +889,11 @@ test('`watch` option watches for config file changes by file write', async t => 
 
 	conf.onDidChange('foo', checkFoo);
 
+	const delayOS = process.platform === 'win32' ? 50 : 5000;
+
 	(async () => {
-		await delay(7000);
+		await delay(delayOS);
+
 		fs.writeFileSync(path.join(cwd, 'config.json'), JSON.stringify({foo: '🦄'}));
 	})();
 
