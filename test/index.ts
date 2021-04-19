@@ -848,9 +848,7 @@ test('.delete() - without dot notation', t => {
 	t.deepEqual(configWithoutDotNotation.get('foo.bar.zoo'), {awesome: 'redpanda'});
 });
 
-const test2 = process.platform === 'darwin' ? test.failing : test;
-
-test2('`watch` option watches for config file changes by another process', async t => {
+test('`watch` option watches for config file changes by another process', async t => {
 	const cwd = tempy.directory();
 	const conf1 = new Conf({cwd, watch: true});
 	const conf2 = new Conf({cwd});
@@ -877,7 +875,7 @@ test2('`watch` option watches for config file changes by another process', async
 	await pEvent(_events, 'change');
 });
 
-test2('`watch` option watches for config file changes by file write', async t => {
+test('`watch` option watches for config file changes by file write', async t => {
 	const cwd = tempy.directory();
 	const conf = new Conf({cwd, watch: true});
 	conf.set('foo', '🐴');
@@ -892,7 +890,7 @@ test2('`watch` option watches for config file changes by file write', async t =>
 	conf.onDidChange('foo', checkFoo);
 
 	(async () => {
-		await delay(5000);
+		await delay(7000);
 		fs.writeFileSync(path.join(cwd, 'config.json'), JSON.stringify({foo: '🦄'}));
 	})();
 
