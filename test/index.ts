@@ -282,7 +282,7 @@ test('with `suffix` option set to empty string', t => {
 	const projectName = 'conf-temp1-project';
 	const config = new Conf({projectSuffix, projectName});
 	const configPathSegments = config.path.split(path.sep);
-	const configRootIndex = configPathSegments.findIndex(segment => segment === projectName);
+	const configRootIndex = configPathSegments.indexOf(projectName);
 	t.true(configRootIndex >= 0 && configRootIndex < configPathSegments.length);
 });
 
@@ -292,7 +292,7 @@ test('with `projectSuffix` option set to non-empty string', t => {
 	const config = new Conf({projectSuffix, projectName});
 	const configPathSegments = config.path.split(path.sep);
 	const expectedRootName = `${projectName}-${projectSuffix}`;
-	const configRootIndex = configPathSegments.findIndex(segment => segment === expectedRootName);
+	const configRootIndex = configPathSegments.indexOf(expectedRootName);
 	t.true(configRootIndex >= 0 && configRootIndex < configPathSegments.length);
 });
 
@@ -674,7 +674,7 @@ test('schema - one violation', t => {
 	});
 	t.throws(() => {
 		config.set('foo', 1);
-	}, {message: 'Config schema violation: `foo` should be string'});
+	}, {message: 'Config schema violation: `foo` must be string'});
 });
 
 test('schema - multiple violations', t => {
@@ -695,7 +695,7 @@ test('schema - multiple violations', t => {
 	const config = new Conf({cwd: tempy.directory(), schema});
 	t.throws(() => {
 		config.set('foo', {bar: '1', foobar: 101});
-	}, {message: 'Config schema violation: `foo/bar` should be number; `foo/foobar` should be <= 100'});
+	}, {message: 'Config schema violation: `foo/bar` must be number; `foo/foobar` must be <= 100'});
 });
 
 test('schema - complex schema', t => {
@@ -717,10 +717,10 @@ test('schema - complex schema', t => {
 	const config = new Conf({cwd: tempy.directory(), schema});
 	t.throws(() => {
 		config.set('foo', 'abca');
-	}, {message: 'Config schema violation: `foo` should NOT have more than 3 characters; `foo` should match pattern "[def]+"'});
+	}, {message: 'Config schema violation: `foo` must NOT have more than 3 characters; `foo` must match pattern "[def]+"'});
 	t.throws(() => {
 		config.set('bar', [1, 1, 2, 'a']);
-	}, {message: 'Config schema violation: `bar` should NOT have more than 3 items; `bar/3` should be integer; `bar` should NOT have duplicate items (items ## 1 and 0 are identical)'});
+	}, {message: 'Config schema violation: `bar` must NOT have more than 3 items; `bar/3` must be integer; `bar` must NOT have duplicate items (items ## 1 and 0 are identical)'});
 });
 
 test('schema - supports formats', t => {
@@ -735,7 +735,7 @@ test('schema - supports formats', t => {
 	});
 	t.throws(() => {
 		config.set('foo', 'bar');
-	}, {message: 'Config schema violation: `foo` should match format "uri"'});
+	}, {message: 'Config schema violation: `foo` must match format "uri"'});
 });
 
 test('schema - invalid write to config file', t => {
@@ -750,7 +750,7 @@ test('schema - invalid write to config file', t => {
 	fs.writeFileSync(path.join(cwd, 'config.json'), JSON.stringify({foo: 1}));
 	t.throws(() => {
 		config.get('foo');
-	}, {message: 'Config schema violation: `foo` should be string'});
+	}, {message: 'Config schema violation: `foo` must be string'});
 });
 
 test('schema - default', t => {
@@ -803,7 +803,7 @@ test('schema - validate Conf default', t => {
 			},
 			schema
 		});
-	}, {message: 'Config schema violation: `foo` should be string'});
+	}, {message: 'Config schema violation: `foo` must be string'});
 });
 
 test('.get() - without dot notation', t => {

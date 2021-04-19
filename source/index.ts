@@ -1,10 +1,10 @@
+import {isDeepStrictEqual} from 'util';
 import fs = require('fs');
 import path = require('path');
 import crypto = require('crypto');
 import assert = require('assert');
 import {EventEmitter} from 'events';
 import dotProp = require('dot-prop');
-import makeDir = require('make-dir');
 import pkgUp = require('pkg-up');
 import envPaths = require('env-paths');
 import atomically = require('atomically');
@@ -411,13 +411,12 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 			const oldValue = currentValue;
 			const newValue = getter();
 
-			try {
-				// TODO: Use `util.isDeepStrictEqual` when targeting Node.js 10
-				assert.deepEqual(newValue, oldValue);
-			} catch {
-				currentValue = newValue;
-				callback.call(this, newValue, oldValue);
+			if (isDeepStrictEqual(newValue, oldValue)) {
+				return;
 			}
+
+			currentValue = newValue;
+			callback.call(this, newValue, oldValue);
 		};
 
 		this.events.on('change', onChange);
@@ -425,7 +424,7 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 	}
 
 	private readonly _deserialize: Deserialize<T> = value => JSON.parse(value);
-	private readonly _serialize: Serialize<T> = value => JSON.stringify(value, null, '\t');
+	private readonly _serialize: Serialize<T> = value => JSON.stringify(value, undefined, '\t');
 
 	private _validate(data: T | unknown): void {
 		if (!this.#validator) {
@@ -438,14 +437,13 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 		}
 
 		const errors = this.#validator.errors
-			.map(({dataPath, message = ''}) => `\`${dataPath.slice(1)}\` ${message}`);
+			.map(({instancePath, message = ''}) => `\`${instancePath.slice(1)}\` ${message}`);
 		throw new Error('Config schema violation: ' + errors.join('; '));
 	}
 
 	private _ensureDirectory(): void {
-		// TODO: Use `fs.mkdirSync` `recursive` option when targeting Node.js 12.
 		// Ensure the directory exists as it could have been deleted in the meantime.
-		makeDir.sync(path.dirname(this.path));
+		fs.mkdirSync(path.dirname(this.path), {recursive: true});
 	}
 
 	private _write(value: T): void {

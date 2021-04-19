@@ -12,7 +12,7 @@
 	},
 	"main": "dist/source",
 	"engines": {
-		"node": ">=10"
+		"node": ">=12"
 	},
 	"scripts": {
 		"test": "xo && npm run build && nyc ava",
@@ -42,35 +42,34 @@
 		"cache"
 	],
 	"dependencies": {
-		"ajv": "^7.0.3",
-		"ajv-formats": "^1.5.1",
+		"ajv": "^8.1.0",
+		"ajv-formats": "^2.0.2",
 		"atomically": "^1.7.0",
 		"debounce-fn": "^4.0.0",
 		"dot-prop": "^6.0.1",
-		"env-paths": "^2.2.0",
+		"env-paths": "^2.2.1",
 		"json-schema-typed": "^7.0.3",
-		"make-dir": "^3.1.0",
 		"onetime": "^5.1.2",
 		"pkg-up": "^3.1.0",
-		"semver": "^7.3.4"
+		"semver": "^7.3.5"
 	},
 	"devDependencies": {
 		"@ava/typescript": "^1.1.1",
 		"@sindresorhus/tsconfig": "^0.7.0",
-		"@types/node": "^14.14.20",
+		"@types/node": "^14.14.41",
 		"@types/semver": "^7.3.4",
 		"@types/write-file-atomic": "^3.0.1",
 		"ava": "^3.15.0",
 		"clear-module": "^4.1.1",
 		"del": "^6.0.0",
 		"del-cli": "^3.0.1",
-		"delay": "^4.4.0",
+		"delay": "^5.0.0",
 		"nyc": "^15.1.0",
 		"p-event": "^4.2.0",
-		"tempy": "^1.0.0",
+		"tempy": "^1.0.1",
 		"tsd": "^0.14.0",
-		"typescript": "4.1.3",
-		"xo": "^0.37.1"
+		"typescript": "^4.2.4",
+		"xo": "^0.38.2"
 	},
 	"types": "dist/source",
 	"ava": {
