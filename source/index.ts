@@ -26,10 +26,14 @@ const isExist = <T = unknown>(data: T): boolean => {
 	return data !== undefined && data !== null;
 };
 
-// Prevent caching of this module so module.parent is always accurate
+let parentDir = '';
+try {
+// Prevent caching of this module so module.parent is always accurate.
+// Note: This trick won't work with ESM or inside a webworker
 // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
-delete require.cache[__filename];
-const parentDir = path.dirname(module.parent?.filename ?? '.');
+	delete require.cache[__filename];
+	parentDir = path.dirname(module.parent?.filename ?? '.');
+} catch {}
 
 const checkValueType = (key: string, value: unknown): void => {
 	const nonJsonTypes = new Set([
