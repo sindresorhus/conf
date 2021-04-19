@@ -488,7 +488,7 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 		} else {
 			fs.watchFile(this.path, {persistent: false}, debounceFn(() => {
 				this.events.emit('change');
-			}, {wait: 100}));
+			}, {wait: 5000}));
 		}
 	}
 
