@@ -484,10 +484,16 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 			this._write(createPlainObject<T>());
 		}
 
-		fs.watch(this.path, {persistent: false}, debounceFn(() => {
+		if (process.platform === 'win32') {
+			fs.watch(this.path, {persistent: false}, debounceFn(() => {
 			// On Linux and Windows, writing to the config file emits a `rename` event, so we skip checking the event type.
-			this.events.emit('change');
-		}, {wait: 100}));
+				this.events.emit('change');
+			}, {wait: 100}));
+		} else {
+			fs.watchFile(this.path, {persistent: false}, debounceFn(() => {
+				this.events.emit('change');
+			}, {wait: 5000}));
+		}
 	}
 
 	private _migrate(migrations: Migrations<T>, versionToMigrate: string): void {
