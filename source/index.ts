@@ -182,7 +182,8 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 			return this._get(key, defaultValue);
 		}
 
-		return key in this.store ? this.store[key] : defaultValue;
+		const {store} = this;
+		return key in store ? store[key] : defaultValue;
 	}
 
 	/**
