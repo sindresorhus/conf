@@ -187,11 +187,11 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 	}
 
 	/**
-    Set an item or multiple items at once.
+	Set an item or multiple items at once.
 
 	@param {key|object} - You can use [dot-notation](https://github.com/sindresorhus/dot-prop) in a key to access nested properties. Or a hashmap of items to set at once.
 	@param value - Must be JSON serializable. Trying to set the type `undefined`, `function`, or `symbol` will result in a `TypeError`.
-    */
+	*/
 	set<Key extends keyof T>(key: Key, value?: T[Key]): void;
 	set(key: string, value: unknown): void;
 	set(object: Partial<T>): void;
@@ -290,7 +290,7 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 	}
 
 	/**
-    Watches the given `key`, calling `callback` on any changes.
+	Watches the given `key`, calling `callback` on any changes.
 
 	@param key - The key wo watch.
 	@param callback - A callback function that is called on any changes. When a `key` is first set `oldValue` will be `undefined`, and when a key is deleted `newValue` will be `undefined`.
@@ -312,7 +312,7 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 	}
 
 	/**
-    Watches the whole config object, calling `callback` on any changes.
+	Watches the whole config object, calling `callback` on any changes.
 
 	@param callback - A callback function that is called on any changes. When a `key` is first set `oldValue` will be `undefined`, and when a key is deleted `newValue` will be `undefined`.
 	@returns A function, that when called, will unsubscribe.
