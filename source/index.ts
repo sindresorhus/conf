@@ -338,8 +338,8 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 			const deserializedData = this._deserialize(dataString);
 			this._validate(deserializedData);
 			return Object.assign(createPlainObject(), deserializedData);
-		} catch (error) {
-			if (error.code === 'ENOENT') {
+		} catch (error: any) {
+			if (error?.code === 'ENOENT') {
 				this._ensureDirectory();
 				return createPlainObject();
 			}
@@ -382,6 +382,7 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 						const decipher = crypto.createDecipheriv(encryptionAlgorithm, password, initializationVector);
 						data = Buffer.concat([decipher.update(Buffer.from(data.slice(17))), decipher.final()]).toString('utf8');
 					} else {
+						// TODO: Remove this in the next major version.
 						const decipher = crypto.createDecipher(encryptionAlgorithm, this.#encryptionKey);
 						data = Buffer.concat([decipher.update(Buffer.from(data)), decipher.final()]).toString('utf8');
 					}
@@ -464,11 +465,11 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 		} else {
 			try {
 				atomically.writeFileSync(this.path, data);
-			} catch (error) {
+			} catch (error: any) {
 				// Fix for https://github.com/sindresorhus/electron-store/issues/106
 				// Sometimes on Windows, we will get an EXDEV error when atomic writing
 				// (even though to the same directory), so we fall back to non atomic write
-				if (error.code === 'EXDEV') {
+				if (error?.code === 'EXDEV') {
 					fs.writeFileSync(this.path, data);
 					return;
 				}
