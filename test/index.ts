@@ -99,6 +99,11 @@ test('.set() - invalid key', t => {
 	}, {message: 'Expected `key` to be of type `string` or `object`, got number'});
 });
 
+test('.set() - with non-primitive value', t => {
+	t.context.config.set('baz.boo', new Date());
+	t.true(t.context.config.get('baz.boo') instanceof Date, 'expected an instance of `Date`');
+});
+
 test('.has()', t => {
 	t.context.config.set('foo', fixture);
 	t.context.config.set('baz.boo', fixture);
