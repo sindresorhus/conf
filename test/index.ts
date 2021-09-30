@@ -18,6 +18,7 @@ const test = anyTest as TestInterface<{
 	configWithDefaults: Conf;
 }>;
 const fixture = '🦄';
+const fixtureNumber = 42;
 
 test.beforeEach(t => {
 	t.context.config = new Conf({cwd: tempy.directory()});
@@ -97,6 +98,63 @@ test('.set() - invalid key', t => {
 		// @ts-expect-error
 		t.context.config.set(1, 'unicorn');
 	}, {message: 'Expected `key` to be of type `string` or `object`, got number'});
+});
+
+test('.toggle()', t => {
+	t.context.config.set('foo', false);
+	t.context.config.set('baz.boo', false);
+	t.is(t.context.config.toggle('foo'), true);
+	t.is(t.context.config.toggle('baz.boo'), true);
+	t.is(t.context.config.get('foo'), true);
+	t.is(t.context.config.get('baz.boo'), true);
+
+	t.context.config.set('foo', true);
+	t.context.config.set('baz.boo', true);
+	t.is(t.context.config.toggle('foo'), false);
+	t.is(t.context.config.toggle('baz.boo'), false);
+	t.is(t.context.config.get('foo'), false);
+	t.is(t.context.config.get('baz.boo'), false);
+});
+
+test('.toggle() - empty', t => {
+	t.context.config.delete('foo');
+	t.context.config.delete('baz.boo');
+	t.is(t.context.config.toggle('foo'), true);
+	t.is(t.context.config.toggle('baz.boo'), true);
+	t.is(t.context.config.get('foo'), true);
+	t.is(t.context.config.get('baz.boo'), true);
+});
+
+test('.toggle() - invalid type', t => {
+	t.throws(() => {
+		t.context.config.set('foo', {a: 'not a boolean'});
+		t.context.config.toggle('foo');
+	}, {message: 'Expected type to be of type `boolean` or empty, is object'});
+
+	t.throws(() => {
+		t.context.config.set('baz.foo', {a: 'not a boolean'});
+		t.context.config.toggle('baz.foo');
+	}, {message: 'Expected type to be of type `boolean` or empty, is object'});
+
+	t.throws(() => {
+		t.context.config.set('foo', fixture);
+		t.context.config.toggle('foo');
+	}, {message: 'Expected type to be of type `boolean` or empty, is string'});
+
+	t.throws(() => {
+		t.context.config.set('baz.foo', fixture);
+		t.context.config.toggle('baz.foo');
+	}, {message: 'Expected type to be of type `boolean` or empty, is string'});
+
+	t.throws(() => {
+		t.context.config.set('foo', fixtureNumber);
+		t.context.config.toggle('foo');
+	}, {message: 'Expected type to be of type `boolean` or empty, is number'});
+
+	t.throws(() => {
+		t.context.config.set('baz.foo', fixtureNumber);
+		t.context.config.toggle('baz.foo');
+	}, {message: 'Expected type to be of type `boolean` or empty, is number'});
 });
 
 test('.has()', t => {

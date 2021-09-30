@@ -285,6 +285,12 @@ The `value` must be JSON serializable. Trying to set the type `undefined`, `func
 
 Set multiple items at once.
 
+#### .toggle(key)
+
+Toggles boolean item
+
+Type of the item must be `boolean` or be empty. Trying to toggle different type will result in TypeError.
+
 #### .get(key, defaultValue?)
 
 Get an item or `defaultValue` if the item does not exist.

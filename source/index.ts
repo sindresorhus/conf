@@ -245,6 +245,26 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 	}
 
 	/**
+	Toggles boolean item.
+
+	@param key - The key of the item to toggle.
+	@returns new value
+	*/
+	toggle<Key extends keyof T>(key: Key | string): boolean {
+		const currentValue = this.has(key) ? this.get(key) : false;
+
+		if (typeof currentValue !== 'boolean') {
+			throw new TypeError(`Expected type to be of type \`boolean\` or empty, is ${typeof currentValue}`);
+		}
+
+		const newValue = !currentValue;
+
+		this.set(key, newValue as T[Key]);
+
+		return newValue;
+	}
+
+	/**
 	Reset items to their default values, as defined by the `defaults` or `schema` option.
 
 	@see `clear()` to reset all items.

@@ -59,6 +59,8 @@ conf.set('hello', 1);
 conf.set('unicorn', false);
 conf.set({foo: 'nope'});
 
+conf.toggle('unicorn');
+
 conf.set('nested.prop', 3);
 
 conf.set({
