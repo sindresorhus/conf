@@ -176,6 +176,39 @@ test('.mutate() - invalid mutation', t => {
 	}, {message: 'Expected type of mutation to be of type `function`, is string'});
 });
 
+test('.append()', t => {
+	t.context.config.set('foo', []);
+	t.context.config.append('foo', fixture);
+	t.deepEqual(t.context.config.get('foo'), [fixture]);
+	t.context.config.append('foo', fixture);
+	t.deepEqual(t.context.config.get('foo'), [fixture, fixture]);
+
+	t.context.config.delete('foo');
+	t.context.config.append('foo', fixture);
+	t.deepEqual(t.context.config.get('foo'), [fixture]);
+
+	t.context.config.set('foo', [fixture]);
+	t.context.config.append('foo', [fixture]);
+	t.deepEqual(t.context.config.get('foo'), [fixture, [fixture]]);
+
+	t.context.config.set('baz.foo', []);
+	t.context.config.append('baz.foo', fixture);
+	t.deepEqual(t.context.config.get('baz.foo'), [fixture]);
+	t.context.config.append('baz.foo', fixture);
+	t.deepEqual(t.context.config.get('baz.foo'), [fixture, fixture]);
+
+	t.context.config.delete('baz.foo');
+	t.context.config.append('baz.foo', fixture);
+	t.deepEqual(t.context.config.get('baz.foo'), [fixture]);
+});
+
+test('.append() - non array', t => {
+	t.throws(() => {
+		t.context.config.set('foo', {foo: 'bar'});
+		t.context.config.append('foo', fixture);
+	}, {message: 'Expected target to be instance of `Array` but it is not'});
+});
+
 test('.has()', t => {
 	t.context.config.set('foo', fixture);
 	t.context.config.set('baz.boo', fixture);

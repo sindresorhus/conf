@@ -52,6 +52,10 @@ const checkValueType = (key: string, value: unknown): void => {
 const INTERNAL_KEY = '__internal__';
 const MIGRATION_KEY = `${INTERNAL_KEY}.migrations.version`;
 
+// Retrieve type information from array type
+// Source: https://stackoverflow.com/questions/41253310/typescript-retrieve-element-type-information-from-array-type
+type ArrayElement<ArrayType extends unknown[]> = ArrayType extends Array<infer ElementType> ? ElementType : never;
+
 class Conf<T extends Record<string, any> = Record<string, unknown>> implements Iterable<[keyof T, T[keyof T]]> {
 	readonly path: string;
 	readonly events: EventEmitter;
@@ -229,6 +233,18 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 		}
 
 		this.store = store;
+	}
+
+	append<Key extends keyof T>(key: Key | string, newItem: ArrayElement<T[Key] | unknown[]>): void;
+	append(key: string, newItem: unknown): void {
+		const currentItems = this.has(key) ? this.get(key) : [];
+
+		if (!Array.isArray(currentItems)) {
+			throw new TypeError('Expected target to be instance of `Array` but it is not');
+		}
+
+		// Not usin .push on purpose not to mutate old array directly. It could mess with
+		this.set(key, [...currentItems, newItem]);
 	}
 
 	/**

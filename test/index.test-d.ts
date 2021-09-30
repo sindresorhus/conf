@@ -5,6 +5,7 @@ import Conf from '../source';
 type UnicornFoo = {
 	foo: string;
 	unicorn: boolean;
+	queue?: string[];
 	nested?: {
 		prop: number;
 	};
@@ -44,6 +45,12 @@ new Conf<UnicornFoo>({
 		hello: {
 			type: 'number'
 		},
+		queue: {
+			type: 'array',
+			items: {
+				type: 'string'
+			}
+		},
 		nested: {
 			type: 'object',
 			properties: {
@@ -58,11 +65,13 @@ new Conf<UnicornFoo>({
 conf.set('hello', 1);
 conf.set('unicorn', false);
 conf.set({foo: 'nope'});
+conf.set('queue', []);
 
 conf.toggle('unicorn');
 
 conf.set('hello', 1);
 conf.mutate('hello', value => (value ?? 0) + 1);
+conf.append('queue', 'foo');
 
 conf.set('nested.prop', 3);
 
