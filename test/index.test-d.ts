@@ -61,6 +61,9 @@ conf.set({foo: 'nope'});
 
 conf.toggle('unicorn');
 
+conf.set('hello', 1);
+conf.mutate('hello', value => (value ?? 0) + 1);
+
 conf.set('nested.prop', 3);
 
 conf.set({

@@ -265,6 +265,21 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 	}
 
 	/**
+	Calls supplied mutation on the item and replaces it with its result.
+
+	@param key - The key of the item to mutate.
+	@param mutation - Function whichreturns new derived value
+	@returns new value
+	*/
+	mutate<Key extends keyof T>(key: Key | string, mutation: (currentValue: T[Key]) => T[Key]) {
+		if (typeof mutation !== 'function') {
+			throw new TypeError(`Expected type of mutation to be of type \`function\`, is ${typeof mutation}`);
+		}
+
+		this.set(key, mutation(this.get(key) as T[Key]));
+	}
+
+	/**
 	Reset items to their default values, as defined by the `defaults` or `schema` option.
 
 	@see `clear()` to reset all items.

@@ -157,6 +157,25 @@ test('.toggle() - invalid type', t => {
 	}, {message: 'Expected type to be of type `boolean` or empty, is number'});
 });
 
+test('.mutate()', t => {
+	const mutation = () => fixtureNumber;
+	t.context.config.set('foo', fixture);
+	t.context.config.set('baz.boo', fixture);
+	t.context.config.mutate('foo', mutation);
+	t.context.config.mutate('baz.boo', mutation);
+	t.is(t.context.config.get('foo'), fixtureNumber);
+	t.is(t.context.config.get('baz.boo'), fixtureNumber);
+});
+
+test('.mutate() - invalid mutation', t => {
+	t.throws(() => {
+		t.context.config.set('foo', fixture);
+		// For our tests to fail and TypeScript to compile, we'll ignore this TS error.
+		// @ts-expect-error
+		t.context.config.mutate('foo', fixture);
+	}, {message: 'Expected type of mutation to be of type `function`, is string'});
+});
+
 test('.has()', t => {
 	t.context.config.set('foo', fixture);
 	t.context.config.set('baz.boo', fixture);
