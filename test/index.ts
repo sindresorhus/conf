@@ -202,7 +202,7 @@ test('.append()', t => {
 	t.deepEqual(t.context.config.get('baz.foo'), [fixture]);
 });
 
-test('.append() - non array', t => {
+test('.append() - non-array', t => {
 	t.throws(() => {
 		t.context.config.set('foo', {foo: 'bar'});
 		t.context.config.append('foo', fixture);
