@@ -129,32 +129,32 @@ test('.toggle() - invalid type', t => {
 	t.throws(() => {
 		t.context.config.set('foo', {a: 'not a boolean'});
 		t.context.config.toggle('foo');
-	}, {message: 'Expected type to be of type `boolean` or empty, is object'});
+	}, {message: 'Expected type to be of type `boolean` or empty, got object'});
 
 	t.throws(() => {
 		t.context.config.set('baz.foo', {a: 'not a boolean'});
 		t.context.config.toggle('baz.foo');
-	}, {message: 'Expected type to be of type `boolean` or empty, is object'});
+	}, {message: 'Expected type to be of type `boolean` or empty, got object'});
 
 	t.throws(() => {
 		t.context.config.set('foo', fixture);
 		t.context.config.toggle('foo');
-	}, {message: 'Expected type to be of type `boolean` or empty, is string'});
+	}, {message: 'Expected type to be of type `boolean` or empty, got string'});
 
 	t.throws(() => {
 		t.context.config.set('baz.foo', fixture);
 		t.context.config.toggle('baz.foo');
-	}, {message: 'Expected type to be of type `boolean` or empty, is string'});
+	}, {message: 'Expected type to be of type `boolean` or empty, got string'});
 
 	t.throws(() => {
 		t.context.config.set('foo', fixtureNumber);
 		t.context.config.toggle('foo');
-	}, {message: 'Expected type to be of type `boolean` or empty, is number'});
+	}, {message: 'Expected type to be of type `boolean` or empty, got number'});
 
 	t.throws(() => {
 		t.context.config.set('baz.foo', fixtureNumber);
 		t.context.config.toggle('baz.foo');
-	}, {message: 'Expected type to be of type `boolean` or empty, is number'});
+	}, {message: 'Expected type to be of type `boolean` or empty, got number'});
 });
 
 test('.mutate()', t => {

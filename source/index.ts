@@ -235,16 +235,31 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 		this.store = store;
 	}
 
-	append<Key extends keyof T>(key: Key | string, newItem: ArrayElement<T[Key] | unknown[]>): void;
-	append(key: string, newItem: unknown): void {
-		const currentItems = this.has(key) ? this.get(key) : [];
+	/**
+	Append value into the array.
+
+	@param {key} - You can use [dot-notation](https://github.com/sindresorhus/dot-prop) in a key to access nested properties.
+	@param value - Must be JSON serializable. Trying to set the type `undefined`, `function`, or `symbol` will result in a `TypeError`.
+	*/
+	append<Key extends keyof T>(key: Key, newItem?: ArrayElement<T[Key]>): void;
+	append(key: string, newItem: unknown): void;
+	append<Key extends keyof T>(key: Partial<T> | Key | string, newItem?: ArrayElement<T[Key]> | unknown): void {
+		if (typeof key !== 'string' && typeof key !== 'object') {
+			throw new TypeError(`Expected \`key\` to be of type \`string\` or \`object\`, got ${typeof key}`);
+		}
+
+		if (this._containsReservedKey(key)) {
+			throw new TypeError(`Please don't use the ${INTERNAL_KEY} key, as it's used to manage this module internal operations.`);
+		}
+
+		const currentItems = this.has(key as string) ? this.get(key as string) : [];
 
 		if (!Array.isArray(currentItems)) {
 			throw new TypeError('Expected target to be instance of `Array` but it is not');
 		}
 
 		// Not using .push on purpose not to mutate old array directly. It could mess with
-		this.set(key, [...currentItems, newItem]);
+		this.set(key as string, [...currentItems, newItem]);
 	}
 
 	/**
@@ -264,7 +279,7 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 	Toggle a boolean item.
 
 	@param key - The key of the item to toggle.
-	@returns new the value after successful toggle
+	@returns the new value after successful toggle
 	*/
 	toggle<Key extends keyof T>(key: Key | string): boolean {
 		const currentValue = this.has(key) ? this.get(key) : false;
@@ -275,7 +290,7 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 
 		const newValue = !currentValue;
 
-		this.set(key, newValue as T[Key]);
+		this.set(key as string, newValue);
 
 		return newValue;
 	}
