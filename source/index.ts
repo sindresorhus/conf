@@ -34,9 +34,9 @@ const isObject = (value: unknown): boolean => typeof value === 'object' && value
 
 let parentDir = '';
 try {
-	// Prevent caching of this module so module.parent is always accurate.
-	// Note: This trick won't work with ESM or inside a webworker
-	// eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+// Prevent caching of this module so module.parent is always accurate.
+// Note: This trick won't work with ESM or inside a webworker
+// eslint-disable-next-line @typescript-eslint/no-dynamic-delete
 	delete require.cache[__filename];
 	parentDir = path.dirname(module.parent?.filename ?? '.');
 } catch {}
