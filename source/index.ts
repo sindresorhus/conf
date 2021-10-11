@@ -520,7 +520,7 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 
 		if (process.platform === 'win32') {
 			fs.watch(this.path, {persistent: false}, debounceFn(() => {
-				// On Linux and Windows, writing to the config file emits a `rename` event, so we skip checking the event type.
+			// On Linux and Windows, writing to the config file emits a `rename` event, so we skip checking the event type.
 				this.events.emit('change');
 			}, {wait: 100}));
 		} else {
