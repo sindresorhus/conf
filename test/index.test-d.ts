@@ -26,7 +26,7 @@ new Conf<UnicornFoo>({encryptionKey: Buffer.from('')});
 new Conf<UnicornFoo>({encryptionKey: new Uint8Array([1])});
 new Conf<UnicornFoo>({encryptionKey: new DataView(new ArrayBuffer(2))});
 new Conf<UnicornFoo>({fileExtension: '.foo'});
-new Conf<UnicornFoo>({ mode: 0o600 });
+new Conf<UnicornFoo>({configFileMode: 0o600});
 new Conf<UnicornFoo>({clearInvalidConfig: false});
 new Conf<UnicornFoo>({serialize: () => 'foo'});
 new Conf<UnicornFoo>({deserialize: () => ({foo: 'foo', unicorn: true})});

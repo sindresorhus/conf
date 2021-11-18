@@ -138,11 +138,15 @@ export interface Options<T> {
 	clearInvalidConfig?: boolean;
 
 	/**
-	The mode that will be used for the config file.
+	The [mode](https://en.wikipedia.org/wiki/File-system_permissions#Numeric_notation) that will be used for the config file.
+
+	You would usually not need this, but it could be useful if you want to restrict the permissions of the configuration file. Setting a permission such as 0o600 would result in a configuration file that can only be accessed by the user running the program.
+
+	Note that setting restrictive permissions can cause problems if multiple different users need to read the file.
 
 	@default 0o666
 	*/
-	mode: number | string;
+	configFileMode: number;
 
 	/**
 	Function to serialize the config object to a UTF-8 string when writing the config file.

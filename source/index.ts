@@ -67,7 +67,7 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 			projectSuffix: 'nodejs',
 			clearInvalidConfig: false,
 			accessPropertiesByDotNotation: true,
-			mode: 0o666,
+			configFileMode: 0o666,
 			...partialOptions
 		};
 
@@ -462,16 +462,16 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 		// Temporary workaround for Conf being packaged in a Ubuntu Snap app.
 		// See https://github.com/sindresorhus/conf/pull/82
 		if (process.env.SNAP) {
-			fs.writeFileSync(this.path, data, { mode: this.#options.mode});
+			fs.writeFileSync(this.path, data, {mode: this.#options.configFileMode});
 		} else {
 			try {
-				atomically.writeFileSync(this.path, data, { mode: this.#options.mode});
+				atomically.writeFileSync(this.path, data, {mode: this.#options.configFileMode});
 			} catch (error: any) {
 				// Fix for https://github.com/sindresorhus/electron-store/issues/106
 				// Sometimes on Windows, we will get an EXDEV error when atomic writing
 				// (even though to the same directory), so we fall back to non atomic write
 				if (error?.code === 'EXDEV') {
-					fs.writeFileSync(this.path, data, { mode: this.#options.mode});
+					fs.writeFileSync(this.path, data, {mode: this.#options.configFileMode});
 					return;
 				}
 
