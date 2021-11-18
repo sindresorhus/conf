@@ -138,6 +138,13 @@ export interface Options<T> {
 	clearInvalidConfig?: boolean;
 
 	/**
+	The mode that will be used for the config file.
+
+	@default 0o666
+	*/
+	mode: number | string;
+
+	/**
 	Function to serialize the config object to a UTF-8 string when writing the config file.
 
 	You would usually not need this, but it could be useful if you want to use a format other than JSON.
