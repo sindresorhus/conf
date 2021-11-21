@@ -138,17 +138,6 @@ export interface Options<T> {
 	clearInvalidConfig?: boolean;
 
 	/**
-	The [mode](https://en.wikipedia.org/wiki/File-system_permissions#Numeric_notation) that will be used for the config file.
-
-	You would usually not need this, but it could be useful if you want to restrict the permissions of the configuration file. Setting a permission such as 0o600 would result in a configuration file that can only be accessed by the user running the program.
-
-	Note that setting restrictive permissions can cause problems if multiple different users need to read the file.
-
-	@default 0o666
-	*/
-	configFileMode: number;
-
-	/**
 	Function to serialize the config object to a UTF-8 string when writing the config file.
 
 	You would usually not need this, but it could be useful if you want to use a format other than JSON.
@@ -223,6 +212,17 @@ export interface Options<T> {
 	@default false
 	*/
 	readonly watch?: boolean;
+	
+	/**
+	The [mode](https://en.wikipedia.org/wiki/File-system_permissions#Numeric_notation) that will be used for the config file.
+
+	You would usually not need this, but it could be useful if you want to restrict the permissions of the config file. Setting a permission such as `0o600` would result in a config file that can only be accessed by the user running the program.
+
+	Note that setting restrictive permissions can cause problems if different users need to read the file. A common problem is a user running your tool with and without `sudo` and then not being able to access the config the second time.
+
+	@default 0o666
+	*/
+	readonly configFileMode: number;
 }
 
 export type Migrations<T> = Record<string, (store: Conf<T>) => void>;
