@@ -212,7 +212,7 @@ export interface Options<T> {
 	@default false
 	*/
 	readonly watch?: boolean;
-	
+
 	/**
 	The [mode](https://en.wikipedia.org/wiki/File-system_permissions#Numeric_notation) that will be used for the config file.
 
