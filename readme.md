@@ -192,17 +192,6 @@ Default: `false`
 
 The config is cleared if reading the config file causes a `SyntaxError`. This is a good behavior for unimportant data, as the config file is not intended to be hand-edited, so it usually means the config is corrupt and there's nothing the user can do about it anyway. However, if you let the user edit the config file directly, mistakes might happen and it could be more useful to throw an error when the config is invalid instead of clearing.
 
-#### configFileMode
-
-Type: `number`\
-Default: `0o666`
-
-The [mode](https://en.wikipedia.org/wiki/File-system_permissions#Numeric_notation) that will be used for the config file.
-
-You would usually not need this, but it could be useful if you want to restrict the permissions of the configuration file. Setting a permission such as 0o600 would result in a configuration file that can only be accessed by the user running the program.
-
-Note that setting restrictive permissions can cause problems if multiple different users need to read the file.
-
 #### serialize
 
 Type: `Function`\
@@ -279,6 +268,17 @@ type: `boolean`\
 Default: `false`
 
 Watch for any changes in the config file and call the callback for `onDidChange` or `onDidAnyChange` if set. This is useful if there are multiple processes changing the same config file.
+
+#### configFileMode
+
+Type: `number`\
+Default: `0o666`
+
+The [mode](https://en.wikipedia.org/wiki/File-system_permissions#Numeric_notation) that will be used for the config file.
+
+You would usually not need this, but it could be useful if you want to restrict the permissions of the config file. Setting a permission such as `0o600` would result in a config file that can only be accessed by the user running the program.
+
+Note that setting restrictive permissions can cause problems if different users need to read the file. A common problem is a user running your tool with and without `sudo` and then not being able to access the config the second time.
 
 ### Instance
 
