@@ -222,7 +222,7 @@ export interface Options<T> {
 
 	@default 0o666
 	*/
-	readonly configFileMode: number;
+	readonly configFileMode?: number;
 }
 
 export type Migrations<T> = Record<string, (store: Conf<T>) => void>;
