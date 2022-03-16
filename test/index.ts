@@ -31,6 +31,45 @@ test('.get()', t => {
 	t.is(t.context.config.get('foo'), fixture);
 });
 
+test('.get() - `defaults` option', t => {
+	const store = new Conf({
+		cwd: tempy.directory(),
+		defaults: {
+			foo: 42,
+			nested: {
+				bar: 55
+			}
+		}
+	});
+
+	t.is(store.get('foo'), 42);
+	t.is(store.get('nested.bar'), 55);
+});
+
+test.failing('.get() - `schema` option - default', t => {
+	const store = new Conf({
+		cwd: tempy.directory(),
+		schema: {
+			foo: {
+				type: 'boolean',
+				default: true
+			},
+			nested: {
+				type: 'object',
+				properties: {
+					bar: {
+						type: 'number',
+						default: 55
+					}
+				}
+			}
+		}
+	});
+
+	t.is(store.get('foo'), true);
+	t.is(store.get('nested.bar'), 55); // See: https://github.com/sindresorhus/electron-store/issues/102
+});
+
 test('.set()', t => {
 	t.context.config.set('foo', fixture);
 	t.context.config.set('baz.boo', fixture);
