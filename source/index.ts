@@ -14,7 +14,17 @@ import debounceFn = require('debounce-fn');
 import semver = require('semver');
 import onetime = require('onetime');
 import {JSONSchema} from 'json-schema-typed';
-import {Deserialize, Migrations, OnDidChangeCallback, Options, Serialize, Unsubscribe, Schema, OnDidAnyChangeCallback} from './types';
+import {
+	Deserialize,
+	Migrations,
+	OnDidChangeCallback,
+	Options,
+	Serialize,
+	Unsubscribe,
+	Schema,
+	OnDidAnyChangeCallback,
+	ObjectSchema
+} from './types';
 
 const encryptionAlgorithm = 'aes-256-cbc';
 
@@ -47,6 +57,10 @@ const checkValueType = (key: string, value: unknown): void => {
 	if (nonJsonTypes.has(type)) {
 		throw new TypeError(`Setting a value of type \`${type}\` for key \`${key}\` is not allowed as it's not supported by JSON`);
 	}
+};
+
+const isObjectJSONSchema = <T>(schema: Schema<T>): schema is ObjectSchema => {
+	return typeof schema === 'object' && 'type' in schema && schema.type === 'object';
 };
 
 const INTERNAL_KEY = '__internal__';
@@ -105,15 +119,15 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 			});
 			ajvFormats(ajv);
 
-			const schema: JSONSchema = {
+			const schema: JSONSchema = isObjectJSONSchema(options.schema) ? options.schema : {
 				type: 'object',
 				properties: options.schema
 			};
 
 			this.#validator = ajv.compile(schema);
 
-			for (const [key, value] of Object.entries<JSONSchema>(options.schema)) {
-				if (value?.default) {
+			for (const [key, value] of Object.entries<JSONSchema>(schema.properties!)) {
+				if (value && typeof value === 'object' && value.default) {
 					this.#defaultValues[key as keyof T] = value.default;
 				}
 			}

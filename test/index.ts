@@ -702,6 +702,30 @@ test('schema - valid set', t => {
 	});
 });
 
+test('schema - valid set with full schema', t => {
+	const schema: Schema<{foo: {bar: number; foobar: number}}> = {
+		type: 'object',
+		properties: {
+			foo: {
+				type: 'object',
+				properties: {
+					bar: {
+						type: 'number'
+					},
+					foobar: {
+						type: 'number',
+						maximum: 100
+					}
+				}
+			}
+		}
+	};
+	const config = new Conf({cwd: tempy.directory(), schema});
+	t.notThrows(() => {
+		config.set('foo', {bar: 1, foobar: 2});
+	});
+});
+
 test('schema - one violation', t => {
 	const config = new Conf({
 		cwd: tempy.directory(),
@@ -835,11 +859,11 @@ test('schema - validate Conf default', t => {
 		new Conf({
 			cwd: tempy.directory(),
 			defaults: {
-				// For our tests to fail and typescript to compile, we'll ignore this ts error.
-				// This error is not bad and means the package is well typed.
-				// @ts-expect-error
 				foo: 1
 			},
+			// For our tests to fail and typescript to compile, we'll ignore this ts error.
+			// This error is not bad and means the package is well typed.
+			// @ts-expect-error
 			schema
 		});
 	}, {message: 'Config schema violation: `foo` must be string'});

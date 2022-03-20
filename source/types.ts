@@ -227,8 +227,9 @@ export interface Options<T> {
 
 export type Migrations<T> = Record<string, (store: Conf<T>) => void>;
 
-export type Schema<T> = {[Property in keyof T]: ValueSchema};
-export type ValueSchema = TypedJSONSchema;
+export type Schema<T> = ObjectSchema | {[Property in keyof T]: ValueSchema<T[Property]>};
+export type ObjectSchema = TypedJSONSchema<Record<string | number, unknown>>;
+export type ValueSchema<T> = TypedJSONSchema<T>;
 
 export type Serialize<T> = (value: T) => string;
 export type Deserialize<T> = (text: string) => T;

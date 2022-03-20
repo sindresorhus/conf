@@ -48,7 +48,7 @@
 		"debounce-fn": "^4.0.0",
 		"dot-prop": "^6.0.1",
 		"env-paths": "^2.2.1",
-		"json-schema-typed": "^7.0.3",
+		"json-schema-typed": "^8.0.0",
 		"onetime": "^5.1.2",
 		"pkg-up": "^3.1.0",
 		"semver": "^7.3.5"
