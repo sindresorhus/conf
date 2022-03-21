@@ -726,6 +726,19 @@ test('schema - valid set with full schema', t => {
 	});
 });
 
+test('schema - valid set with additionalProps', t => {
+	const schema: Schema<{foo: {bar: number; foobar: number}}> = {
+		type: 'object',
+		additionalProperties: {
+			type: 'string'
+		}
+	};
+	const config = new Conf({cwd: tempy.directory(), schema});
+	t.notThrows(() => {
+		config.set('foo', 'string');
+	});
+});
+
 test('schema - one violation', t => {
 	const config = new Conf({
 		cwd: tempy.directory(),
@@ -735,6 +748,19 @@ test('schema - one violation', t => {
 			}
 		}
 	});
+	t.throws(() => {
+		config.set('foo', 1);
+	}, {message: 'Config schema violation: `foo` must be string'});
+});
+
+test('schema - one violation with additionalProperties', t => {
+	const schema: Schema<{foo: {bar: number; foobar: number}}> = {
+		type: 'object',
+		additionalProperties: {
+			type: 'string'
+		}
+	};
+	const config = new Conf({cwd: tempy.directory(), schema});
 	t.throws(() => {
 		config.set('foo', 1);
 	}, {message: 'Config schema violation: `foo` must be string'});

@@ -119,7 +119,10 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 			});
 			ajvFormats(ajv);
 
-			const schema: JSONSchema = isObjectJSONSchema(options.schema) ? options.schema : {
+			const schema: JSONSchema = isObjectJSONSchema(options.schema) ? {
+				properties: {},
+				...options.schema
+			} : {
 				type: 'object',
 				properties: options.schema
 			};
