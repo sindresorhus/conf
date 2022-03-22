@@ -681,6 +681,24 @@ test('schema - should be an object', t => {
 	}, {message: 'The `schema` option must be an object.'});
 });
 
+test('schema - should be a json schema representation of object type', t => {
+	const schema: any = {
+		type: 'object'
+	};
+	t.notThrows(() => {
+		new Conf({cwd: tempy.directory(), schema});
+	});
+});
+
+test('schema - should not be a json schema representation of non-object type', t => {
+	const schema: any = {
+		type: 'string'
+	};
+	t.throws(() => {
+		new Conf({cwd: tempy.directory(), schema});
+	}, {message: 'The `schema.type` property must be set to `object` if present.'});
+});
+
 test('schema - valid set', t => {
 	const schema: Schema<{foo: {bar: number; foobar: number}}> = {
 		foo: {

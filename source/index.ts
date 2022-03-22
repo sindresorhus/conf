@@ -113,6 +113,10 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 				throw new TypeError('The `schema` option must be an object.');
 			}
 
+			if ('type' in options.schema && options.schema.type !== 'object') {
+				throw new TypeError('The `schema.type` property must be set to `object` if present.');
+			}
+
 			const ajv = new Ajv({
 				allErrors: true,
 				useDefaults: true
