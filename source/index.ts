@@ -255,10 +255,10 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 		const currentItems = this.has(key as string) ? this.get(key as string) : [];
 
 		if (!Array.isArray(currentItems)) {
-			throw new TypeError('Expected target to be instance of `Array` but it is not');
+			throw new TypeError(`Expected target to be instance of \`Array\` but got \`${typeof currentItems}\``);
 		}
 
-		// Not using .push on purpose not to mutate old array directly. It could mess with
+		// Not using .push on purpose not to mutate old array directly. It could mess with events
 		this.set(key as string, [...currentItems, newItem]);
 	}
 

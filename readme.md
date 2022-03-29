@@ -295,7 +295,7 @@ Returns the new value after successful toggle.
 
 #### .append(key, value)
 
-Append value into the array
+Append the given value to the array.
 
 Type of the item must be `array`. Trying to append into different type will result in TypeError.
 
