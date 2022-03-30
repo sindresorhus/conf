@@ -3,7 +3,7 @@ import {JSONSchema as TypedJSONSchema} from 'json-schema-typed';
 import Conf from '.';
 import {EventEmitter} from 'events';
 
-export interface Options<T> {
+export interface Options<T extends Record<string, any>> {
 	/**
 	Config used if there are no existing config.
 
@@ -225,7 +225,7 @@ export interface Options<T> {
 	readonly configFileMode?: number;
 }
 
-export type Migrations<T> = Record<string, (store: Conf<T>) => void>;
+export type Migrations<T extends Record<string, any>> = Record<string, (store: Conf<T>) => void>;
 
 export type Schema<T> = {[Property in keyof T]: ValueSchema};
 export type ValueSchema = TypedJSONSchema;
