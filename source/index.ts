@@ -293,14 +293,14 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 	/**
 	Watches the given `key`, calling `callback` on any changes.
 
-	@param key - The key wo watch.
+	@param key - The key to watch.
 	@param callback - A callback function that is called on any changes. When a `key` is first set `oldValue` will be `undefined`, and when a key is deleted `newValue` will be `undefined`.
 	@returns A function, that when called, will unsubscribe.
 	*/
-	onDidChange<Key extends keyof T>(
-		key: Key,
-		callback: OnDidChangeCallback<T[Key]>
-	): Unsubscribe {
+	onDidChange<Key extends keyof T>(key: Key, callback: OnDidChangeCallback<T[Key]>): Unsubscribe;
+	// These overloads are used for dot-notation access.
+	onDidChange<Key extends string, Value = unknown>(key: Exclude<Key, keyof T>, callback: OnDidChangeCallback<Value>): Unsubscribe;
+	onDidChange(key: string, callback: OnDidChangeCallback<unknown>): unknown {
 		if (typeof key !== 'string') {
 			throw new TypeError(`Expected \`key\` to be of type \`string\`, got ${typeof key}`);
 		}
