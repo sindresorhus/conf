@@ -131,6 +131,46 @@ const store = new Conf({
 
 > Note: The version the migrations use refers to the **project version** by default. If you want to change this behavior, specify the [`projectVersion`](#projectVersion) option.
 
+### beforeMigration
+
+Type: `Function`\
+Default: `undefined`
+
+You can use `beforeMigration` callback for logging purposes, preparing migration data, etc.
+
+`beforeMigration` callback will be called before the migration is executed.
+
+It could be useful when u have multiple configs and you want to log the migration data for each config.
+
+Example:
+
+```js
+const Conf = require('conf');
+
+console.log = someLogger.log;
+
+const mainConfig = new Conf({
+	beforeMigration: (store, currentVersion, nextVersion) => {
+		console.log(`[main-config] migrate from ${currentVersion} -> ${nextVersion}`);
+	},
+	migrations: {
+		'0.4.0': store => {
+			store.set('debugPhase', true);
+		},
+	}
+});
+const secondConfig = new Conf({
+	beforeMigration: (store, currentVersion, nextVersion) => {
+		console.log(`[second-config] migrate from ${currentVersion} -> ${nextVersion}`);
+	},
+	migrations: {
+		'1.0.1': store => {
+			store.set('debugPhase', true);
+		},
+	}
+});
+```
+
 #### configName
 
 Type: `string`\
