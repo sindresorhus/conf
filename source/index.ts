@@ -510,7 +510,14 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 		for (const version of newerVersions) {
 			try {
 				if (beforeEachMigration) {
-					beforeEachMigration(this, {fromVersion: previousMigratedVersion, toVersion: version});
+					beforeEachMigration(this, {
+						fromVersion: previousMigratedVersion,
+						toVersion: version,
+						migrationProcess: {
+							finalVersion: versionToMigrate,
+							versions: newerVersions
+						}
+					});
 				}
 
 				const migration = migrations[version];

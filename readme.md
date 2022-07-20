@@ -159,6 +159,7 @@ const mainConfig = new Conf({
 		},
 	}
 });
+
 const secondConfig = new Conf({
 	beforeEachMigration: (store, context) => {
 		console.log(`[second-config] migrate from ${context.fromVersion} → ${context.toVersion}`);

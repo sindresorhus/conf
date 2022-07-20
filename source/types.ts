@@ -240,6 +240,10 @@ export type Migrations<T extends Record<string, any>> = Record<string, (store: C
 export type BeforeEachMigrationContext = {
 	fromVersion: string;
 	toVersion: string;
+	migrationProcess: {
+		finalVersion: string;
+		versions: string[];
+	};
 };
 export type BeforeEachMigrationCallback<T extends Record<string, any>> = (store: Conf<T>, context: BeforeEachMigrationContext) => void;
 
