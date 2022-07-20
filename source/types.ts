@@ -104,14 +104,14 @@ export interface Options<T extends Record<string, any>> {
 	migrations?: Migrations<T>;
 
 	/**
-	You can use `beforeMigration` callback for logging purposes, preparing migration data, etc.
+	You can use `beforeEachMigration` callback for logging purposes, preparing migration data, etc.
 
-	`beforeMigration` callback will be called before the migration is executed.
+	`beforeEachMigration` callback will be called before the migration is executed.
 
-	It could be useful when u have multiple configs and you want to log the migration data for each config.
+	It could be useful when you have multiple configs and you want to log the migration data for each config.
 
 	*/
-	beforeMigration?: BeforeMigrationCallback<T>;
+	beforeEachMigration?: BeforeEachMigrationCallback<T>;
 
 	/**
 	__You most likely don't need this. Please don't use it unless you really have to.__
@@ -236,7 +236,12 @@ export interface Options<T extends Record<string, any>> {
 }
 
 export type Migrations<T extends Record<string, any>> = Record<string, (store: Conf<T>) => void>;
-export type BeforeMigrationCallback<T extends Record<string, any>> = (store: Conf<T>, currentVersion: string, previousVersion: string) => void;
+
+export type BeforeEachMigrationContext = {
+	fromVersion: string;
+	toVersion: string;
+};
+export type BeforeEachMigrationCallback<T extends Record<string, any>> = (store: Conf<T>, context: BeforeEachMigrationContext) => void;
 
 export type Schema<T> = {[Property in keyof T]: ValueSchema};
 export type ValueSchema = TypedJSONSchema;

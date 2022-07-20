@@ -14,7 +14,7 @@ import debounceFn = require('debounce-fn');
 import semver = require('semver');
 import onetime = require('onetime');
 import {JSONSchema} from 'json-schema-typed';
-import {Deserialize, Migrations, OnDidChangeCallback, Options, Serialize, Unsubscribe, Schema, OnDidAnyChangeCallback, BeforeMigrationCallback} from './types';
+import {Deserialize, Migrations, OnDidChangeCallback, Options, Serialize, Unsubscribe, Schema, OnDidAnyChangeCallback, BeforeEachMigrationCallback} from './types';
 
 const encryptionAlgorithm = 'aes-256-cbc';
 
@@ -163,7 +163,7 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 				throw new Error('Project version could not be inferred. Please specify the `projectVersion` option.');
 			}
 
-			this._migrate(options.migrations, options.projectVersion, options.beforeMigration);
+			this._migrate(options.migrations, options.projectVersion, options.beforeEachMigration);
 		}
 	}
 
@@ -499,7 +499,7 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 		}
 	}
 
-	private _migrate(migrations: Migrations<T>, versionToMigrate: string, beforeMigration?: BeforeMigrationCallback<T>): void {
+	private _migrate(migrations: Migrations<T>, versionToMigrate: string, beforeEachMigration?: BeforeEachMigrationCallback<T>): void {
 		let previousMigratedVersion = this._get(MIGRATION_KEY, '0.0.0');
 
 		const newerVersions = Object.keys(migrations)
@@ -509,8 +509,8 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 
 		for (const version of newerVersions) {
 			try {
-				if (beforeMigration) {
-					beforeMigration(this, previousMigratedVersion, version);
+				if (beforeEachMigration) {
+					beforeEachMigration(this, {fromVersion: previousMigratedVersion, toVersion: version});
 				}
 
 				const migration = migrations[version];
