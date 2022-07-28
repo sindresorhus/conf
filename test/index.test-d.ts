@@ -137,7 +137,7 @@ expectError<number>(config.get('unicorn', 1));
 new Conf({
 	beforeEachMigration: (store, context) => {
 		console.log(`[main-config] migrate from ${context.fromVersion} → ${context.toVersion}`);
-		console.log(`[main-config] final migration verison ${context.migrationProcess.finalVersion}, all migrations that were run or will be runned: ${context.migrationProcess.versions.toString()}`);
+		console.log(`[main-config] final migration version ${context.finalVersion}, all migrations that were run or will be ran: ${context.versions.toString()}`);
 		console.log(`[main-config] phase ${(store.get('phase') || 'none') as string}`);
 	},
 	migrations: {

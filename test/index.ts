@@ -1218,7 +1218,7 @@ test('beforeEachMigration - should be called before every migration', t => {
 		}
 	});
 
-	t.is(conf.get('beforeEachMigration 0.0.0 → 1.0.0'), true);
-	t.is(conf.get('beforeEachMigration 1.0.0 → 1.0.1'), true);
+	t.true(conf.get('beforeEachMigration 0.0.0 → 1.0.0'));
+	t.true(conf.get('beforeEachMigration 1.0.0 → 1.0.1'));
 	t.false(conf.has('beforeEachMigration 1.0.1 → 2.0.1'));
 });

@@ -109,7 +109,6 @@ export interface Options<T extends Record<string, any>> {
 	`beforeEachMigration` callback will be called before the migration is executed.
 
 	It could be useful when you have multiple configs and you want to log the migration data for each config.
-
 	*/
 	beforeEachMigration?: BeforeEachMigrationCallback<T>;
 
@@ -240,10 +239,8 @@ export type Migrations<T extends Record<string, any>> = Record<string, (store: C
 export type BeforeEachMigrationContext = {
 	fromVersion: string;
 	toVersion: string;
-	migrationProcess: {
-		finalVersion: string;
-		versions: string[];
-	};
+	finalVersion: string;
+	versions: string[];
 };
 export type BeforeEachMigrationCallback<T extends Record<string, any>> = (store: Conf<T>, context: BeforeEachMigrationContext) => void;
 

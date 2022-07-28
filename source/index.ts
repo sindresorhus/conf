@@ -513,10 +513,8 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 					beforeEachMigration(this, {
 						fromVersion: previousMigratedVersion,
 						toVersion: version,
-						migrationProcess: {
-							finalVersion: versionToMigrate,
-							versions: newerVersions
-						}
+						finalVersion: versionToMigrate,
+						versions: newerVersions
 					});
 				}
 
