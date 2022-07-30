@@ -136,11 +136,9 @@ const store = new Conf({
 Type: `Function`\
 Default: `undefined`
 
-You can use `beforeEachMigration` callback for logging purposes, preparing migration data, etc.
+The given callback function will be called before each migration step.
 
-`beforeEachMigration` callback will be called before each migrations executed.
-
-It could be useful when you have multiple configs and you want to log the migration data for each config.
+This can be useful for logging purposes, preparing migration data, etc.
 
 Example:
 
