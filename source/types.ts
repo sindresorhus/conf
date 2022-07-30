@@ -104,6 +104,13 @@ export interface Options<T extends Record<string, any>> {
 	migrations?: Migrations<T>;
 
 	/**
+	The given callback function will be called before each migration step.
+
+	This can be useful for logging purposes, preparing migration data, etc.
+	*/
+	beforeEachMigration?: BeforeEachMigrationCallback<T>;
+
+	/**
 	__You most likely don't need this. Please don't use it unless you really have to.__
 
 	The only use-case I can think of is having the config located in the app directory or on some external storage. Default: System default user [config directory](https://github.com/sindresorhus/env-paths#pathsconfig).
@@ -226,6 +233,14 @@ export interface Options<T extends Record<string, any>> {
 }
 
 export type Migrations<T extends Record<string, any>> = Record<string, (store: Conf<T>) => void>;
+
+export type BeforeEachMigrationContext = {
+	fromVersion: string;
+	toVersion: string;
+	finalVersion: string;
+	versions: string[];
+};
+export type BeforeEachMigrationCallback<T extends Record<string, any>> = (store: Conf<T>, context: BeforeEachMigrationContext) => void;
 
 export type Schema<T> = {[Property in keyof T]: ValueSchema};
 export type ValueSchema = TypedJSONSchema;

@@ -135,6 +135,11 @@ expectError<number>(config.get('unicorn', 1));
 
 // -- Migrations --
 new Conf({
+	beforeEachMigration: (store, context) => {
+		console.log(`[main-config] migrate from ${context.fromVersion} → ${context.toVersion}`);
+		console.log(`[main-config] final migration version ${context.finalVersion}, all migrations that were run or will be ran: ${context.versions.toString()}`);
+		console.log(`[main-config] phase ${(store.get('phase') || 'none') as string}`);
+	},
 	migrations: {
 		'0.0.1': store => {
 			store.set('debug phase', true);

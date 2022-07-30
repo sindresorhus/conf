@@ -1203,3 +1203,22 @@ test('__internal__ keys - should only match specific "__internal__" entry', t =>
 		conf.set('__internal__foo.you-shall', 'not-pass');
 	});
 });
+
+test('beforeEachMigration - should be called before every migration', t => {
+	const conf = new Conf({
+		cwd: tempy.directory(),
+		projectVersion: '2.0.0',
+		beforeEachMigration: (store, context) => {
+			store.set(`beforeEachMigration ${context.fromVersion} → ${context.toVersion}`, true);
+		},
+		migrations: {
+			'1.0.0': () => {},
+			'1.0.1': () => {},
+			'2.0.1': () => {}
+		}
+	});
+
+	t.true(conf.get('beforeEachMigration 0.0.0 → 1.0.0'));
+	t.true(conf.get('beforeEachMigration 1.0.0 → 1.0.1'));
+	t.false(conf.has('beforeEachMigration 1.0.1 → 2.0.1'));
+});
