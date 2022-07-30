@@ -138,6 +138,13 @@ Default: `undefined`
 
 The given callback function will be called before each migration step.
 
+The function receives the store as the first argument and a context object as the second argument with the following properties:
+
+- `fromVersion` - The version the migration step is being migrated from.
+- `toVersion` - The version the migration step is being migrated to.
+- `finalVersion` - The final version after all the migrations are applied.
+- `versions` - All the versions with a migration step.
+
 This can be useful for logging purposes, preparing migration data, etc.
 
 Example:
