@@ -1,6 +1,7 @@
 import {isDeepStrictEqual} from 'util';
 import fs = require('fs');
 import path = require('path');
+import v8 = require('v8');
 import crypto = require('crypto');
 import assert = require('assert');
 import {EventEmitter} from 'events';
@@ -13,9 +14,12 @@ import ajvFormats from 'ajv-formats';
 import debounceFn = require('debounce-fn');
 import semver = require('semver');
 import onetime = require('onetime');
+import isPlainObject = require('is-plain-obj');
+import modifyValues = require('modify-values');
 import {JSONSchema} from 'json-schema-typed';
 import {Deserialize, Migrations, OnDidChangeCallback, Options, Serialize, Unsubscribe, Schema, OnDidAnyChangeCallback, BeforeEachMigrationCallback} from './types';
 
+const {serialize, deserialize} = v8;
 const encryptionAlgorithm = 'aes-256-cbc';
 
 const createPlainObject = <T = Record<string, unknown>>(): T => {
@@ -25,6 +29,8 @@ const createPlainObject = <T = Record<string, unknown>>(): T => {
 const isExist = <T = unknown>(data: T): boolean => {
 	return data !== undefined && data !== null;
 };
+
+const isObject = (value: unknown): boolean => typeof value === 'object' && value !== null;
 
 let parentDir = '';
 try {
@@ -426,8 +432,34 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 		return () => this.events.removeListener('change', onChange);
 	}
 
-	private readonly _deserialize: Deserialize<T> = value => JSON.parse(value);
-	private readonly _serialize: Serialize<T> = value => JSON.stringify(value, undefined, '\t');
+	private readonly _deserialize: Deserialize<T> = value => JSON.parse(
+		value,
+		(_, value) => {
+			if (typeof value === 'string' && value.startsWith(INTERNAL_KEY)) {
+				return deserialize(Buffer.from(value.slice(INTERNAL_KEY.length), 'base64'));
+			}
+
+			return value;
+		}
+	);
+
+	private readonly _serialize: Serialize<T> = value => JSON.stringify(
+		value,
+		(_, value) => {
+			if (isPlainObject(value)) {
+				return modifyValues(value, value => {
+					if (isObject(value) && !Array.isArray(value) && !isPlainObject(value)) {
+						return INTERNAL_KEY + serialize(value).toString('base64');
+					}
+
+					return value;
+				});
+			}
+
+			return value;
+		},
+		'\t'
+	);
 
 	private _validate(data: T | unknown): void {
 		if (!this.#validator) {

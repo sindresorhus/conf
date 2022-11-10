@@ -34,6 +34,11 @@ console.log(config.get('foo'));
 config.delete('unicorn');
 console.log(config.get('unicorn'));
 //=> undefined
+
+// Store non-primitive values
+store.set('date', new Date());
+console.log(store.get('date') instanceof Date);
+//=> true
 ```
 
 Or [create a subclass](https://github.com/sindresorhus/electron-store/blob/main/index.js).
