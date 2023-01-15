@@ -1,6 +1,7 @@
-/* eslint-disable no-new */
+/* eslint-disable no-new, @typescript-eslint/naming-convention */
+import {Buffer} from 'node:buffer';
 import {expectType, expectAssignable, expectError} from 'tsd';
-import Conf from '../source';
+import Conf from '../source/index.js';
 
 type UnicornFoo = {
 	foo: string;
@@ -15,8 +16,8 @@ const conf = new Conf<UnicornFoo>({accessPropertiesByDotNotation: true});
 new Conf<UnicornFoo>({
 	defaults: {
 		foo: 'bar',
-		unicorn: false
-	}
+		unicorn: false,
+	},
 });
 new Conf<UnicornFoo>({configName: ''});
 new Conf<UnicornFoo>({projectName: 'foo'});
@@ -37,23 +38,23 @@ new Conf<UnicornFoo>({
 	schema: {
 		foo: {
 			type: 'string',
-			default: 'foobar'
+			default: 'foobar',
 		},
 		unicorn: {
-			type: 'boolean'
+			type: 'boolean',
 		},
 		hello: {
-			type: 'number'
+			type: 'number',
 		},
 		nested: {
 			type: 'object',
 			properties: {
 				prop: {
-					type: 'number'
-				}
-			}
-		}
-	}
+					type: 'number',
+				},
+			},
+		},
+	},
 });
 
 conf.set('hello', 1);
@@ -64,8 +65,8 @@ conf.set('nested.prop', 3);
 
 conf.set({
 	nested: {
-		prop: 3
-	}
+		prop: 3,
+	},
 });
 
 expectType<string>(conf.get('foo'));
@@ -83,13 +84,13 @@ off();
 
 conf.store = {
 	foo: 'bar',
-	unicorn: false
+	unicorn: false,
 };
 expectType<string>(conf.path);
 expectType<number>(conf.size);
 
 expectType<IterableIterator<[keyof UnicornFoo, UnicornFoo[keyof UnicornFoo]]>>(
-	conf[Symbol.iterator]()
+	conf[Symbol.iterator](),
 );
 for (const [key, value] of conf) {
 	expectType<keyof UnicornFoo>(key);
@@ -105,8 +106,8 @@ type StoreType = {
 
 const config = new Conf<StoreType>({
 	defaults: {
-		isRainbow: true
-	}
+		isRainbow: true,
+	},
 });
 
 config.get('isRainbow');
@@ -135,22 +136,22 @@ expectError<number>(config.get('unicorn', 1));
 
 // -- Migrations --
 new Conf({
-	beforeEachMigration: (store, context) => {
+	beforeEachMigration(store, context) {
 		console.log(`[main-config] migrate from ${context.fromVersion} → ${context.toVersion}`);
 		console.log(`[main-config] final migration version ${context.finalVersion}, all migrations that were run or will be ran: ${context.versions.toString()}`);
 		console.log(`[main-config] phase ${(store.get('phase') || 'none') as string}`);
 	},
 	migrations: {
-		'0.0.1': store => {
+		'0.0.1'(store) {
 			store.set('debug phase', true);
 		},
-		'1.0.0': store => {
+		'1.0.0'(store) {
 			store.delete('debug phase');
 			store.set('phase', '1.0');
 		},
-		'1.0.2': store => {
+		'1.0.2'(store) {
 			store.set('phase', '>1.0');
-		}
-	}
+		},
+	},
 });
 // --

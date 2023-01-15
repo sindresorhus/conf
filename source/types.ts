@@ -1,9 +1,10 @@
-import {JSONSchema as TypedJSONSchema} from 'json-schema-typed';
+import {type Buffer} from 'node:buffer';
+import {type EventEmitter} from 'node:events';
+import {type JSONSchema as TypedJSONSchema} from 'json-schema-typed';
 // eslint-disable unicorn/import-index
-import Conf from '.';
-import {EventEmitter} from 'events';
+import type Conf from './index.js';
 
-export interface Options<T extends Record<string, any>> {
+export type Options<T extends Record<string, any>> = {
 	/**
 	Config used if there are no existing config.
 
@@ -20,7 +21,7 @@ export interface Options<T extends Record<string, any>> {
 
 	@example
 	```
-	import Conf = require('conf');
+	import Conf from 'conf';
 
 	const schema = {
 		foo: {
@@ -35,7 +36,10 @@ export interface Options<T extends Record<string, any>> {
 		}
 	};
 
-	const config = new Conf({schema});
+	const config = new Conf({
+		projectName: 'foo',
+		schema
+	});
 
 	console.log(config.get('foo'));
 	//=> 50
@@ -58,16 +62,16 @@ export interface Options<T extends Record<string, any>> {
 	configName?: string;
 
 	/**
-	You only need to specify this if you don't have a package.json file in your project or if it doesn't have a name defined within it.
+	__Required unless you specify the `cwd` option.__
 
-	Default: The name field in the `package.json` closest to where `conf` is imported.
+	You can fetch the `name` field from package.json.
 	*/
 	projectName?: string;
 
 	/**
-	You only need to specify this if you don't have a package.json file in your project or if it doesn't have a version defined within it.
+	__Required if you specify the `migration` option.__
 
-	Default: The name field in the `package.json` closest to where `conf` is imported.
+	You can fetch the `version` field from package.json.
 	*/
 	projectVersion?: string;
 
@@ -80,9 +84,11 @@ export interface Options<T extends Record<string, any>> {
 
 	@example
 	```
-	import Conf = require('conf');
+	import Conf from 'conf';
 
 	const store = new Conf({
+		projectName: 'foo',
+		projectVersion: …,
 		migrations: {
 			'0.0.1': store => {
 				store.set('debugPhase', true);
@@ -182,7 +188,7 @@ export interface Options<T extends Record<string, any>> {
 
 	@example
 	```
-	const config = new Conf();
+	const config = new Conf({projectName: 'foo'});
 
 	config.set({
 		foo: {
@@ -200,7 +206,10 @@ export interface Options<T extends Record<string, any>> {
 
 	@example
 	```
-	const config = new Conf({accessPropertiesByDotNotation: false});
+	const config = new Conf({
+		projectName: 'foo',
+		accessPropertiesByDotNotation: false
+	});
 
 	config.set({
 		`foo.bar.foobar`: '🦄'
@@ -230,7 +239,7 @@ export interface Options<T extends Record<string, any>> {
 	@default 0o666
 	*/
 	readonly configFileMode?: number;
-}
+};
 
 export type Migrations<T extends Record<string, any>> = Record<string, (store: Conf<T>) => void>;
 

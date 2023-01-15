@@ -1,27 +1,26 @@
-/* eslint-disable no-new, @typescript-eslint/no-empty-function */
-import fs = require('fs');
-import path = require('path');
-import tempy = require('tempy');
-import del = require('del');
-import pkgUp = require('pkg-up');
-import clearModule = require('clear-module');
-import pEvent = require('p-event');
-import delay = require('delay');
-import anyTest, {TestInterface} from 'ava';
-import readPkgUp = require('read-pkg-up');
-import Conf, {Schema} from '../source';
+/* eslint-disable no-new, @typescript-eslint/no-empty-function, @typescript-eslint/naming-convention */
+import process from 'node:process';
+import fs from 'node:fs';
+import path from 'node:path';
+import {temporaryDirectory} from 'tempy';
+import {deleteSync} from 'del';
+import {pEvent} from 'p-event';
+import delay from 'delay';
+import anyTest, {type TestFn} from 'ava';
+import Conf, {type Schema} from '../source/index.js';
 
-const test = anyTest as TestInterface<{
+const test = anyTest as TestFn<{
 	config: Conf;
 	configWithoutDotNotation: Conf;
 	configWithSchema: Conf<{foo: unknown; bar: unknown}>;
 	configWithDefaults: Conf;
 }>;
+
 const fixture = '🦄';
 
 test.beforeEach(t => {
-	t.context.config = new Conf({cwd: tempy.directory()});
-	t.context.configWithoutDotNotation = new Conf({cwd: tempy.directory(), accessPropertiesByDotNotation: false});
+	t.context.config = new Conf({cwd: temporaryDirectory()});
+	t.context.configWithoutDotNotation = new Conf({cwd: temporaryDirectory(), accessPropertiesByDotNotation: false});
 });
 
 test('.get()', t => {
@@ -33,13 +32,13 @@ test('.get()', t => {
 
 test('.get() - `defaults` option', t => {
 	const store = new Conf({
-		cwd: tempy.directory(),
+		cwd: temporaryDirectory(),
 		defaults: {
 			foo: 42,
 			nested: {
-				bar: 55
-			}
-		}
+				bar: 55,
+			},
+		},
 	});
 
 	t.is(store.get('foo'), 42);
@@ -48,22 +47,22 @@ test('.get() - `defaults` option', t => {
 
 test.failing('.get() - `schema` option - default', t => {
 	const store = new Conf({
-		cwd: tempy.directory(),
+		cwd: temporaryDirectory(),
 		schema: {
 			foo: {
 				type: 'boolean',
-				default: true
+				default: true,
 			},
 			nested: {
 				type: 'object',
 				properties: {
 					bar: {
 						type: 'number',
-						default: 55
-					}
-				}
-			}
-		}
+						default: 55,
+					},
+				},
+			},
+		},
 	});
 
 	t.is(store.get('foo'), true);
@@ -84,9 +83,9 @@ test('.set() - with object', t => {
 		baz: {
 			boo: 'foo',
 			foo: {
-				bar: 'baz'
-			}
-		}
+				bar: 'baz',
+			},
+		},
 	});
 	t.is(t.context.config.get('foo1'), 'bar1');
 	t.is(t.context.config.get('foo2'), 'bar2');
@@ -113,19 +112,19 @@ test('.set() - with unsupported values', t => {
 
 	t.throws(() => {
 		t.context.config.set({
-			a: undefined
+			a: undefined,
 		});
 	}, {message: /not supported by JSON/});
 
 	t.throws(() => {
 		t.context.config.set({
-			a: () => {}
+			a() {},
 		});
 	}, {message: /not supported by JSON/});
 
 	t.throws(() => {
 		t.context.config.set({
-			a: Symbol('a')
+			a: Symbol('a'),
 		});
 	}, {message: /not supported by JSON/});
 });
@@ -148,11 +147,11 @@ test('.has()', t => {
 
 test('.reset() - `defaults` option', t => {
 	const store = new Conf({
-		cwd: tempy.directory(),
+		cwd: temporaryDirectory(),
 		defaults: {
 			foo: 42,
-			bar: 99
-		}
+			bar: 99,
+		},
 	});
 
 	store.set('foo', 77);
@@ -172,11 +171,11 @@ test('.reset() - falsy `defaults` option', t => {
 		foo: 0,
 		bar: '',
 		fox: false,
-		bax: true
+		bax: true,
 	};
 	const store = new Conf({
-		cwd: tempy.directory(),
-		defaults: defaultsValue
+		cwd: temporaryDirectory(),
+		defaults: defaultsValue,
 	});
 
 	store.set('foo', 5);
@@ -194,15 +193,15 @@ test('.reset() - falsy `defaults` option', t => {
 
 test('.reset() - `schema` option', t => {
 	const store = new Conf({
-		cwd: tempy.directory(),
+		cwd: temporaryDirectory(),
 		schema: {
 			foo: {
-				default: 42
+				default: 42,
 			},
 			bar: {
-				default: 99
-			}
-		}
+				default: 99,
+			},
+		},
 	});
 
 	store.set('foo', 77);
@@ -239,11 +238,11 @@ test('.clear()', t => {
 
 test('.clear() - `defaults` option', t => {
 	const store = new Conf({
-		cwd: tempy.directory(),
+		cwd: temporaryDirectory(),
 		defaults: {
 			foo: 42,
-			bar: 99
-		}
+			bar: 99,
+		},
 	});
 
 	store.set('foo', 2);
@@ -254,15 +253,15 @@ test('.clear() - `defaults` option', t => {
 
 test('.clear() - `schema` option', t => {
 	const store = new Conf({
-		cwd: tempy.directory(),
+		cwd: temporaryDirectory(),
 		schema: {
 			foo: {
-				default: 42
+				default: 42,
 			},
 			bar: {
-				default: 99
-			}
-		}
+				default: 99,
+			},
+		},
 	});
 
 	store.set('foo', 2);
@@ -282,17 +281,17 @@ test('.store', t => {
 	t.deepEqual(t.context.config.store, {
 		foo: 'bar',
 		baz: {
-			boo: true
-		}
+			boo: true,
+		},
 	});
 });
 
 test('`defaults` option', t => {
 	const config = new Conf({
-		cwd: tempy.directory(),
+		cwd: temporaryDirectory(),
 		defaults: {
-			foo: 'bar'
-		}
+			foo: 'bar',
+		},
 	});
 
 	t.is(config.get('foo'), 'bar');
@@ -300,9 +299,9 @@ test('`defaults` option', t => {
 
 test('`configName` option', t => {
 	const configName = 'alt-config';
-	const config = new Conf<{foo: string}>({
-		cwd: tempy.directory(),
-		configName
+	const config = new Conf<{foo: string | undefined}>({
+		cwd: temporaryDirectory(),
+		configName,
 	});
 	t.is(config.get('foo'), undefined);
 	config.set('foo', fixture);
@@ -312,8 +311,9 @@ test('`configName` option', t => {
 });
 
 test('no `suffix` option', t => {
-	const config = new Conf();
+	const config = new Conf({projectName: Date.now().toString()});
 	t.true(config.path.includes('-nodejs'));
+	config.clear();
 });
 
 test('with `suffix` option set to empty string', t => {
@@ -338,8 +338,8 @@ test('with `projectSuffix` option set to non-empty string', t => {
 test('`fileExtension` option', t => {
 	const fileExtension = 'alt-ext';
 	const config = new Conf({
-		cwd: tempy.directory(),
-		fileExtension
+		cwd: temporaryDirectory(),
+		fileExtension,
 	});
 	t.is(config.get('foo'), undefined);
 	config.set('foo', fixture);
@@ -350,9 +350,9 @@ test('`fileExtension` option', t => {
 test('`fileExtension` option = empty string', t => {
 	const configName = 'unicorn';
 	const config = new Conf({
-		cwd: tempy.directory(),
+		cwd: temporaryDirectory(),
 		fileExtension: '',
-		configName
+		configName,
 	});
 	t.is(path.basename(config.path), configName);
 });
@@ -372,9 +372,9 @@ test('`serialize` and `deserialize` options', t => {
 	};
 
 	const config = new Conf({
-		cwd: tempy.directory(),
+		cwd: temporaryDirectory(),
 		serialize,
-		deserialize
+		deserialize,
 	});
 
 	t.deepEqual(config.store, {} as any);
@@ -389,14 +389,14 @@ test('`projectName` option', t => {
 	config.set('foo', fixture);
 	t.is(config.get('foo'), fixture);
 	t.true(config.path.includes(projectName));
-	del.sync(config.path, {force: true});
+	deleteSync(config.path, {force: true});
 });
 
 test('ensure `.store` is always an object', t => {
-	const cwd = tempy.directory();
+	const cwd = temporaryDirectory();
 	const config = new Conf({cwd});
 
-	del.sync(cwd, {force: true});
+	deleteSync(cwd, {force: true});
 
 	t.notThrows(() => {
 		config.get('foo');
@@ -406,24 +406,16 @@ test('ensure `.store` is always an object', t => {
 test('instance is iterable', t => {
 	t.context.config.set({
 		foo: fixture,
-		bar: fixture
+		bar: fixture,
 	});
 	t.deepEqual(
 		[...t.context.config],
-		[['foo', fixture], ['bar', fixture]]
+		[['foo', fixture], ['bar', fixture]],
 	);
 });
 
-test('automatic `projectName` inference', t => {
-	const config = new Conf();
-	config.set('foo', fixture);
-	t.is(config.get('foo'), fixture);
-	t.true(config.path.includes('conf'));
-	del.sync(config.path, {force: true});
-});
-
 test('`cwd` option overrides `projectName` option', t => {
-	const cwd = tempy.directory();
+	const cwd = temporaryDirectory();
 
 	t.notThrows(() => {
 		const config: Conf = new Conf({cwd, projectName: ''});
@@ -431,53 +423,14 @@ test('`cwd` option overrides `projectName` option', t => {
 		t.is(config.get('foo'), undefined);
 		config.set('foo', fixture);
 		t.is(config.get('foo'), fixture);
-		del.sync(config.path, {force: true});
-	});
-});
-
-test('safely handle missing package.json', t => {
-	const pkgUpSyncOrig = pkgUp.sync;
-	pkgUp.sync = () => null;
-
-	let config: Conf;
-	t.notThrows(() => {
-		config = new Conf({projectName: 'conf-fixture-project-name'});
-		del.sync(config.path, {force: true});
-	});
-
-	pkgUp.sync = pkgUpSyncOrig;
-});
-
-test('handle `cwd` being set and `projectName` not being set', t => {
-	const pkgUpSyncOrig = pkgUp.sync;
-	pkgUp.sync = () => null;
-
-	let config: Conf;
-	t.notThrows(() => {
-		config = new Conf({cwd: 'conf-fixture-cwd'});
-		del.sync(path.dirname(config.path));
-	});
-
-	pkgUp.sync = pkgUpSyncOrig;
-});
-
-// See #11
-test('fallback to cwd if `module.filename` is `null`', t => {
-	const preservedFilename: string = module.filename;
-	module.filename = '';
-	clearModule('.');
-
-	t.notThrows(() => {
-		const config: Conf = new Conf({cwd: 'conf-fixture-fallback-module-filename-null'});
-		del.sync(path.dirname(config.path));
-		module.filename = preservedFilename;
+		deleteSync(config.path, {force: true});
 	});
 });
 
 test('encryption', t => {
 	const config = new Conf({
-		cwd: tempy.directory(),
-		encryptionKey: 'abc123'
+		cwd: temporaryDirectory(),
+		encryptionKey: 'abc123',
 	});
 
 	t.is(config.get('foo'), undefined);
@@ -489,7 +442,7 @@ test('encryption', t => {
 });
 
 test('encryption - upgrade', t => {
-	const cwd = tempy.directory();
+	const cwd = temporaryDirectory();
 
 	const before = new Conf({cwd});
 	before.set('foo', fixture);
@@ -500,12 +453,12 @@ test('encryption - upgrade', t => {
 });
 
 test('encryption - corrupt file', t => {
-	const cwd = tempy.directory();
+	const cwd = temporaryDirectory();
 
 	const before = new Conf({
 		cwd,
 		encryptionKey: 'abc123',
-		clearInvalidConfig: true
+		clearInvalidConfig: true,
 	});
 
 	before.set('foo', fixture);
@@ -516,7 +469,7 @@ test('encryption - corrupt file', t => {
 	const after = new Conf({
 		cwd,
 		encryptionKey: 'abc123',
-		clearInvalidConfig: true
+		clearInvalidConfig: true,
 	});
 
 	t.is(after.get('foo'), undefined);
@@ -527,7 +480,7 @@ test('decryption - migration to initialization vector', t => {
 	const config = new Conf({
 		cwd: 'test',
 		encryptionKey: 'abcd1234',
-		configName: 'config-encrypted-with-conf-4-1-0'
+		configName: 'config-encrypted-with-conf-4-1-0',
 	});
 
 	t.deepEqual(config.store, {unicorn: '🦄'});
@@ -592,11 +545,11 @@ test('onDidAnyChange()', t => {
 	const checkBaz = (newValue: unknown, oldValue: unknown): void => {
 		t.deepEqual(newValue, {
 			foo: fixture,
-			baz: {boo: '🐴'}
+			baz: {boo: '🐴'},
 		});
 		t.deepEqual(oldValue, {
 			foo: fixture,
-			baz: {boo: fixture}
+			baz: {boo: fixture},
 		});
 	};
 
@@ -615,22 +568,22 @@ test('onDidAnyChange()', t => {
 	const checkUndefined = (newValue: unknown, oldValue: unknown): void => {
 		t.deepEqual(oldValue, {
 			foo: '🦄',
-			baz: {boo: '🦄'}
+			baz: {boo: '🦄'},
 		});
 
 		t.deepEqual(newValue, {
-			baz: {boo: fixture}
+			baz: {boo: fixture},
 		});
 	};
 
 	const checkSet = (newValue: unknown, oldValue: unknown): void => {
 		t.deepEqual(oldValue, {
-			baz: {boo: fixture}
+			baz: {boo: fixture},
 		});
 
 		t.deepEqual(newValue, {
 			baz: {boo: '🦄'},
-			foo: '🐴'
+			foo: '🐴',
 		});
 	};
 
@@ -649,17 +602,17 @@ test('doesn\'t write to disk upon instanciation if and only if the store didn\'t
 	t.is(exists, false);
 
 	const conf = new Conf({
-		cwd: tempy.directory(),
+		cwd: temporaryDirectory(),
 		defaults: {
-			foo: 'bar'
-		}
+			foo: 'bar',
+		},
 	});
 	exists = fs.existsSync(conf.path);
 	t.is(exists, true);
 });
 
 test('`clearInvalidConfig` option - invalid data', t => {
-	const config = new Conf({cwd: tempy.directory(), clearInvalidConfig: false});
+	const config = new Conf({cwd: temporaryDirectory(), clearInvalidConfig: false});
 	fs.writeFileSync(config.path, '🦄');
 
 	t.throws(() => {
@@ -669,7 +622,7 @@ test('`clearInvalidConfig` option - invalid data', t => {
 });
 
 test('`clearInvalidConfig` option - valid data', t => {
-	const config = new Conf({cwd: tempy.directory(), clearInvalidConfig: false});
+	const config = new Conf({cwd: temporaryDirectory(), clearInvalidConfig: false});
 	config.set('foo', 'bar');
 	t.deepEqual(config.store, {foo: 'bar'});
 });
@@ -677,7 +630,7 @@ test('`clearInvalidConfig` option - valid data', t => {
 test('schema - should be an object', t => {
 	const schema: any = 'object';
 	t.throws(() => {
-		new Conf({cwd: tempy.directory(), schema});
+		new Conf({cwd: temporaryDirectory(), schema}); // eslint-disable-line @typescript-eslint/no-unsafe-assignment
 	}, {message: 'The `schema` option must be an object.'});
 });
 
@@ -687,16 +640,16 @@ test('schema - valid set', t => {
 			type: 'object',
 			properties: {
 				bar: {
-					type: 'number'
+					type: 'number',
 				},
 				foobar: {
 					type: 'number',
-					maximum: 100
-				}
-			}
-		}
+					maximum: 100,
+				},
+			},
+		},
 	};
-	const config = new Conf({cwd: tempy.directory(), schema});
+	const config = new Conf({cwd: temporaryDirectory(), schema});
 	t.notThrows(() => {
 		config.set('foo', {bar: 1, foobar: 2});
 	});
@@ -704,12 +657,12 @@ test('schema - valid set', t => {
 
 test('schema - one violation', t => {
 	const config = new Conf({
-		cwd: tempy.directory(),
+		cwd: temporaryDirectory(),
 		schema: {
 			foo: {
-				type: 'string'
-			}
-		}
+				type: 'string',
+			},
+		},
 	});
 	t.throws(() => {
 		config.set('foo', 1);
@@ -722,16 +675,16 @@ test('schema - multiple violations', t => {
 			type: 'object',
 			properties: {
 				bar: {
-					type: 'number'
+					type: 'number',
 				},
 				foobar: {
 					type: 'number',
-					maximum: 100
-				}
-			}
-		}
+					maximum: 100,
+				},
+			},
+		},
 	};
-	const config = new Conf({cwd: tempy.directory(), schema});
+	const config = new Conf({cwd: temporaryDirectory(), schema});
 	t.throws(() => {
 		config.set('foo', {bar: '1', foobar: 101});
 	}, {message: 'Config schema violation: `foo/bar` must be number; `foo/foobar` must be <= 100'});
@@ -742,18 +695,18 @@ test('schema - complex schema', t => {
 		foo: {
 			type: 'string',
 			maxLength: 3,
-			pattern: '[def]+'
+			pattern: '[def]+',
 		},
 		bar: {
 			type: 'array',
 			uniqueItems: true,
 			maxItems: 3,
 			items: {
-				type: 'integer'
-			}
-		}
+				type: 'integer',
+			},
+		},
 	};
-	const config = new Conf({cwd: tempy.directory(), schema});
+	const config = new Conf({cwd: temporaryDirectory(), schema});
 	t.throws(() => {
 		config.set('foo', 'abca');
 	}, {message: 'Config schema violation: `foo` must NOT have more than 3 characters; `foo` must match pattern "[def]+"'});
@@ -764,13 +717,13 @@ test('schema - complex schema', t => {
 
 test('schema - supports formats', t => {
 	const config = new Conf({
-		cwd: tempy.directory(),
+		cwd: temporaryDirectory(),
 		schema: {
 			foo: {
 				type: 'string',
-				format: 'uri'
-			}
-		}
+				format: 'uri',
+			},
+		},
 	});
 	t.throws(() => {
 		config.set('foo', 'bar');
@@ -780,10 +733,10 @@ test('schema - supports formats', t => {
 test('schema - invalid write to config file', t => {
 	const schema: Schema<{foo: string}> = {
 		foo: {
-			type: 'string'
-		}
+			type: 'string',
+		},
 	};
-	const cwd = tempy.directory();
+	const cwd = temporaryDirectory();
 
 	const config = new Conf({cwd, schema});
 	fs.writeFileSync(path.join(cwd, 'config.json'), JSON.stringify({foo: 1}));
@@ -796,12 +749,12 @@ test('schema - default', t => {
 	const schema: Schema<{foo: string}> = {
 		foo: {
 			type: 'string',
-			default: 'bar'
-		}
+			default: 'bar',
+		},
 	};
 	const config = new Conf({
-		cwd: tempy.directory(),
-		schema
+		cwd: temporaryDirectory(),
+		schema,
 	});
 
 	const foo: string = config.get('foo', '');
@@ -812,15 +765,15 @@ test('schema - Conf defaults overwrites schema default', t => {
 	const schema: Schema<{foo: string}> = {
 		foo: {
 			type: 'string',
-			default: 'bar'
-		}
+			default: 'bar',
+		},
 	};
 	const config = new Conf({
-		cwd: tempy.directory(),
+		cwd: temporaryDirectory(),
 		defaults: {
-			foo: 'foo'
+			foo: 'foo',
 		},
-		schema
+		schema,
 	});
 	t.is(config.get('foo'), 'foo');
 });
@@ -828,19 +781,19 @@ test('schema - Conf defaults overwrites schema default', t => {
 test('schema - validate Conf default', t => {
 	const schema: Schema<{foo: string}> = {
 		foo: {
-			type: 'string'
-		}
+			type: 'string',
+		},
 	};
 	t.throws(() => {
 		new Conf({
-			cwd: tempy.directory(),
+			cwd: temporaryDirectory(),
 			defaults: {
 				// For our tests to fail and typescript to compile, we'll ignore this ts error.
 				// This error is not bad and means the package is well typed.
 				// @ts-expect-error
-				foo: 1
+				foo: 1,
 			},
-			schema
+			schema,
 		});
 	}, {message: 'Config schema violation: `foo` must be string'});
 });
@@ -866,9 +819,9 @@ test('.set() - with object - without dot notation', t => {
 		baz: {
 			boo: 'foo',
 			foo: {
-				bar: 'baz'
-			}
-		}
+				bar: 'baz',
+			},
+		},
 	});
 	t.is(t.context.configWithoutDotNotation.get('foo1'), 'bar1');
 	t.is(t.context.configWithoutDotNotation.get('foo2'), 'bar2');
@@ -903,7 +856,7 @@ test('.delete() - without dot notation', t => {
 });
 
 test('`watch` option watches for config file changes by another process', async t => {
-	const cwd = tempy.directory();
+	const cwd = temporaryDirectory();
 	const conf1 = new Conf({cwd, watch: true});
 	const conf2 = new Conf({cwd});
 	conf1.set('foo', '👾');
@@ -930,7 +883,7 @@ test('`watch` option watches for config file changes by another process', async 
 });
 
 test('`watch` option watches for config file changes by file write', async t => {
-	const cwd = tempy.directory();
+	const cwd = temporaryDirectory();
 	const conf = new Conf({cwd, watch: true});
 	conf.set('foo', '🐴');
 
@@ -957,7 +910,7 @@ test('`watch` option watches for config file changes by file write', async t => 
 });
 
 test('migrations - should save the project version as the initial migrated version', t => {
-	const cwd = tempy.directory();
+	const cwd = temporaryDirectory();
 
 	const conf = new Conf({cwd, projectVersion: '0.0.2', migrations: {}});
 
@@ -965,12 +918,12 @@ test('migrations - should save the project version as the initial migrated versi
 });
 
 test('migrations - should save the project version when a migration occurs', t => {
-	const cwd = tempy.directory();
+	const cwd = temporaryDirectory();
 
 	const migrations = {
-		'0.0.3': (store: Conf) => {
+		'0.0.3'(store: Conf) {
 			store.set('foo', 'cool stuff');
-		}
+		},
 	};
 
 	const conf = new Conf({cwd, projectVersion: '0.0.2', migrations});
@@ -984,12 +937,12 @@ test('migrations - should save the project version when a migration occurs', t =
 });
 
 test('migrations - should NOT run the migration when the version doesn\'t change', t => {
-	const cwd = tempy.directory();
+	const cwd = temporaryDirectory();
 
 	const migrations = {
-		'1.0.0': (store: Conf) => {
+		'1.0.0'(store: Conf) {
 			store.set('foo', 'cool stuff');
-		}
+		},
 	};
 
 	const conf = new Conf({cwd, projectVersion: '0.0.2', migrations});
@@ -1003,12 +956,12 @@ test('migrations - should NOT run the migration when the version doesn\'t change
 });
 
 test('migrations - should run the migration when the version changes', t => {
-	const cwd = tempy.directory();
+	const cwd = temporaryDirectory();
 
 	const migrations = {
-		'1.0.0': (store: Conf) => {
+		'1.0.0'(store: Conf) {
 			store.set('foo', 'cool stuff');
-		}
+		},
 	};
 
 	const conf = new Conf({cwd, projectVersion: '0.0.2', migrations});
@@ -1023,11 +976,11 @@ test('migrations - should run the migration when the version changes', t => {
 });
 
 test('migrations - should run the migration when the version uses semver comparisons', t => {
-	const cwd = tempy.directory();
+	const cwd = temporaryDirectory();
 	const migrations = {
-		'>=1.0': (store: Conf) => {
+		'>=1.0'(store: Conf) {
 			store.set('foo', 'cool stuff');
-		}
+		},
 	};
 
 	const conf = new Conf({cwd, projectVersion: '1.0.2', migrations});
@@ -1036,14 +989,14 @@ test('migrations - should run the migration when the version uses semver compari
 });
 
 test('migrations - should run the migration when the version uses multiple semver comparisons', t => {
-	const cwd = tempy.directory();
+	const cwd = temporaryDirectory();
 	const migrations = {
-		'>=1.0': (store: Conf) => {
+		'>=1.0'(store: Conf) {
 			store.set('foo', 'cool stuff');
 		},
-		'>2.0.0': (store: Conf) => {
+		'>2.0.0'(store: Conf) {
 			store.set('foo', 'modern cool stuff');
-		}
+		},
 	};
 
 	const conf = new Conf({cwd, projectVersion: '1.0.2', migrations});
@@ -1056,19 +1009,19 @@ test('migrations - should run the migration when the version uses multiple semve
 });
 
 test('migrations - should run all valid migrations when the version uses multiple semver comparisons', t => {
-	const cwd = tempy.directory();
+	const cwd = temporaryDirectory();
 	const migrations = {
-		'>=1.0': (store: Conf) => {
+		'>=1.0'(store: Conf) {
 			store.set('foo', 'cool stuff');
 		},
-		'>2.0.0': (store: Conf) => {
+		'>2.0.0'(store: Conf) {
 			store.set('woof', 'oof');
 			store.set('medium', 'yes');
 		},
-		'<3.0.0': (store: Conf) => {
+		'<3.0.0'(store: Conf) {
 			store.set('woof', 'woof');
 			store.set('heart', '❤');
-		}
+		},
 	};
 
 	const conf = new Conf({cwd, projectVersion: '2.4.0', migrations});
@@ -1080,19 +1033,19 @@ test('migrations - should run all valid migrations when the version uses multipl
 });
 
 test('migrations - should cleanup migrations with non-numeric values', t => {
-	const cwd = tempy.directory();
+	const cwd = temporaryDirectory();
 	const migrations = {
-		'1.0.1-alpha': (store: Conf) => {
+		'1.0.1-alpha'(store: Conf) {
 			store.set('foo', 'cool stuff');
 		},
-		'>2.0.0-beta': (store: Conf) => {
+		'>2.0.0-beta'(store: Conf) {
 			store.set('woof', 'oof');
 			store.set('medium', 'yes');
 		},
-		'<3.0.0': (store: Conf) => {
+		'<3.0.0'(store: Conf) {
 			store.set('woof', 'woof');
 			store.set('heart', '❤');
-		}
+		},
 	};
 
 	const conf = new Conf({cwd, projectVersion: '2.4.0', migrations});
@@ -1103,25 +1056,8 @@ test('migrations - should cleanup migrations with non-numeric values', t => {
 	t.is(conf.get('heart'), '❤');
 });
 
-test('migrations - should infer the applicationVersion from the package.json when it isn\'t specified', async t => {
-	const cwd = tempy.directory();
-
-	const conf = new Conf({
-		cwd, migrations: {
-			'2000.0.0': (store: Conf) => {
-				store.set('foo', 'bar');
-			}
-		}
-	});
-
-	t.false(conf.has('foo'));
-
-	const {packageJson} = (await readPkgUp())!;
-	t.is(conf.get('__internal__.migrations.version'), packageJson.version);
-});
-
 test('migrations - should NOT throw an error when project version is unspecified but there are no migrations', t => {
-	const cwd = tempy.directory();
+	const cwd = temporaryDirectory();
 
 	t.notThrows(() => {
 		const conf = new Conf({cwd});
@@ -1130,33 +1066,33 @@ test('migrations - should NOT throw an error when project version is unspecified
 });
 
 test('migrations - should not create the previous migration key if the migrations aren\'t needed', t => {
-	const cwd = tempy.directory();
+	const cwd = temporaryDirectory();
 
 	const conf = new Conf({cwd});
 	t.false(conf.has('__internal__.migrations.version'));
 });
 
 test('migrations error handling - should rollback changes if a migration failed', t => {
-	const cwd = tempy.directory();
+	const cwd = temporaryDirectory();
 
 	const failingMigrations = {
-		'1.0.0': (store: Conf) => {
+		'1.0.0'(store: Conf) {
 			store.set('foo', 'initial update');
 		},
-		'1.0.1': (store: Conf) => {
+		'1.0.1'(store: Conf) {
 			store.set('foo', 'updated before crash');
 
 			throw new Error('throw the migration and rollback');
 
 			// eslint-disable-next-line no-unreachable
 			store.set('foo', 'can you reach here?');
-		}
+		},
 	};
 
 	const passingMigrations = {
-		'1.0.0': (store: Conf) => {
+		'1.0.0'(store: Conf) {
 			store.set('foo', 'initial update');
-		}
+		},
 	};
 
 	let conf = new Conf({cwd, projectVersion: '1.0.0', migrations: passingMigrations});
@@ -1171,7 +1107,7 @@ test('migrations error handling - should rollback changes if a migration failed'
 });
 
 test('__internal__ keys - should not be accessible by the user', t => {
-	const cwd = tempy.directory();
+	const cwd = temporaryDirectory();
 
 	const conf = new Conf({cwd});
 
@@ -1181,21 +1117,21 @@ test('__internal__ keys - should not be accessible by the user', t => {
 });
 
 test('__internal__ keys - should not be accessible by the user even without dot notation', t => {
-	const cwd = tempy.directory();
+	const cwd = temporaryDirectory();
 
 	const conf = new Conf({cwd, accessPropertiesByDotNotation: false});
 
 	t.throws(() => {
 		conf.set({
 			__internal__: {
-				'you-shall': 'not-pass'
-			}
+				'you-shall': 'not-pass',
+			},
 		});
 	}, {message: /Please don't use the __internal__ key/});
 });
 
 test('__internal__ keys - should only match specific "__internal__" entry', t => {
-	const cwd = tempy.directory();
+	const cwd = temporaryDirectory();
 
 	const conf = new Conf({cwd});
 
@@ -1206,16 +1142,16 @@ test('__internal__ keys - should only match specific "__internal__" entry', t =>
 
 test('beforeEachMigration - should be called before every migration', t => {
 	const conf = new Conf({
-		cwd: tempy.directory(),
+		cwd: temporaryDirectory(),
 		projectVersion: '2.0.0',
-		beforeEachMigration: (store, context) => {
+		beforeEachMigration(store, context) {
 			store.set(`beforeEachMigration ${context.fromVersion} → ${context.toVersion}`, true);
 		},
 		migrations: {
-			'1.0.0': () => {},
-			'1.0.1': () => {},
-			'2.0.1': () => {}
-		}
+			'1.0.0'() {},
+			'1.0.1'() {},
+			'2.0.1'() {},
+		},
 	});
 
 	t.true(conf.get('beforeEachMigration 0.0.0 → 1.0.0'));

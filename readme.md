@@ -11,16 +11,16 @@ I initially made this tool to let command-line tools persist some data.
 
 ## Install
 
-```
-$ npm install conf
+```sh
+npm install conf
 ```
 
 ## Usage
 
 ```js
-const Conf = require('conf');
+import Conf from 'conf';
 
-const config = new Conf();
+const config = new Conf({projectName: 'foo'});
 
 config.set('unicorn', '🦄');
 console.log(config.get('unicorn'));
@@ -71,7 +71,7 @@ You should define your schema as an object where each key is the name of your da
 Example:
 
 ```js
-const Conf = require('conf');
+import Conf from 'conf';
 
 const schema = {
 	foo: {
@@ -86,7 +86,10 @@ const schema = {
 	}
 };
 
-const config = new Conf({schema});
+const config = new Conf({
+	projectName: 'foo',
+	schema
+});
 
 console.log(config.get('foo'));
 //=> 50
@@ -108,9 +111,11 @@ The `migrations` object should consist of a key-value pair of `'version': handle
 Example:
 
 ```js
-const Conf = require('conf');
+import Conf from 'conf';
 
 const store = new Conf({
+	projectName: 'foo',
+	projectVersion: …,
 	migrations: {
 		'0.0.1': store => {
 			store.set('debugPhase', true);
@@ -150,11 +155,12 @@ This can be useful for logging purposes, preparing migration data, etc.
 Example:
 
 ```js
-const Conf = require('conf');
+import Conf from 'conf';
 
 console.log = someLogger.log;
 
 const mainConfig = new Conf({
+	projectName: 'foo1',
 	beforeEachMigration: (store, context) => {
 		console.log(`[main-config] migrate from ${context.fromVersion} → ${context.toVersion}`);
 	},
@@ -166,6 +172,7 @@ const mainConfig = new Conf({
 });
 
 const secondConfig = new Conf({
+	projectName: 'foo2',
 	beforeEachMigration: (store, context) => {
 		console.log(`[second-config] migrate from ${context.fromVersion} → ${context.toVersion}`);
 	},
@@ -188,17 +195,19 @@ Useful if you need multiple config files for your app or module. For example, di
 
 #### projectName
 
-Type: `string`\
-Default: The `name` field in the package.json closest to where `conf` is imported.
+Type: `string`
 
-You only need to specify this if you don't have a package.json file in your project or if it doesn't have a name defined within it.
+**Required unless you specify the `cwd` option.**
+
+You can fetch the `name` field from package.json.
 
 #### projectVersion
 
 Type: `string`\
-Default: The `version` field in the package.json closest to where `conf` is imported.
 
-You only need to specify this if you don't have a package.json file in your project or if it doesn't have a version defined within it.
+**Required if you specify the `migration` option.**
+
+You can fetch the `version` field from package.json.
 
 #### cwd
 
@@ -277,9 +286,9 @@ Default: `true`
 Accessing nested properties by dot notation. For example:
 
 ```js
-const Conf = require('conf');
+import Conf from 'conf';
 
-const config = new Conf();
+const config = new Conf({projectName: 'foo'});
 
 config.set({
 	foo: {
@@ -296,9 +305,12 @@ console.log(config.get('foo.bar.foobar'));
 Alternatively, you can set this option to `false` so the whole string would be treated as one key.
 
 ```js
-const Conf = require('conf');
+import Conf from 'conf';
 
-const config = new Conf({accessPropertiesByDotNotation: false});
+const config = new Conf({
+	projectName: 'foo',
+	accessPropertiesByDotNotation: false
+});
 
 config.set({
 	`foo.bar.foobar`: '🦄'
@@ -429,10 +441,11 @@ The `serialize` and `deserialize` options can be used to customize the format of
 Example using YAML:
 
 ```js
-const Conf = require('conf');
+import Conf from 'conf';
 const yaml = require('js-yaml');
 
 const config = new Conf({
+	projectName: 'foo',
 	fileExtension: 'yaml',
 	serialize: yaml.safeDump,
 	deserialize: yaml.safeLoad

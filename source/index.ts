@@ -1,45 +1,46 @@
-import {isDeepStrictEqual} from 'util';
-import fs = require('fs');
-import path = require('path');
-import crypto = require('crypto');
-import assert = require('assert');
-import {EventEmitter} from 'events';
-import dotProp = require('dot-prop');
-import pkgUp = require('pkg-up');
-import envPaths = require('env-paths');
-import atomically = require('atomically');
-import Ajv, {ValidateFunction as AjvValidateFunction} from 'ajv';
-import ajvFormats from 'ajv-formats';
-import debounceFn = require('debounce-fn');
-import semver = require('semver');
-import onetime = require('onetime');
-import {JSONSchema} from 'json-schema-typed';
-import {Deserialize, Migrations, OnDidChangeCallback, Options, Serialize, Unsubscribe, Schema, OnDidAnyChangeCallback, BeforeEachMigrationCallback} from './types';
+/* eslint-disable @typescript-eslint/naming-convention, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-redundant-type-constituents */
+import {isDeepStrictEqual} from 'node:util';
+import process from 'node:process';
+import {Buffer} from 'node:buffer';
+import fs from 'node:fs';
+import path from 'node:path';
+import crypto from 'node:crypto';
+import assert from 'node:assert';
+import {EventEmitter} from 'node:events';
+import {getProperty, hasProperty, setProperty, deleteProperty} from 'dot-prop';
+import envPaths from 'env-paths';
+import {writeFileSync as atomicWriteFileSync} from 'atomically';
+import AjvModule, {type ValidateFunction as AjvValidateFunction} from 'ajv';
+import ajvFormatsModule from 'ajv-formats';
+import debounceFn from 'debounce-fn';
+import semver from 'semver';
+import {type JSONSchema} from 'json-schema-typed';
+import {
+	type Deserialize,
+	type Migrations,
+	type OnDidChangeCallback,
+	type Options,
+	type Serialize,
+	type Unsubscribe,
+	type OnDidAnyChangeCallback,
+	type BeforeEachMigrationCallback,
+} from './types.js';
+
+// FIXME: https://github.com/ajv-validator/ajv/issues/2047
+const Ajv = AjvModule.default;
+const ajvFormats = ajvFormatsModule.default;
 
 const encryptionAlgorithm = 'aes-256-cbc';
 
-const createPlainObject = <T = Record<string, unknown>>(): T => {
-	return Object.create(null);
-};
+const createPlainObject = <T = Record<string, unknown>>(): T => Object.create(null);
 
-const isExist = <T = unknown>(data: T): boolean => {
-	return data !== undefined && data !== null;
-};
-
-let parentDir = '';
-try {
-// Prevent caching of this module so module.parent is always accurate.
-// Note: This trick won't work with ESM or inside a webworker
-// eslint-disable-next-line @typescript-eslint/no-dynamic-delete
-	delete require.cache[__filename];
-	parentDir = path.dirname(module.parent?.filename ?? '.');
-} catch {}
+const isExist = <T = unknown>(data: T): boolean => data !== undefined && data !== null;
 
 const checkValueType = (key: string, value: unknown): void => {
 	const nonJsonTypes = new Set([
 		'undefined',
 		'symbol',
-		'function'
+		'function',
 	]);
 
 	const type = typeof value;
@@ -52,7 +53,7 @@ const checkValueType = (key: string, value: unknown): void => {
 const INTERNAL_KEY = '__internal__';
 const MIGRATION_KEY = `${INTERNAL_KEY}.migrations.version`;
 
-class Conf<T extends Record<string, any> = Record<string, unknown>> implements Iterable<[keyof T, T[keyof T]]> {
+export default class Conf<T extends Record<string, any> = Record<string, unknown>> implements Iterable<[keyof T, T[keyof T]]> {
 	readonly path: string;
 	readonly events: EventEmitter;
 	readonly #validator?: AjvValidateFunction;
@@ -68,25 +69,12 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 			clearInvalidConfig: false,
 			accessPropertiesByDotNotation: true,
 			configFileMode: 0o666,
-			...partialOptions
+			...partialOptions,
 		};
-
-		const getPackageData = onetime(() => {
-			const packagePath = pkgUp.sync({cwd: parentDir});
-			// Can't use `require` because of Webpack being annoying:
-			// https://github.com/webpack/webpack/issues/196
-			const packageData = packagePath && JSON.parse(fs.readFileSync(packagePath, 'utf8'));
-
-			return packageData ?? {};
-		});
 
 		if (!options.cwd) {
 			if (!options.projectName) {
-				options.projectName = getPackageData().name;
-			}
-
-			if (!options.projectName) {
-				throw new Error('Project name could not be inferred. Please specify the `projectName` option.');
+				throw new Error('Please specify the `projectName` option.');
 			}
 
 			options.cwd = envPaths(options.projectName, {suffix: options.projectSuffix}).config;
@@ -101,20 +89,20 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 
 			const ajv = new Ajv({
 				allErrors: true,
-				useDefaults: true
+				useDefaults: true,
 			});
 			ajvFormats(ajv);
 
 			const schema: JSONSchema = {
 				type: 'object',
-				properties: options.schema
+				properties: options.schema,
 			};
 
 			this.#validator = ajv.compile(schema);
 
-			for (const [key, value] of Object.entries<JSONSchema>(options.schema)) {
+			for (const [key, value] of Object.entries(options.schema) as any) { // TODO: Remove the `as any`.
 				if (value?.default) {
-					this.#defaultValues[key as keyof T] = value.default;
+					this.#defaultValues[key as keyof T] = value.default; // eslint-disable-line @typescript-eslint/no-unsafe-assignment
 				}
 			}
 		}
@@ -122,7 +110,7 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 		if (options.defaults) {
 			this.#defaultValues = {
 				...this.#defaultValues,
-				...options.defaults
+				...options.defaults,
 			};
 		}
 
@@ -156,11 +144,7 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 
 		if (options.migrations) {
 			if (!options.projectVersion) {
-				options.projectVersion = getPackageData().version;
-			}
-
-			if (!options.projectVersion) {
-				throw new Error('Project version could not be inferred. Please specify the `projectVersion` option.');
+				throw new Error('Please specify the `projectVersion` option.');
 			}
 
 			this._migrate(options.migrations, options.projectVersion, options.beforeEachMigration);
@@ -214,7 +198,7 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 		const set = (key: string, value?: T[Key] | T | unknown): void => {
 			checkValueType(key, value);
 			if (this.#options.accessPropertiesByDotNotation) {
-				dotProp.set(store, key, value);
+				setProperty(store, key, value);
 			} else {
 				store[key as Key] = value as T[Key];
 			}
@@ -239,7 +223,7 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 	*/
 	has<Key extends keyof T>(key: Key | string): boolean {
 		if (this.#options.accessPropertiesByDotNotation) {
-			return dotProp.has(this.store, key as string);
+			return hasProperty(this.store, key as string);
 		}
 
 		return (key as string) in this.store;
@@ -268,7 +252,7 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 	delete<Key extends keyof T>(key: Key): void {
 		const {store} = this;
 		if (this.#options.accessPropertiesByDotNotation) {
-			dotProp.delete(store, key as string);
+			deleteProperty(store, key as string);
 		} else {
 			// eslint-disable-next-line @typescript-eslint/no-dynamic-delete
 			delete store[key];
@@ -299,7 +283,7 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 	*/
 	onDidChange<Key extends keyof T>(
 		key: Key,
-		callback: OnDidChangeCallback<T[Key]>
+		callback: OnDidChangeCallback<T[Key]>,
 	): Unsubscribe {
 		if (typeof key !== 'string') {
 			throw new TypeError(`Expected \`key\` to be of type \`string\`, got ${typeof key}`);
@@ -319,7 +303,7 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 	@returns A function, that when called, will unsubscribe.
 	*/
 	onDidAnyChange(
-		callback: OnDidAnyChangeCallback<T>
+		callback: OnDidAnyChangeCallback<T>,
 	): Unsubscribe {
 		if (typeof callback !== 'function') {
 			throw new TypeError(`Expected \`callback\` to be of type \`function\`, got ${typeof callback}`);
@@ -339,13 +323,13 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 			const deserializedData = this._deserialize(dataString);
 			this._validate(deserializedData);
 			return Object.assign(createPlainObject(), deserializedData);
-		} catch (error: any) {
-			if (error?.code === 'ENOENT') {
+		} catch (error: unknown) {
+			if ((error as any)?.code === 'ENOENT') {
 				this._ensureDirectory();
 				return createPlainObject();
 			}
 
-			if (this.#options.clearInvalidConfig && error.name === 'SyntaxError') {
+			if (this.#options.clearInvalidConfig && (error as Error).name === 'SyntaxError') {
 				return createPlainObject();
 			}
 
@@ -379,7 +363,7 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 				try {
 					if (data.slice(16, 17).toString() === ':') {
 						const initializationVector = data.slice(0, 16);
-						const password = crypto.pbkdf2Sync(this.#encryptionKey, initializationVector.toString(), 10000, 32, 'sha512');
+						const password = crypto.pbkdf2Sync(this.#encryptionKey, initializationVector.toString(), 10_000, 32, 'sha512');
 						const decipher = crypto.createDecipheriv(encryptionAlgorithm, password, initializationVector);
 						data = Buffer.concat([decipher.update(Buffer.from(data.slice(17))), decipher.final()]).toString('utf8');
 					} else {
@@ -406,7 +390,7 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 
 	private _handleChange<Key extends keyof T>(
 		getter: () => T | T[Key] | undefined,
-		callback: OnDidAnyChangeCallback<T | T[Key]> | OnDidChangeCallback<T | T[Key]>
+		callback: OnDidAnyChangeCallback<T | T[Key]> | OnDidChangeCallback<T | T[Key]>,
 	): Unsubscribe {
 		let currentValue = getter();
 
@@ -454,7 +438,7 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 
 		if (this.#encryptionKey) {
 			const initializationVector = crypto.randomBytes(16);
-			const password = crypto.pbkdf2Sync(this.#encryptionKey, initializationVector.toString(), 10000, 32, 'sha512');
+			const password = crypto.pbkdf2Sync(this.#encryptionKey, initializationVector.toString(), 10_000, 32, 'sha512');
 			const cipher = crypto.createCipheriv(encryptionAlgorithm, password, initializationVector);
 			data = Buffer.concat([initializationVector, Buffer.from(':'), cipher.update(Buffer.from(data)), cipher.final()]);
 		}
@@ -465,12 +449,12 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 			fs.writeFileSync(this.path, data, {mode: this.#options.configFileMode});
 		} else {
 			try {
-				atomically.writeFileSync(this.path, data, {mode: this.#options.configFileMode});
-			} catch (error: any) {
+				atomicWriteFileSync(this.path, data, {mode: this.#options.configFileMode});
+			} catch (error: unknown) {
 				// Fix for https://github.com/sindresorhus/electron-store/issues/106
 				// Sometimes on Windows, we will get an EXDEV error when atomic writing
 				// (even though to the same directory), so we fall back to non atomic write
-				if (error?.code === 'EXDEV') {
+				if ((error as any)?.code === 'EXDEV') {
 					fs.writeFileSync(this.path, data, {mode: this.#options.configFileMode});
 					return;
 				}
@@ -514,22 +498,22 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 						fromVersion: previousMigratedVersion,
 						toVersion: version,
 						finalVersion: versionToMigrate,
-						versions: newerVersions
+						versions: newerVersions,
 					});
 				}
 
 				const migration = migrations[version];
-				migration(this);
+				migration?.(this);
 
 				this._set(MIGRATION_KEY, version);
 
 				previousMigratedVersion = version;
 				storeBackup = {...this.store};
-			} catch (error) {
+			} catch (error: unknown) {
 				this.store = storeBackup;
 
 				throw new Error(
-					`Something went wrong during the migration! Changes applied to the store until this failed migration will be restored. ${error as string}`
+					`Something went wrong during the migration! Changes applied to the store until this failed migration will be restored. ${error as string}`,
 				);
 			}
 		}
@@ -590,21 +574,15 @@ class Conf<T extends Record<string, any> = Record<string, unknown>> implements I
 	private _get<Key extends keyof T>(key: Key): T[Key] | undefined;
 	private _get<Key extends keyof T, Default = unknown>(key: Key, defaultValue: Default): T[Key] | Default;
 	private _get<Key extends keyof T, Default = unknown>(key: Key | string, defaultValue?: Default): Default | undefined {
-		return dotProp.get<T[Key] | undefined>(this.store, key as string, defaultValue as T[Key]);
+		return getProperty(this.store, key as string, defaultValue as T[Key]);
 	}
 
 	private _set(key: string, value: unknown): void {
 		const {store} = this;
-		dotProp.set(store, key, value);
+		setProperty(store, key, value);
 
 		this.store = store;
 	}
 }
 
-export {Schema, Options};
-
-export default Conf;
-
-// For CommonJS default export support
-module.exports = Conf;
-module.exports.default = Conf;
+export type {Options, Schema} from './types.js';
