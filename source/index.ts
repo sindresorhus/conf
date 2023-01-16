@@ -357,22 +357,12 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 			return data.toString();
 		}
 
+		// Check if an initialization vector has been used to encrypt the data.
 		try {
-			// Check if an initialization vector has been used to encrypt the data
-			if (this.#encryptionKey) {
-				try {
-					if (data.slice(16, 17).toString() === ':') {
-						const initializationVector = data.slice(0, 16);
-						const password = crypto.pbkdf2Sync(this.#encryptionKey, initializationVector.toString(), 10_000, 32, 'sha512');
-						const decipher = crypto.createDecipheriv(encryptionAlgorithm, password, initializationVector);
-						data = Buffer.concat([decipher.update(Buffer.from(data.slice(17))), decipher.final()]).toString('utf8');
-					} else {
-						// TODO: Remove this in the next major version.
-						const decipher = crypto.createDecipher(encryptionAlgorithm, this.#encryptionKey);
-						data = Buffer.concat([decipher.update(Buffer.from(data)), decipher.final()]).toString('utf8');
-					}
-				} catch {}
-			}
+			const initializationVector = data.slice(0, 16);
+			const password = crypto.pbkdf2Sync(this.#encryptionKey, initializationVector.toString(), 10_000, 32, 'sha512');
+			const decipher = crypto.createDecipheriv(encryptionAlgorithm, password, initializationVector);
+			return Buffer.concat([decipher.update(Buffer.from(data.slice(17))), decipher.final()]).toString('utf8');
 		} catch {}
 
 		return data.toString();

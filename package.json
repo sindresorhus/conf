@@ -60,7 +60,6 @@
 		"@types/node": "^18.11.18",
 		"@types/semver": "^7.3.13",
 		"ava": "^5.1.0",
-		"clear-module": "^4.1.2",
 		"del": "^7.0.0",
 		"del-cli": "^5.0.0",
 		"delay": "^5.0.0",
