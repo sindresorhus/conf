@@ -15,6 +15,7 @@
 		"types": "./dist/source/index.d.ts",
 		"default": "./dist/source/index.js"
 	},
+	"main": "./dist/source/index.js",
 	"engines": {
 		"node": ">=14.16"
 	},
