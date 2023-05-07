@@ -104,6 +104,8 @@ config.set('foo', '1');
 
 Type: `object`
 
+**Important: I cannot provide support for this feature. It has some known bugs. I have no plans to work on it, but pull requests are welcome.**
+
 You can use migrations to perform operations to the store whenever a **project version** is upgraded.
 
 The `migrations` object should consist of a key-value pair of `'version': handler`. The `version` can also be a [semver range](https://github.com/npm/node-semver#ranges).
@@ -442,7 +444,7 @@ Example using YAML:
 
 ```js
 import Conf from 'conf';
-const yaml = require('js-yaml');
+import yaml from 'js-yaml';
 
 const config = new Conf({
 	projectName: 'foo',
