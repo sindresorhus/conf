@@ -249,7 +249,12 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 
 	@param key - The key of the item to delete.
 	*/
-	delete<Key extends keyof T>(key: Key): void {
+	delete<Key extends keyof T>(key: Key): T[Key];
+	delete<Key extends keyof T>(key: Key, defaultValue: Required<T>[Key]): Required<T>[Key];
+	// This overload is used for dot-notation access.
+	// We exclude `keyof T` as an incorrect type for the default value should not fall through to this overload.
+	delete<Key extends string, Value = unknown>(key: Exclude<Key, keyof T>, defaultValue?: Value): Value;
+	delete(key: string): void {
 		const {store} = this;
 		if (this.#options.accessPropertiesByDotNotation) {
 			deleteProperty(store, key as string);
