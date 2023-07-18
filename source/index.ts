@@ -253,7 +253,7 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 	delete(key: string): void {
 		const {store} = this;
 		if (this.#options.accessPropertiesByDotNotation) {
-			deleteProperty(store, key as string);
+			deleteProperty(store, key);
 		} else {
 			// eslint-disable-next-line @typescript-eslint/no-dynamic-delete
 			delete store[key];
