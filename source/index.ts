@@ -249,7 +249,8 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 
 	@param key - The key of the item to delete.
 	*/
-	delete<Key extends keyof T>(key: Key): void {
+	delete<Key extends keyof T>(key: Key): void;
+	delete(key: string): void {
 		const {store} = this;
 		if (this.#options.accessPropertiesByDotNotation) {
 			deleteProperty(store, key as string);
