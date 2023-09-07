@@ -50,6 +50,8 @@ const checkValueType = (key: string, value: unknown): void => {
 	}
 };
 
+const deepClone = <T>(obj: T): T => JSON.parse(JSON.stringify(obj));
+
 const INTERNAL_KEY = '__internal__';
 const MIGRATION_KEY = `${INTERNAL_KEY}.migrations.version`;
 
@@ -60,6 +62,7 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 	readonly #encryptionKey?: string | Buffer | NodeJS.TypedArray | DataView;
 	readonly #options: Readonly<Partial<Options<T>>>;
 	readonly #defaultValues: Partial<T> = {};
+	#state?: T
 
 	constructor(partialOptions: Readonly<Partial<Options<T>>> = {}) {
 		const options: Partial<Options<T>> = {
@@ -318,6 +321,7 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 	}
 
 	get store(): T {
+		if(this.#state) return deepClone(this.#state)
 		try {
 			const data = fs.readFileSync(this.path, this.#encryptionKey ? null : 'utf8');
 			const dataString = this._encryptData(data);
@@ -343,6 +347,7 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 
 		this._validate(value);
 		this._write(value);
+		this.#state = value
 
 		this.events.emit('change');
 	}
