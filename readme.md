@@ -100,7 +100,7 @@ config.set('foo', '1');
 
 **Note:** The `default` value will be overwritten by the `defaults` option if set.
 
-### migrations
+#### migrations
 
 Type: `object`
 
@@ -138,7 +138,7 @@ const store = new Conf({
 
 > Note: The version the migrations use refers to the **project version** by default. If you want to change this behavior, specify the [`projectVersion`](#projectVersion) option.
 
-### beforeEachMigration
+#### beforeEachMigration
 
 Type: `Function`\
 Default: `undefined`
