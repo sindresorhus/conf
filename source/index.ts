@@ -360,7 +360,7 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 
 	private _encryptData(data: string | Uint8Array): string {
 		if (!this.#encryptionKey) {
-			return typeof data === 'string' ? string : uint8ArrayToString(data);
+			return typeof data === 'string' ? data : uint8ArrayToString(data);
 		}
 
 		// Check if an initialization vector has been used to encrypt the data.
