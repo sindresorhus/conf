@@ -1,11 +1,10 @@
-/* eslint-disable @typescript-eslint/naming-convention, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-redundant-type-constituents */
+/* eslint-disable @typescript-eslint/naming-convention, @typescript-eslint/no-unsafe-return */
 import {isDeepStrictEqual} from 'node:util';
 import process from 'node:process';
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import assert from 'node:assert';
-import {EventEmitter} from 'node:events';
 import {getProperty, hasProperty, setProperty, deleteProperty} from 'dot-prop';
 import envPaths from 'env-paths';
 import {writeFileSync as atomicWriteFileSync} from 'atomically';
@@ -16,7 +15,6 @@ import semver from 'semver';
 import {type JSONSchema} from 'json-schema-typed';
 import {
 	concatUint8Arrays,
-	isUint8Array,
 	stringToUint8Array,
 	uint8ArrayToString,
 } from 'uint8array-extras';
@@ -60,7 +58,7 @@ const MIGRATION_KEY = `${INTERNAL_KEY}.migrations.version`;
 
 export default class Conf<T extends Record<string, any> = Record<string, unknown>> implements Iterable<[keyof T, T[keyof T]]> {
 	readonly path: string;
-	readonly events: EventEmitter;
+	readonly events: EventTarget;
 	readonly #validator?: AjvValidateFunction;
 	readonly #encryptionKey?: string | Uint8Array | NodeJS.TypedArray | DataView;
 	readonly #options: Readonly<Partial<Options<T>>>;
@@ -127,7 +125,7 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 			this._deserialize = options.deserialize;
 		}
 
-		this.events = new EventEmitter();
+		this.events = new EventTarget();
 		this.#encryptionKey = options.encryptionKey;
 
 		const fileExtension = options.fileExtension ? `.${options.fileExtension}` : '';
@@ -349,7 +347,7 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 		this._validate(value);
 		this._write(value);
 
-		this.events.emit('change');
+		this.events.dispatchEvent(new Event('change'));
 	}
 
 	* [Symbol.iterator](): IterableIterator<[keyof T, T[keyof T]]> {
@@ -369,7 +367,7 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 			const password = crypto.pbkdf2Sync(this.#encryptionKey, initializationVector.toString(), 10_000, 32, 'sha512');
 			const decipher = crypto.createDecipheriv(encryptionAlgorithm, password, initializationVector);
 			const slice = data.slice(17);
-			const dataUpdate = isUint8Array(slice) ? slice : stringToUint8Array(slice);
+			const dataUpdate = typeof slice === 'string' ? stringToUint8Array(slice) : slice;
 			return uint8ArrayToString(concatUint8Arrays([decipher.update(dataUpdate), decipher.final()]));
 		} catch {}
 
@@ -404,8 +402,11 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 			callback.call(this, newValue, oldValue);
 		};
 
-		this.events.on('change', onChange);
-		return () => this.events.removeListener('change', onChange);
+		this.events.addEventListener('change', onChange);
+
+		return () => {
+			this.events.removeEventListener('change', onChange);
+		};
 	}
 
 	private readonly _deserialize: Deserialize<T> = value => JSON.parse(value);
@@ -472,11 +473,11 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 		if (process.platform === 'win32') {
 			fs.watch(this.path, {persistent: false}, debounceFn(() => {
 			// On Linux and Windows, writing to the config file emits a `rename` event, so we skip checking the event type.
-				this.events.emit('change');
+				this.events.dispatchEvent(new Event('change'));
 			}, {wait: 100}));
 		} else {
 			fs.watchFile(this.path, {persistent: false}, debounceFn(() => {
-				this.events.emit('change');
+				this.events.dispatchEvent(new Event('change'));
 			}, {wait: 5000}));
 		}
 	}

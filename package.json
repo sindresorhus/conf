@@ -16,8 +16,9 @@
 		"default": "./dist/source/index.js"
 	},
 	"engines": {
-		"node": ">=14.16"
+		"node": ">=18"
 	},
+	"sideEffects": false,
 	"scripts": {
 		"test": "xo && npm run build && ava",
 		"build": "del-cli dist && tsc",
@@ -48,30 +49,29 @@
 	"dependencies": {
 		"ajv": "^8.12.0",
 		"ajv-formats": "^2.1.1",
-		"atomically": "^2.0.0",
+		"atomically": "^2.0.2",
 		"debounce-fn": "^5.1.2",
-		"dot-prop": "^7.2.0",
+		"dot-prop": "^8.0.2",
 		"env-paths": "^3.0.0",
 		"json-schema-typed": "^8.0.1",
-		"semver": "^7.3.8",
-		"uint8array-extras": "^0.2.0"
+		"semver": "^7.5.4",
+		"uint8array-extras": "^0.3.0"
 	},
 	"devDependencies": {
-		"@sindresorhus/tsconfig": "^3.0.1",
-		"@types/node": "^18.11.18",
-		"@types/semver": "^7.3.13",
-		"ava": "^5.1.0",
-		"del": "^7.0.0",
-		"del-cli": "^5.0.0",
-		"delay": "^5.0.0",
-		"p-event": "^5.0.1",
-		"tempy": "^3.0.0",
+		"@sindresorhus/tsconfig": "^5.0.0",
+		"@types/node": "^20.8.8",
+		"@types/semver": "^7.5.4",
+		"ava": "^5.3.1",
+		"del": "^7.1.0",
+		"del-cli": "^5.1.0",
+		"delay": "^6.0.0",
+		"p-event": "^6.0.0",
+		"tempy": "^3.1.0",
 		"ts-node": "^10.9.1",
-		"tsd": "^0.28.1",
-		"typescript": "^5.1.6",
-		"xo": "^0.54.0"
+		"tsd": "^0.29.0",
+		"typescript": "^5.2.2",
+		"xo": "^0.56.0"
 	},
-	"sideEffects": false,
 	"ava": {
 		"files": [
 			"test/*",

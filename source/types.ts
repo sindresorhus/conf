@@ -1,4 +1,3 @@
-import {type EventEmitter} from 'node:events';
 import {type JSONSchema as TypedJSONSchema} from 'json-schema-typed';
 // eslint-disable unicorn/import-index
 import type Conf from './index.js';
@@ -259,4 +258,4 @@ export type Deserialize<T> = (text: string) => T;
 export type OnDidChangeCallback<T> = (newValue?: T, oldValue?: T) => void;
 export type OnDidAnyChangeCallback<T> = (newValue?: Readonly<T>, oldValue?: Readonly<T>) => void;
 
-export type Unsubscribe = () => EventEmitter;
+export type Unsubscribe = () => void;
