@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/naming-convention, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-redundant-type-constituents */
 import {isDeepStrictEqual} from 'node:util';
 import process from 'node:process';
-import {Buffer} from 'node:buffer';
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
@@ -15,6 +14,12 @@ import ajvFormatsModule from 'ajv-formats';
 import debounceFn from 'debounce-fn';
 import semver from 'semver';
 import {type JSONSchema} from 'json-schema-typed';
+import {
+	concatUint8Arrays,
+	isUint8Array,
+	stringToUint8Array,
+	uint8ArrayToString,
+} from 'uint8array-extras';
 import {
 	type Deserialize,
 	type Migrations,
@@ -57,7 +62,7 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 	readonly path: string;
 	readonly events: EventEmitter;
 	readonly #validator?: AjvValidateFunction;
-	readonly #encryptionKey?: string | Buffer | NodeJS.TypedArray | DataView;
+	readonly #encryptionKey?: string | Uint8Array | NodeJS.TypedArray | DataView;
 	readonly #options: Readonly<Partial<Options<T>>>;
 	readonly #defaultValues: Partial<T> = {};
 
@@ -353,9 +358,9 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 		}
 	}
 
-	private _encryptData(data: string | Buffer): string {
+	private _encryptData(data: string | Uint8Array): string {
 		if (!this.#encryptionKey) {
-			return data.toString();
+			return isUint8Array(data) ? uint8ArrayToString(data) : data.toString();
 		}
 
 		// Check if an initialization vector has been used to encrypt the data.
@@ -363,7 +368,9 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 			const initializationVector = data.slice(0, 16);
 			const password = crypto.pbkdf2Sync(this.#encryptionKey, initializationVector.toString(), 10_000, 32, 'sha512');
 			const decipher = crypto.createDecipheriv(encryptionAlgorithm, password, initializationVector);
-			return Buffer.concat([decipher.update(Buffer.from(data.slice(17))), decipher.final()]).toString('utf8');
+			const slice = data.slice(17);
+			const dataUpdate = isUint8Array(slice) ? slice : stringToUint8Array(slice);
+			return uint8ArrayToString(concatUint8Arrays([decipher.update(dataUpdate), decipher.final()]));
 		} catch {}
 
 		return data.toString();
@@ -425,13 +432,13 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 	}
 
 	private _write(value: T): void {
-		let data: string | Buffer = this._serialize(value);
+		let data: string | Uint8Array = this._serialize(value);
 
 		if (this.#encryptionKey) {
 			const initializationVector = crypto.randomBytes(16);
 			const password = crypto.pbkdf2Sync(this.#encryptionKey, initializationVector.toString(), 10_000, 32, 'sha512');
 			const cipher = crypto.createCipheriv(encryptionAlgorithm, password, initializationVector);
-			data = Buffer.concat([initializationVector, Buffer.from(':'), cipher.update(Buffer.from(data)), cipher.final()]);
+			data = concatUint8Arrays([initializationVector, stringToUint8Array(':'), cipher.update(stringToUint8Array(data)), cipher.final()]);
 		}
 
 		// Temporary workaround for Conf being packaged in a Ubuntu Snap app.

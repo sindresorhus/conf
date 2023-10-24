@@ -1,4 +1,3 @@
-import {type Buffer} from 'node:buffer';
 import {type EventEmitter} from 'node:events';
 import {type JSONSchema as TypedJSONSchema} from 'json-schema-typed';
 // eslint-disable unicorn/import-index
@@ -132,7 +131,7 @@ export type Options<T extends Record<string, any>> = {
 
 	When specified, the store will be encrypted using the [`aes-256-cbc`](https://en.wikipedia.org/wiki/Block_cipher_mode_of_operation) encryption algorithm.
 	*/
-	encryptionKey?: string | Buffer | NodeJS.TypedArray | DataView;
+	encryptionKey?: string | Uint8Array | NodeJS.TypedArray | DataView;
 
 	/**
 	Extension of the config file.

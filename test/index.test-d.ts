@@ -1,5 +1,5 @@
 /* eslint-disable no-new, @typescript-eslint/naming-convention */
-import {Buffer} from 'node:buffer';
+import {stringToUint8Array} from 'uint8array-extras';
 import {expectType, expectAssignable, expectError} from 'tsd';
 import Conf from '../source/index.js';
 
@@ -23,7 +23,7 @@ new Conf<UnicornFoo>({configName: ''});
 new Conf<UnicornFoo>({projectName: 'foo'});
 new Conf<UnicornFoo>({cwd: ''});
 new Conf<UnicornFoo>({encryptionKey: ''});
-new Conf<UnicornFoo>({encryptionKey: Buffer.from('')});
+new Conf<UnicornFoo>({encryptionKey: stringToUint8Array('')});
 new Conf<UnicornFoo>({encryptionKey: new Uint8Array([1])});
 new Conf<UnicornFoo>({encryptionKey: new DataView(new ArrayBuffer(2))});
 new Conf<UnicornFoo>({fileExtension: '.foo'});
