@@ -53,7 +53,8 @@
 		"dot-prop": "^7.2.0",
 		"env-paths": "^3.0.0",
 		"json-schema-typed": "^8.0.1",
-		"semver": "^7.3.8"
+		"semver": "^7.3.8",
+		"uint8array-extras": "^0.2.0"
 	},
 	"devDependencies": {
 		"@sindresorhus/tsconfig": "^3.0.1",
