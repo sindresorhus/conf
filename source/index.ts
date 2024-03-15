@@ -281,7 +281,7 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 	/**
 	Watches the given `key`, calling `callback` on any changes.
 
-	@param key - The key wo watch.
+	@param key - The key to watch.
 	@param callback - A callback function that is called on any changes. When a `key` is first set `oldValue` will be `undefined`, and when a key is deleted `newValue` will be `undefined`.
 	@returns A function, that when called, will unsubscribe.
 	*/
