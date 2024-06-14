@@ -5,7 +5,12 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import assert from 'node:assert';
-import {getProperty, hasProperty, setProperty, deleteProperty} from 'dot-prop';
+import {
+	getProperty,
+	hasProperty,
+	setProperty,
+	deleteProperty,
+} from 'dot-prop';
 import envPaths from 'env-paths';
 import {writeFileSync as atomicWriteFileSync} from 'atomically';
 import AjvModule, {type ValidateFunction as AjvValidateFunction} from 'ajv';
