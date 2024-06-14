@@ -13,7 +13,7 @@ import {
 } from 'dot-prop';
 import envPaths from 'env-paths';
 import {writeFileSync as atomicWriteFileSync} from 'atomically';
-import AjvModule, {type ValidateFunction as AjvValidateFunction} from 'ajv';
+import {Ajv2020 as Ajv, type ValidateFunction as AjvValidateFunction} from 'ajv/dist/2020.js';
 import ajvFormatsModule from 'ajv-formats';
 import debounceFn from 'debounce-fn';
 import semver from 'semver';
@@ -35,7 +35,6 @@ import {
 } from './types.js';
 
 // FIXME: https://github.com/ajv-validator/ajv/issues/2047
-const Ajv = AjvModule.default;
 const ajvFormats = ajvFormatsModule.default;
 
 const encryptionAlgorithm = 'aes-256-cbc';
