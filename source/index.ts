@@ -146,6 +146,7 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 			this._migrate(options.migrations, options.projectVersion, options.beforeEachMigration);
 		}
 
+		// We defer validation until after migrations are applied so that the store can be updated to the current schema.
 		this._validate(store);
 
 		try {
