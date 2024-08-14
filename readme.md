@@ -205,7 +205,7 @@ You can fetch the `name` field from package.json.
 
 #### projectVersion
 
-Type: `string`\
+Type: `string`
 
 **Required if you specify the `migration` option.**
 
