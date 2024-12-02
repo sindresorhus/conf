@@ -787,6 +787,28 @@ test('schema - validate Conf default', t => {
 	}, {message: 'Config schema violation: `foo` must be string'});
 });
 
+test('schema - rootSchema without schema', t => {
+	t.throws(() => {
+		new Conf({
+			cwd: temporaryDirectory(),
+			rootSchema: {},
+		});
+	}, {message: '`schema` option required to use `rootSchema`.'});
+});
+
+test('schema - validate rootSchema', t => {
+	t.throws(() => {
+		const config = new Conf({
+			cwd: temporaryDirectory(),
+			schema: {},
+			rootSchema: {
+				additionalProperties: false,
+			},
+		});
+		config.set('foo', 'bar');
+	}, {message: 'Config schema violation: `` must NOT have additional properties'});
+});
+
 test('.get() - without dot notation', t => {
 	t.is(t.context.configWithoutDotNotation.get('foo'), undefined);
 	t.is(t.context.configWithoutDotNotation.get('foo', '🐴'), '🐴');

@@ -51,6 +51,13 @@ export type Options<T extends Record<string, any>> = {
 	schema?: Schema<T>;
 
 	/**
+	Top-level properties for the schema.
+
+	Requires a `schema` option to be provided, and cannot contain a `properties` field.
+	*/
+	rootSchema?: Omit<TypedJSONSchema, 'properties'>;
+
+	/**
 	Name of the config file (without extension).
 
 	Useful if you need multiple config files for your app or module. For example, different config files between two major versions.

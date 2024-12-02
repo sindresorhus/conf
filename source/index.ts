@@ -103,6 +103,7 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 			const schema: JSONSchema = {
 				type: 'object',
 				properties: options.schema,
+				...options.rootSchema,
 			};
 
 			this.#validator = ajv.compile(schema);
@@ -112,6 +113,8 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 					this.#defaultValues[key as keyof T] = value.default; // eslint-disable-line @typescript-eslint/no-unsafe-assignment
 				}
 			}
+		} else if (options.rootSchema) {
+			throw new TypeError('`schema` option required to use `rootSchema`.');
 		}
 
 		if (options.defaults) {
