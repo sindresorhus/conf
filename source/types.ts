@@ -1,5 +1,6 @@
 import {type JSONSchema as TypedJSONSchema} from 'json-schema-typed';
 // eslint-disable unicorn/import-index
+import type {CurrentOptions} from 'ajv/dist/core.js';
 import type Conf from './index.js';
 
 export type Options<T extends Record<string, any>> = {
@@ -56,6 +57,13 @@ export type Options<T extends Record<string, any>> = {
 	Requires a `schema` option to be provided, and cannot contain a `properties` field.
 	*/
 	rootSchema?: Omit<TypedJSONSchema, 'properties'>;
+
+	/**
+	Options to pass to AJV.
+
+	Requires a `schema` option to be provided.
+	*/
+	ajvOptions?: CurrentOptions;
 
 	/**
 	Name of the config file (without extension).

@@ -100,6 +100,47 @@ config.set('foo', '1');
 
 **Note:** The `default` value will be overwritten by the `defaults` option if set.
 
+#### rootSchema
+Type: `object`
+
+Top-level properties for the schema. Requires a `schema` option to be provided, and cannot contain a `properties` field.
+
+Example:
+
+```js
+import Conf from 'conf';
+
+const store = new Conf({
+	projectName: 'foo',
+	schema: {},
+	rootSchema: {
+		additionalProperties: false
+	}
+});
+```
+
+#### ajvOptions
+Type: `object`
+
+Options to pass to AJV. Requires a `schema` option to be provided.
+
+Example:
+
+```js
+import Conf from 'conf';
+
+const store = new Conf({
+	projectName: 'foo',
+	schema: {},
+	rootSchema: {
+		additionalProperties: false
+	},
+	ajvOptions: {
+		removeAdditional: true,
+	},
+});
+```
+
 #### migrations
 
 Type: `object`

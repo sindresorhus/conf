@@ -97,6 +97,7 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 			const ajv = new Ajv({
 				allErrors: true,
 				useDefaults: true,
+				...options.ajvOptions,
 			});
 			ajvFormats(ajv);
 
@@ -113,8 +114,8 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 					this.#defaultValues[key as keyof T] = value.default; // eslint-disable-line @typescript-eslint/no-unsafe-assignment
 				}
 			}
-		} else if (options.rootSchema) {
-			throw new TypeError('`schema` option required to use `rootSchema`.');
+		} else if (options.rootSchema ?? options.ajvOptions) {
+			throw new TypeError('`schema` option required to use `rootSchema` or `ajvOptions`.');
 		}
 
 		if (options.defaults) {

@@ -793,7 +793,7 @@ test('schema - rootSchema without schema', t => {
 			cwd: temporaryDirectory(),
 			rootSchema: {},
 		});
-	}, {message: '`schema` option required to use `rootSchema`.'});
+	}, {message: '`schema` option required to use `rootSchema` or `ajvOptions`.'});
 });
 
 test('schema - validate rootSchema', t => {
@@ -807,6 +807,21 @@ test('schema - validate rootSchema', t => {
 		});
 		config.set('foo', 'bar');
 	}, {message: 'Config schema violation: `` must NOT have additional properties'});
+});
+
+test('AJV - validate AJV options', t => {
+	const config = new Conf({
+		cwd: temporaryDirectory(),
+		schema: {},
+		ajvOptions: {
+			removeAdditional: true,
+		},
+		rootSchema: {
+			additionalProperties: false,
+		},
+	});
+	config.set('foo', 'bar');
+	t.is(config.get('foo'), undefined);
 });
 
 test('.get() - without dot notation', t => {
