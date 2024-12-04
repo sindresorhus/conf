@@ -101,9 +101,10 @@ config.set('foo', '1');
 **Note:** The `default` value will be overwritten by the `defaults` option if set.
 
 #### rootSchema
+
 Type: `object`
 
-Top-level properties for the schema. Requires a `schema` option to be provided, and cannot contain a `properties` field.
+Top-level properties for the schema. Requires the `schema` option to be specified, and cannot contain a `properties` field.
 
 Example:
 
@@ -120,9 +121,10 @@ const store = new Conf({
 ```
 
 #### ajvOptions
+
 Type: `object`
 
-Options to pass to AJV. Requires a `schema` option to be provided.
+Options passed to AJV. Requires the `schema` option to be specified.
 
 Example:
 
@@ -136,8 +138,8 @@ const store = new Conf({
 		additionalProperties: false
 	},
 	ajvOptions: {
-		removeAdditional: true,
-	},
+		removeAdditional: true
+	}
 });
 ```
 
