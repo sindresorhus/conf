@@ -14,9 +14,7 @@ export type Options<T extends Record<string, any>> = {
 	/**
 	[JSON Schema](https://json-schema.org) to validate your config data.
 
-	Under the hood, the JSON Schema validator [ajv](https://github.com/epoberezkin/ajv) is used to validate your config. We use [JSON Schema draft-07](https://json-schema.org/latest/json-schema-validation.html) and support all [validation keywords](https://github.com/epoberezkin/ajv/blob/master/KEYWORDS.md) and [formats](https://github.com/epoberezkin/ajv#formats).
-
-	You should define your schema as an object where each key is the name of your data's property and each value is a JSON schema used to validate that property. See more [here](https://json-schema.org/understanding-json-schema/reference/object.html#properties).
+	This will be the [`properties`](https://json-schema.org/understanding-json-schema/reference/object.html#properties) object of the JSON schema. That is, define `schema` as an object where each key is the name of your data's property and each value is a JSON schema used to validate that property.
 
 	@example
 	```
@@ -52,16 +50,43 @@ export type Options<T extends Record<string, any>> = {
 	schema?: Schema<T>;
 
 	/**
-	Top-level properties for the schema.
+	Top-level properties for the schema, excluding `properties` field.
 
-	Requires a `schema` option to be provided, and cannot contain a `properties` field.
+	@example
+	```js
+	import Conf from 'conf';
+
+	const store = new Conf({
+		projectName: 'foo',
+		rootSchema: {
+			additionalProperties: false
+		}
+	});
+	```
 	*/
 	rootSchema?: Omit<TypedJSONSchema, 'properties'>;
 
 	/**
-	Options to pass to AJV.
+	[Options passed to AJV](https://ajv.js.org/options.html).
 
-	Requires a `schema` option to be provided.
+	Under the hood, the JSON Schema validator [ajv](https://ajv.js.org/json-schema.html) is used to validate your config. We use [JSON Schema draft-2020-12](https://json-schema.org/draft/2020-12/release-notes) and support all validation keywords and formats.
+
+	**Note:** By default, `allErrors` and `useDefaults` are both set to `true`, but can be overridden.
+
+	@example
+	```js
+	import Conf from 'conf';
+
+	const store = new Conf({
+		projectName: 'foo',
+		rootSchema: {
+			additionalProperties: false
+		},
+		ajvOptions: {
+			removeAdditional: true
+		}
+	});
+	```
 	*/
 	ajvOptions?: CurrentOptions;
 
