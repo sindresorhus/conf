@@ -73,6 +73,8 @@ expectType<string>(conf.get('foo'));
 expectType<string>(conf.get('foo', 'bar'));
 conf.delete('foo');
 expectType<boolean>(conf.has('foo'));
+conf.delete('nested.prop');
+expectType<boolean>(conf.has('nested.prop'));
 conf.clear();
 const off = conf.onDidChange('foo', (oldValue, newValue) => {
 	expectAssignable<UnicornFoo[keyof UnicornFoo]>(oldValue);
