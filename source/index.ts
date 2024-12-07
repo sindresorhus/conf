@@ -259,6 +259,8 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 	@param key - The key of the item to delete.
 	*/
 	delete<Key extends keyof T>(key: Key): void;
+	// This overload is used for dot-notation access.
+	delete(key: string): void;
 	delete(key: string): void {
 		const {store} = this;
 		if (this.#options.accessPropertiesByDotNotation) {
