@@ -58,7 +58,7 @@ export type Options<T extends Record<string, any>> = {
 
 	const store = new Conf({
 		projectName: 'foo',
-  		schema: {},
+		schema: {},
 		rootSchema: {
 			additionalProperties: false
 		}
@@ -80,7 +80,7 @@ export type Options<T extends Record<string, any>> = {
 
 	const store = new Conf({
 		projectName: 'foo',
-  		schema: {},
+		schema: {},
 		rootSchema: {
 			additionalProperties: false
 		},
