@@ -53,11 +53,12 @@ export type Options<T extends Record<string, any>> = {
 	Top-level properties for the schema, excluding `properties` field.
 
 	@example
-	```js
+	```
 	import Conf from 'conf';
 
 	const store = new Conf({
 		projectName: 'foo',
+  		schema: {},
 		rootSchema: {
 			additionalProperties: false
 		}
@@ -74,11 +75,12 @@ export type Options<T extends Record<string, any>> = {
 	**Note:** By default, `allErrors` and `useDefaults` are both set to `true`, but can be overridden.
 
 	@example
-	```js
+	```
 	import Conf from 'conf';
 
 	const store = new Conf({
 		projectName: 'foo',
+  		schema: {},
 		rootSchema: {
 			additionalProperties: false
 		},
