@@ -787,6 +787,32 @@ test('schema - validate Conf default', t => {
 	}, {message: 'Config schema violation: `foo` must be string'});
 });
 
+test('schema - validate rootSchema', t => {
+	t.throws(() => {
+		const config = new Conf({
+			cwd: temporaryDirectory(),
+			rootSchema: {
+				additionalProperties: false,
+			},
+		});
+		config.set('foo', 'bar');
+	}, {message: 'Config schema violation: `` must NOT have additional properties'});
+});
+
+test('AJV - validate AJV options', t => {
+	const config = new Conf({
+		cwd: temporaryDirectory(),
+		ajvOptions: {
+			removeAdditional: true,
+		},
+		rootSchema: {
+			additionalProperties: false,
+		},
+	});
+	config.set('foo', 'bar');
+	t.is(config.get('foo'), undefined);
+});
+
 test('.get() - without dot notation', t => {
 	t.is(t.context.configWithoutDotNotation.get('foo'), undefined);
 	t.is(t.context.configWithoutDotNotation.get('foo', '🐴'), '🐴');

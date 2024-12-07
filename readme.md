@@ -64,9 +64,7 @@ Type: `object`
 
 [JSON Schema](https://json-schema.org) to validate your config data.
 
-Under the hood, the JSON Schema validator [ajv](https://ajv.js.org/json-schema.html) is used to validate your config. We use [JSON Schema draft-2020-12](https://json-schema.org/draft/2020-12/release-notes) and support all validation keywords and formats.
-
-You should define your schema as an object where each key is the name of your data's property and each value is a JSON schema used to validate that property. See more [here](https://json-schema.org/understanding-json-schema/reference/object.html#properties).
+This will be the [`properties`](https://json-schema.org/understanding-json-schema/reference/object.html#properties) object of the JSON schema. That is, define `schema` as an object where each key is the name of your data's property and each value is a JSON schema used to validate that property. 
 
 Example:
 
@@ -99,6 +97,53 @@ config.set('foo', '1');
 ```
 
 **Note:** The `default` value will be overwritten by the `defaults` option if set.
+
+#### rootSchema
+
+Type: `object`
+
+Top-level properties for the schema, excluding `properties` field.
+
+Example:
+
+```js
+import Conf from 'conf';
+
+const store = new Conf({
+	projectName: 'foo',
+	schema: { /* … */ },
+	rootSchema: {
+		additionalProperties: false
+	}
+});
+```
+
+#### ajvOptions
+
+Type: `object`
+
+[Options passed to AJV](https://ajv.js.org/options.html).
+
+Under the hood, the JSON Schema validator [ajv](https://ajv.js.org/json-schema.html) is used to validate your config. We use [JSON Schema draft-2020-12](https://json-schema.org/draft/2020-12/release-notes) and support all validation keywords and formats.
+
+**Note:** By default, `allErrors` and `useDefaults` are both set to `true`, but can be overridden.
+
+Example:
+
+```js
+import Conf from 'conf';
+
+const store = new Conf({
+	projectName: 'foo',
+	schema: { /* … */ },
+	rootSchema: {
+		additionalProperties: false
+	},
+	ajvOptions: {
+		removeAdditional: true
+	}
+});
+```
 
 #### migrations
 

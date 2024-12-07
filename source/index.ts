@@ -89,25 +89,27 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 
 		this.#options = options;
 
-		if (options.schema) {
-			if (typeof options.schema !== 'object') {
+		if (options.schema ?? options.ajvOptions ?? options.rootSchema) {
+			if (options.schema && typeof options.schema !== 'object') {
 				throw new TypeError('The `schema` option must be an object.');
 			}
 
 			const ajv = new Ajv({
 				allErrors: true,
 				useDefaults: true,
+				...options.ajvOptions,
 			});
 			ajvFormats(ajv);
 
 			const schema: JSONSchema = {
+				...options.rootSchema,
 				type: 'object',
 				properties: options.schema,
 			};
 
 			this.#validator = ajv.compile(schema);
 
-			for (const [key, value] of Object.entries(options.schema) as any) { // TODO: Remove the `as any`.
+			for (const [key, value] of Object.entries(options.schema ?? {}) as any) { // TODO: Remove the `as any`.
 				if (value?.default) {
 					this.#defaultValues[key as keyof T] = value.default; // eslint-disable-line @typescript-eslint/no-unsafe-assignment
 				}
