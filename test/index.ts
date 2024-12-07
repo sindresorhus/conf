@@ -322,7 +322,7 @@ test('with `suffix` option set to empty string', t => {
 	const config = new Conf({projectSuffix, projectName});
 	const configPathSegments = config.path.split(path.sep);
 	const configRootIndex = configPathSegments.indexOf(projectName);
-	t.true(configRootIndex >= 0 && configRootIndex < configPathSegments.length);
+	t.true(configRootIndex !== -1 && configRootIndex < configPathSegments.length);
 });
 
 test('with `projectSuffix` option set to non-empty string', t => {
@@ -332,7 +332,7 @@ test('with `projectSuffix` option set to non-empty string', t => {
 	const configPathSegments = config.path.split(path.sep);
 	const expectedRootName = `${projectName}-${projectSuffix}`;
 	const configRootIndex = configPathSegments.indexOf(expectedRootName);
-	t.true(configRootIndex >= 0 && configRootIndex < configPathSegments.length);
+	t.true(configRootIndex !== -1 && configRootIndex < configPathSegments.length);
 });
 
 test('`fileExtension` option', t => {
