@@ -102,9 +102,9 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 			ajvFormats(ajv);
 
 			const schema: JSONSchema = {
+				...options.rootSchema,
 				type: 'object',
 				properties: options.schema,
-				...options.rootSchema,
 			};
 
 			this.#validator = ajv.compile(schema);
