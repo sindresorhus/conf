@@ -111,6 +111,7 @@ import Conf from 'conf';
 
 const store = new Conf({
 	projectName: 'foo',
+	schema: { /* … */ },
 	rootSchema: {
 		additionalProperties: false
 	}
@@ -134,6 +135,7 @@ import Conf from 'conf';
 
 const store = new Conf({
 	projectName: 'foo',
+	schema: { /* … */ },
 	rootSchema: {
 		additionalProperties: false
 	},
