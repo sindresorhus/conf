@@ -1,6 +1,6 @@
 import {type JSONSchema as TypedJSONSchema} from 'json-schema-typed';
 // eslint-disable unicorn/import-index
-import type {CurrentOptions} from 'ajv/dist/core.js';
+import type {CurrentOptions as AjvOptions} from 'ajv/dist/core.js';
 import type Conf from './index.js';
 
 export type Options<T extends Record<string, any>> = {
@@ -90,7 +90,7 @@ export type Options<T extends Record<string, any>> = {
 	});
 	```
 	*/
-	ajvOptions?: CurrentOptions;
+	ajvOptions?: AjvOptions;
 
 	/**
 	Name of the config file (without extension).
@@ -301,3 +301,5 @@ export type OnDidChangeCallback<T> = (newValue?: T, oldValue?: T) => void;
 export type OnDidAnyChangeCallback<T> = (newValue?: Readonly<T>, oldValue?: Readonly<T>) => void;
 
 export type Unsubscribe = () => void;
+
+export type {CurrentOptions as AjvOptions} from 'ajv/dist/core.js';
