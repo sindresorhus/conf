@@ -25,6 +25,8 @@ const config = new Conf({projectName: 'foo'});
 config.set('unicorn', '🦄');
 console.log(config.get('unicorn'));
 //=> '🦄'
+console.log(config.getAll({unicorn: '🦄'}));
+//=> {unicorn: '🦄', foo: {bar: true}}
 
 // Use dot-notation to access nested properties
 config.set('foo.bar', true);
@@ -64,7 +66,7 @@ Type: `object`
 
 [JSON Schema](https://json-schema.org) to validate your config data.
 
-This will be the [`properties`](https://json-schema.org/understanding-json-schema/reference/object.html#properties) object of the JSON schema. That is, define `schema` as an object where each key is the name of your data's property and each value is a JSON schema used to validate that property. 
+This will be the [`properties`](https://json-schema.org/understanding-json-schema/reference/object.html#properties) object of the JSON schema. That is, define `schema` as an object where each key is the name of your data's property and each value is a JSON schema used to validate that property.
 
 Example:
 
@@ -404,6 +406,10 @@ Set multiple items at once.
 #### .get(key, defaultValue?)
 
 Get an item or `defaultValue` if the item does not exist.
+
+#### .getAll(defaultValue?)
+
+Get all config items or `defaultValue` if no items exist.
 
 #### .reset(...keys)
 
