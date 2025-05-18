@@ -188,7 +188,7 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 	@param defaultValue - The default value if no items exist.
 	*/
 	getAll(defaultValue?: T): T {
-		const store = this.store;
+		const {store} = this;
 		return Object.keys(store).length === 0 && defaultValue !== undefined ? defaultValue : store;
 	}
 
