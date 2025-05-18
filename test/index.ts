@@ -69,6 +69,27 @@ test.failing('.get() - `schema` option - default', t => {
 	t.is(store.get('nested.bar'), 55); // See: https://github.com/sindresorhus/electron-store/issues/102
 });
 
+test('.getAll()', t => {
+	const {config} = t.context;
+	t.deepEqual(config.getAll(), {});
+	t.deepEqual(config.getAll({foo: fixture}), {foo: fixture});
+	config.set('foo', fixture);
+	t.deepEqual(config.getAll({baz: '🐴'}), {foo: fixture});
+});
+
+test('.getAll() - with defaults', t => {
+	type Config = {foo: string; bar: string; baz?: string};
+	const store = new Conf<Config>({
+		cwd: temporaryDirectory(),
+		defaults: {
+			foo: fixture,
+			bar: '🐴',
+		},
+	});
+	t.deepEqual(store.getAll(), {foo: fixture, bar: '🐴'});
+	t.deepEqual(store.getAll({foo: fixture, bar: '🐴', baz: 'qux'}), {foo: fixture, bar: '🐴'});
+});
+
 test('.set()', t => {
 	t.context.config.set('foo', fixture);
 	t.context.config.set('baz.boo', fixture);
