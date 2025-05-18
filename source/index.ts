@@ -163,17 +163,24 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 	}
 
 	/**
-	Get an item.
+	Get an item or the entire store.
 
-	@param key - The key of the item to get.
-	@param defaultValue - The default value if the item does not exist.
+	If no `key` is provided, the entire store object is returned.
+
+	@param key - The key of the item to get. If not provided, the entire store is returned.
+	@param defaultValue - The default value if the item does not exist. Not used if `key` is not provided.
 	*/
+	get(): T;
 	get<Key extends keyof T>(key: Key): T[Key];
 	get<Key extends keyof T>(key: Key, defaultValue: Required<T>[Key]): Required<T>[Key];
 	// This overload is used for dot-notation access.
 	// We exclude `keyof T` as an incorrect type for the default value should not fall through to this overload.
 	get<Key extends string, Value = unknown>(key: Exclude<Key, keyof T>, defaultValue?: Value): Value;
-	get(key: string, defaultValue?: unknown): unknown {
+	get(key?: string, defaultValue?: unknown): unknown {
+		if (key === undefined) {
+			return this.store;
+		}
+
 		if (this.#options.accessPropertiesByDotNotation) {
 			return this._get(key, defaultValue);
 		}
