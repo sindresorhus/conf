@@ -184,10 +184,9 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 
 	/**
 	Get all config items.
-
 	*/
 	getAll(): T {
-		return this.store || {};
+		return this.store ?? {};
 	}
 
 	/**
