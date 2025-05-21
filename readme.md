@@ -25,8 +25,8 @@ const config = new Conf({projectName: 'foo'});
 config.set('unicorn', '🦄');
 console.log(config.get('unicorn'));
 //=> '🦄'
-console.log(config.getAll({unicorn: '🦄'}));
-//=> {unicorn: '🦄', foo: {bar: true}}
+console.log(config.getAll());
+//=> {projectName: 'foo', unicorn: '🦄'}
 
 // Use dot-notation to access nested properties
 config.set('foo.bar', true);
@@ -407,9 +407,9 @@ Set multiple items at once.
 
 Get an item or `defaultValue` if the item does not exist.
 
-#### .getAll(defaultValue?)
+#### .getAll()
 
-Get all config items or `defaultValue` if no items exist.
+Get all config items.
 
 #### .reset(...keys)
 

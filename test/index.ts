@@ -72,22 +72,9 @@ test.failing('.get() - `schema` option - default', t => {
 test('.getAll()', t => {
 	const {config} = t.context;
 	t.deepEqual(config.getAll(), {});
-	t.deepEqual(config.getAll({foo: fixture}), {foo: fixture});
 	config.set('foo', fixture);
-	t.deepEqual(config.getAll({baz: '🐴'}), {foo: fixture});
-});
-
-test('.getAll() - with defaults', t => {
-	type Config = {foo: string; bar: string; baz?: string};
-	const store = new Conf<Config>({
-		cwd: temporaryDirectory(),
-		defaults: {
-			foo: fixture,
-			bar: '🐴',
-		},
-	});
-	t.deepEqual(store.getAll(), {foo: fixture, bar: '🐴'});
-	t.deepEqual(store.getAll({foo: fixture, bar: '🐴', baz: 'qux'}), {foo: fixture, bar: '🐴'});
+	config.set('bar', '🐴');
+	t.deepEqual(config.getAll(), {foo: fixture, bar: '🐴'});
 });
 
 test('.set()', t => {

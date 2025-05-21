@@ -185,11 +185,9 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 	/**
 	Get all config items.
 
-	@param defaultValue - The default value if no items exist.
 	*/
-	getAll(defaultValue?: T): T {
-		const {store} = this;
-		return Object.keys(store).length === 0 && defaultValue !== undefined ? defaultValue : store;
+	getAll(): T {
+		return this.store || {};
 	}
 
 	/**
