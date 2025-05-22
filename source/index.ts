@@ -167,6 +167,8 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 
 	@param key - The key of the item to get.
 	@param defaultValue - The default value if the item does not exist.
+
+	Tip: To get all items, see `.store`.
 	*/
 	get<Key extends keyof T>(key: Key): T[Key];
 	get<Key extends keyof T>(key: Key, defaultValue: Required<T>[Key]): Required<T>[Key];
@@ -330,6 +332,22 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 		return Object.keys(this.store).length;
 	}
 
+	/**
+	Get all the config as an object or replace the current config with an object.
+
+	@example
+	```
+	console.log(config.store);
+	//=> {name: 'John', age: 30}
+	```
+
+	@example
+	```
+	config.store = {
+		hello: 'world'
+	};
+	```
+	*/
 	get store(): T {
 		try {
 			const data = fs.readFileSync(this.path, this.#encryptionKey ? null : 'utf8');

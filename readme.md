@@ -405,6 +405,8 @@ Set multiple items at once.
 
 Get an item or `defaultValue` if the item does not exist.
 
+Tip: To get all items, see [`.store`](#store).
+
 #### .reset(...keys)
 
 Reset items to their default values, as defined by the `defaults` or `schema` option.
@@ -436,7 +438,7 @@ When a key is first set `oldValue` will be `undefined`, and when a key is delete
 Returns a function which you can use to unsubscribe:
 
 ```js
-const unsubscribe = conf.onDidChange(key, callback);
+const unsubscribe = config.onDidChange(key, callback);
 
 unsubscribe();
 ```
@@ -452,7 +454,7 @@ Watches the whole config object, calling `callback` on any changes.
 Returns a function which you can use to unsubscribe:
 
 ```js
-const unsubscribe = conf.onDidAnyChange(callback);
+const unsubscribe = config.onDidAnyChange(callback);
 
 unsubscribe();
 ```
@@ -466,7 +468,12 @@ Get the item count.
 Get all the config as an object or replace the current config with an object:
 
 ```js
-conf.store = {
+console.log(config.store);
+//=> {name: 'John', age: 30}
+```
+
+```js
+config.store = {
 	hello: 'world'
 };
 ```
