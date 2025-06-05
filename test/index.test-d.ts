@@ -102,9 +102,7 @@ conf.store = {
 expectType<string>(conf.path);
 expectType<number>(conf.size);
 
-expectType<IterableIterator<[keyof UnicornFoo, UnicornFoo[keyof UnicornFoo]]>>(
-	conf[Symbol.iterator](),
-);
+expectType<IterableIterator<[keyof UnicornFoo, UnicornFoo[keyof UnicornFoo]]>>(conf[Symbol.iterator]());
 for (const [key, value] of conf) {
 	expectType<keyof UnicornFoo>(key);
 	expectType<UnicornFoo[keyof UnicornFoo]>(value);
@@ -152,7 +150,7 @@ new Conf({
 	beforeEachMigration(store, context) {
 		console.log(`[main-config] migrate from ${context.fromVersion} → ${context.toVersion}`);
 		console.log(`[main-config] final migration version ${context.finalVersion}, all migrations that were run or will be ran: ${context.versions.toString()}`);
-		console.log(`[main-config] phase ${(store.get('phase') || 'none') as string}`);
+		console.log(`[main-config] phase ${(store.get('phase') ?? 'none') as string}`);
 	},
 	migrations: {
 		'0.0.1'(store) {

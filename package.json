@@ -17,7 +17,7 @@
 	},
 	"sideEffects": false,
 	"engines": {
-		"node": ">=18"
+		"node": ">=20"
 	},
 	"scripts": {
 		"test": "xo && npm run build && ava",
@@ -54,23 +54,23 @@
 		"dot-prop": "^9.0.0",
 		"env-paths": "^3.0.0",
 		"json-schema-typed": "^8.0.1",
-		"semver": "^7.6.3",
+		"semver": "^7.7.2",
 		"uint8array-extras": "^1.4.0"
 	},
 	"devDependencies": {
 		"@sindresorhus/tsconfig": "^7.0.0",
-		"@types/node": "^22.10.1",
-		"@types/semver": "^7.5.8",
-		"ava": "^6.2.0",
+		"@types/node": "^22.15.30",
+		"@types/semver": "^7.7.0",
+		"ava": "^6.3.0",
 		"del": "^8.0.0",
 		"del-cli": "^6.0.0",
 		"delay": "^6.0.0",
 		"p-event": "^6.0.1",
 		"tempy": "^3.1.0",
 		"ts-node": "^10.9.2",
-		"tsd": "^0.31.2",
-		"typescript": "^5.7.2",
-		"xo": "^0.60.0"
+		"tsd": "^0.32.0",
+		"typescript": "^5.8.3",
+		"xo": "^1.0.5"
 	},
 	"ava": {
 		"files": [

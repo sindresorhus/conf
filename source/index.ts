@@ -324,9 +324,7 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 	@param callback - A callback function that is called on any changes. When a `key` is first set `oldValue` will be `undefined`, and when a key is deleted `newValue` will be `undefined`.
 	@returns A function, that when called, will unsubscribe.
 	*/
-	onDidAnyChange(
-		callback: OnDidAnyChangeCallback<T>,
-	): Unsubscribe {
+	onDidAnyChange(callback: OnDidAnyChangeCallback<T>): Unsubscribe {
 		if (typeof callback !== 'function') {
 			throw new TypeError(`Expected \`callback\` to be of type \`function\`, got ${typeof callback}`);
 		}
@@ -545,9 +543,7 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 			} catch (error: unknown) {
 				this.store = storeBackup;
 
-				throw new Error(
-					`Something went wrong during the migration! Changes applied to the store until this failed migration will be restored. ${error as string}`,
-				);
+				throw new Error(`Something went wrong during the migration! Changes applied to the store until this failed migration will be restored. ${error as string}`);
 			}
 		}
 
