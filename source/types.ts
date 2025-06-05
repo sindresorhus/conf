@@ -302,4 +302,33 @@ export type OnDidAnyChangeCallback<T> = (newValue?: Readonly<T>, oldValue?: Read
 
 export type Unsubscribe = () => void;
 
+export type DotNotationKeyOf<T extends Record<string, any>> = {
+	[K in keyof Required<T>]: K extends string
+		? Required<T>[K] extends Record<string, any>
+			? K | `${K}.${DotNotationKeyOf<Required<T>[K]>}`
+			: K
+		: never
+}[keyof T];
+
+export type DotNotationValueOf<T extends Record<string, any>, K extends DotNotationKeyOf<T>> =
+	K extends `${infer Head}.${infer Tail}`
+		? Head extends keyof T
+			? T[Head] extends Record<string, any>
+				? Tail extends DotNotationKeyOf<T[Head]>
+					// Type of objects for required properties
+					? DotNotationValueOf<T[Head], Tail>
+					: never
+				: Required<T>[Head] extends Record<string, any>
+					? Tail extends DotNotationKeyOf<Required<T>[Head]>
+						// Type of objects for optional properties
+						? DotNotationValueOf<Required<T>[Head], Tail> | undefined
+						: never
+					: never
+			: never
+		: K extends keyof T
+			? T[K]
+			: never;
+
+export type PartialObjectDeep<T> = {[K in keyof T]?: PartialObjectDeep<T[K]>};
+
 export type {CurrentOptions as AjvOptions} from 'ajv/dist/core.js';

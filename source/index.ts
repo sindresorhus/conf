@@ -32,6 +32,9 @@ import {
 	type Unsubscribe,
 	type OnDidAnyChangeCallback,
 	type BeforeEachMigrationCallback,
+	type DotNotationKeyOf,
+	type DotNotationValueOf,
+	type PartialObjectDeep,
 } from './types.js';
 
 // FIXME: https://github.com/ajv-validator/ajv/issues/2047
@@ -172,9 +175,11 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 	*/
 	get<Key extends keyof T>(key: Key): T[Key];
 	get<Key extends keyof T>(key: Key, defaultValue: Required<T>[Key]): Required<T>[Key];
+	get<Key extends DotNotationKeyOf<T>>(key: Key): DotNotationValueOf<T, Key>;
+	get<Key extends DotNotationKeyOf<T>>(key: Key, defaultValue: NonNullable<DotNotationValueOf<T, Key>>): NonNullable<DotNotationValueOf<T, Key>>;
 	// This overload is used for dot-notation access.
-	// We exclude `keyof T` as an incorrect type for the default value should not fall through to this overload.
-	get<Key extends string, Value = unknown>(key: Exclude<Key, keyof T>, defaultValue?: Value): Value;
+	// We exclude `keyof T` and `DotNotationKeyOf<T>` as an incorrect type for the default value should not fall through to this overload.
+	get<Key extends string, Value = unknown>(key: Exclude<Key, DotNotationKeyOf<T>>, defaultValue?: Value): Value;
 	get(key: string, defaultValue?: unknown): unknown {
 		if (this.#options.accessPropertiesByDotNotation) {
 			return this._get(key, defaultValue);
@@ -191,9 +196,10 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 	@param value - Must be JSON serializable. Trying to set the type `undefined`, `function`, or `symbol` will result in a `TypeError`.
 	*/
 	set<Key extends keyof T>(key: Key, value?: T[Key]): void;
+	set<Key extends DotNotationKeyOf<T>>(key: Key, Value?: DotNotationValueOf<T, Key>): void;
 	set(key: string, value: unknown): void;
-	set(object: Partial<T>): void;
-	set<Key extends keyof T>(key: Partial<T> | Key | string, value?: T[Key] | unknown): void {
+	set(object: PartialObjectDeep<T>): void;
+	set<Key extends keyof T>(key: PartialObjectDeep<T> | string, value?: unknown): void {
 		if (typeof key !== 'string' && typeof key !== 'object') {
 			throw new TypeError(`Expected \`key\` to be of type \`string\` or \`object\`, got ${typeof key}`);
 		}
@@ -234,12 +240,14 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 
 	@param key - The key of the item to check.
 	*/
-	has<Key extends keyof T>(key: Key | string): boolean {
+	has<Key extends keyof T>(key: Key): boolean;
+	has<Key extends DotNotationKeyOf<T>>(key: Key): boolean;
+	has(key: string): boolean {
 		if (this.#options.accessPropertiesByDotNotation) {
-			return hasProperty(this.store, key as string);
+			return hasProperty(this.store, key);
 		}
 
-		return (key as string) in this.store;
+		return key in this.store;
 	}
 
 	/**
@@ -263,8 +271,7 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 	@param key - The key of the item to delete.
 	*/
 	delete<Key extends keyof T>(key: Key): void;
-	// This overload is used for dot-notation access.
-	delete(key: string): void;
+	delete<Key extends DotNotationKeyOf<T>>(key: Key): void;
 	delete(key: string): void {
 		const {store} = this;
 		if (this.#options.accessPropertiesByDotNotation) {
@@ -297,10 +304,9 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 	@param callback - A callback function that is called on any changes. When a `key` is first set `oldValue` will be `undefined`, and when a key is deleted `newValue` will be `undefined`.
 	@returns A function, that when called, will unsubscribe.
 	*/
-	onDidChange<Key extends keyof T>(
-		key: Key,
-		callback: OnDidChangeCallback<T[Key]>,
-	): Unsubscribe {
+	onDidChange<Key extends keyof T>(key: Key, callback: OnDidChangeCallback<T[Key]>): Unsubscribe;
+	onDidChange<Key extends DotNotationKeyOf<T>>(key: Key, callback: OnDidChangeCallback<DotNotationValueOf<T, Key>>): Unsubscribe;
+	onDidChange<Key extends string>(key: Key, callback: OnDidChangeCallback<any>): Unsubscribe {
 		if (typeof key !== 'string') {
 			throw new TypeError(`Expected \`key\` to be of type \`string\`, got ${typeof key}`);
 		}
@@ -550,11 +556,11 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 		}
 	}
 
-	private _containsReservedKey(key: string | Partial<T>): boolean {
+	private _containsReservedKey(key: string | PartialObjectDeep<T>): boolean {
 		if (typeof key === 'object') {
-			const firsKey = Object.keys(key)[0];
+			const firstKey = Object.keys(key)[0];
 
-			if (firsKey === INTERNAL_KEY) {
+			if (firstKey === INTERNAL_KEY) {
 				return true;
 			}
 		}
