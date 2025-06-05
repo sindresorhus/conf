@@ -2,6 +2,7 @@
 import {stringToUint8Array} from 'uint8array-extras';
 import {expectType, expectAssignable, expectError} from 'tsd';
 import Conf from '../source/index.js';
+import {type DotNotationKeyOf, type DotNotationValueOf} from '../source/types.js';
 
 type UnicornFoo = {
 	foo: string;
@@ -71,18 +72,28 @@ conf.set({
 
 expectType<string>(conf.get('foo'));
 expectType<string>(conf.get('foo', 'bar'));
+expectType<number | undefined>(conf.get('nested.prop'));
+expectType<number>(conf.get('nested.prop', 5));
 conf.delete('foo');
 expectType<boolean>(conf.has('foo'));
 conf.delete('nested.prop');
 expectType<boolean>(conf.has('nested.prop'));
 conf.clear();
-const off = conf.onDidChange('foo', (oldValue, newValue) => {
-	expectAssignable<UnicornFoo[keyof UnicornFoo]>(oldValue);
+const off = conf.onDidChange('foo', (newValue, oldValue) => {
 	expectAssignable<UnicornFoo[keyof UnicornFoo]>(newValue);
+	expectAssignable<UnicornFoo[keyof UnicornFoo]>(oldValue);
 });
 
 expectType<() => void>(off);
 off();
+
+const offForNestedProp = conf.onDidChange('nested.prop', (newValue, oldValue) => {
+	expectAssignable<DotNotationValueOf<UnicornFoo, DotNotationKeyOf<UnicornFoo>>>(newValue);
+	expectAssignable<DotNotationValueOf<UnicornFoo, DotNotationKeyOf<UnicornFoo>>>(oldValue);
+});
+
+expectType<() => void>(offForNestedProp);
+offForNestedProp();
 
 conf.store = {
 	foo: 'bar',
