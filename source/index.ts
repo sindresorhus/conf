@@ -37,9 +37,6 @@ import {
 	type PartialObjectDeep,
 } from './types.js';
 
-// FIXME: https://github.com/ajv-validator/ajv/issues/2047
-const ajvFormats = ajvFormatsModule.default;
-
 const encryptionAlgorithm = 'aes-256-cbc';
 
 const createPlainObject = <T = Record<string, unknown>>(): T => Object.create(null);
@@ -96,6 +93,9 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 			if (options.schema && typeof options.schema !== 'object') {
 				throw new TypeError('The `schema` option must be an object.');
 			}
+
+			// FIXME: https://github.com/ajv-validator/ajv/issues/2047
+			const ajvFormats = ajvFormatsModule.default;
 
 			const ajv = new Ajv({
 				allErrors: true,

@@ -506,6 +506,22 @@ const config = new Conf({
 });
 ```
 
+### Can I use `conf` with strict Content Security Policy (CSP)?
+
+`conf` depends on [`ajv`](https://ajv.js.org) for the `schema` option, which uses `unsafe-eval`. Even without using the `schema` option, `ajv` is still bundled and may cause CSP errors. As a workaround, you could configure your bundler to replace `ajv` with a stub:
+
+```js
+// webpack.config.js
+module.exports = {
+	resolve: {
+		alias: {
+			'ajv': false,
+			'ajv-formats': false
+		}
+	}
+};
+```
+
 ## Related
 
 - [electron-store](https://github.com/sindresorhus/electron-store) - Simple data persistence for your Electron app or module

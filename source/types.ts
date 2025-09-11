@@ -16,6 +16,8 @@ export type Options<T extends Record<string, any>> = {
 
 	This will be the [`properties`](https://json-schema.org/understanding-json-schema/reference/object.html#properties) object of the JSON schema. That is, define `schema` as an object where each key is the name of your data's property and each value is a JSON schema used to validate that property.
 
+	**Note:** The ajv dependency may cause CSP violations. See readme FAQ for workarounds.
+
 	@example
 	```
 	import Conf from 'conf';
