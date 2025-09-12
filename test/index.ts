@@ -145,6 +145,132 @@ test('.has()', t => {
 	t.false(t.context.config.has('missing'));
 });
 
+test('.appendToArray()', t => {
+	// Test appending to non-existent key creates array
+	t.context.config.appendToArray('newArray', 'first');
+	t.deepEqual(t.context.config.get('newArray'), ['first']);
+
+	// Test appending to existing array
+	t.context.config.set('items', ['a', 'b']);
+	t.context.config.appendToArray('items', 'c');
+	t.deepEqual(t.context.config.get('items'), ['a', 'b', 'c']);
+
+	// Test appending objects
+	t.context.config.set('objects', [{id: 1}, {id: 2}]);
+	t.context.config.appendToArray('objects', {id: 3});
+	t.deepEqual(t.context.config.get('objects'), [{id: 1}, {id: 2}, {id: 3}]);
+
+	// Test with nested arrays using dot notation
+	t.context.config.set('nested.items', [1, 2]);
+	t.context.config.appendToArray('nested.items', 3);
+	t.deepEqual(t.context.config.get('nested.items'), [1, 2, 3]);
+
+	// Test creating nested array that doesn't exist
+	t.context.config.appendToArray('deeply.nested.array', 'value');
+	t.deepEqual(t.context.config.get('deeply.nested.array'), ['value']);
+});
+
+test('.appendToArray() - error when key is not array', t => {
+	// Test error when existing value is not an array
+	t.context.config.set('notArray', 'string value');
+	t.throws(() => {
+		t.context.config.appendToArray('notArray', 'item');
+	}, {message: 'The key `notArray` is already set to a non-array value'});
+
+	// Test with number
+	t.context.config.set('numberValue', 42);
+	t.throws(() => {
+		t.context.config.appendToArray('numberValue', 'item');
+	}, {message: 'The key `numberValue` is already set to a non-array value'});
+
+	// Test with object
+	t.context.config.set('objectValue', {foo: 'bar'});
+	t.throws(() => {
+		t.context.config.appendToArray('objectValue', 'item');
+	}, {message: 'The key `objectValue` is already set to a non-array value'});
+
+	// Test with nested non-array
+	t.context.config.set('nested.notArray', false);
+	t.throws(() => {
+		t.context.config.appendToArray('nested.notArray', 'item');
+	}, {message: 'The key `nested.notArray` is already set to a non-array value'});
+});
+
+test('.appendToArray() - without dot notation', t => {
+	const store = new Conf({
+		cwd: temporaryDirectory(),
+		accessPropertiesByDotNotation: false,
+	});
+
+	// Test basic functionality without dot notation
+	store.appendToArray('items', 'first');
+	t.deepEqual(store.get('items'), ['first']);
+
+	store.appendToArray('items', 'second');
+	t.deepEqual(store.get('items'), ['first', 'second']);
+
+	// Dot notation key should be treated as literal
+	store.appendToArray('nested.items', 'value');
+	t.deepEqual(store.get('nested.items'), ['value']);
+});
+
+test('.appendToArray() - value validation', t => {
+	// Test that unsupported JSON types throw appropriate errors
+	t.context.config.set('items', ['valid']);
+
+	t.throws(() => {
+		t.context.config.appendToArray('items', () => {});
+	}, {message: /not supported by JSON/});
+
+	t.throws(() => {
+		t.context.config.appendToArray('items', Symbol('test'));
+	}, {message: /not supported by JSON/});
+
+	t.throws(() => {
+		t.context.config.appendToArray('items', undefined);
+	}, {message: /not supported by JSON/});
+});
+
+test('.appendToArray() - change events', t => {
+	let changeCallCount = 0;
+	let lastNewValue;
+	let lastOldValue;
+
+	const unsubscribe = t.context.config.onDidChange('items', (newValue, oldValue) => {
+		changeCallCount++;
+		lastNewValue = newValue;
+		lastOldValue = oldValue;
+	});
+
+	// First append should create array and fire change event
+	t.context.config.appendToArray('items', 'first');
+	t.is(changeCallCount, 1);
+	t.deepEqual(lastNewValue, ['first']);
+	t.is(lastOldValue, undefined);
+
+	// Second append should fire change event with updated array
+	t.context.config.appendToArray('items', 'second');
+	t.is(changeCallCount, 2);
+	t.deepEqual(lastNewValue, ['first', 'second']);
+	t.deepEqual(lastOldValue, ['first']);
+
+	unsubscribe();
+});
+
+test('.appendToArray() - empty arrays', t => {
+	// Test appending to explicitly set empty array
+	t.context.config.set('empty', []);
+	t.context.config.appendToArray('empty', 'item');
+	t.deepEqual(t.context.config.get('empty'), ['item']);
+
+	// Test multiple appends to empty array
+	t.context.config.set('multi', []);
+	t.context.config.appendToArray('multi', 'a');
+	t.context.config.appendToArray('multi', 'b');
+	t.context.config.appendToArray('multi', 'c');
+	t.deepEqual(t.context.config.get('multi'), ['a', 'b', 'c']);
+});
+
 test('.reset() - `defaults` option', t => {
 	const store = new Conf({
 		cwd: temporaryDirectory(),

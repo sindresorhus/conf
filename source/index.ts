@@ -251,6 +251,36 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 	}
 
 	/**
+	Append an item to an array.
+
+	If the key doesn't exist, it will be created as an array.
+	If the key exists and is not an array, a `TypeError` will be thrown.
+
+	@param key - The key of the array to append to. You can use [dot-notation](https://github.com/sindresorhus/dot-prop) to access nested properties.
+	@param value - The item to append. Must be JSON serializable.
+
+	@example
+	```
+	config.set('items', [{name: 'foo'}]);
+	config.appendToArray('items', {name: 'bar'});
+	console.log(config.get('items'));
+	//=> [{name: 'foo'}, {name: 'bar'}]
+	```
+	*/
+	appendToArray<Key extends keyof T>(key: Key, value: T[Key] extends ReadonlyArray<infer U> ? U : unknown): void;
+	appendToArray<Key extends DotNotationKeyOf<T>>(key: Key, value: DotNotationValueOf<T, Key> extends ReadonlyArray<infer U> ? U : unknown): void;
+	appendToArray(key: string, value: unknown): void {
+		checkValueType(key, value);
+		const array = this._get(key, []);
+
+		if (!Array.isArray(array)) {
+			throw new TypeError(`The key \`${key}\` is already set to a non-array value`);
+		}
+
+		this.set(key, [...array, value]);
+	}
+
+	/**
 	Reset items to their default values, as defined by the `defaults` or `schema` option.
 
 	@see `clear()` to reset all items.
