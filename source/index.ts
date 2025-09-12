@@ -376,6 +376,18 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 	set store(value: T) {
 		this._ensureDirectory();
 
+		// Preserve existing internal data if it exists and the new value doesn't contain it
+		if (!hasProperty(value, INTERNAL_KEY)) {
+			try {
+				const currentStore = this.store;
+				if (hasProperty(currentStore, INTERNAL_KEY)) {
+					setProperty(value, INTERNAL_KEY, getProperty(currentStore, INTERNAL_KEY));
+				}
+			} catch {
+				// If we can't read the current store, just proceed without preserving internal data
+			}
+		}
+
 		this._validate(value);
 		this._write(value);
 

@@ -1173,3 +1173,105 @@ test('beforeEachMigration - should be called before every migration', t => {
 	t.true(conf.get('beforeEachMigration 1.0.0 → 1.0.1'));
 	t.false(conf.has('beforeEachMigration 1.0.1 → 2.0.1'));
 });
+
+test('migrations - should preserve internal data when store is overwritten', t => {
+	const cwd = temporaryDirectory();
+	let migrationRunCount = 0;
+
+	// Create a config with migrations
+	const conf = new Conf({
+		cwd,
+		projectVersion: '2.0.0',
+		migrations: {
+			'2.0.0'(store) {
+				migrationRunCount++;
+				store.set('lastSeenVersion', '2.0.0');
+			},
+		},
+	});
+
+	// Migration should run once initially
+	t.is(migrationRunCount, 1);
+	t.is(conf.get('__internal__.migrations.version'), '2.0.0');
+
+	// Overwrite the store - this should NOT destroy the migration info
+	conf.store = {newData: 'test'};
+
+	// The internal migration version should still be preserved
+	t.is(conf.get('__internal__.migrations.version'), '2.0.0');
+
+	// Create a new config instance - migration should NOT run again
+	const conf2 = new Conf({
+		cwd,
+		projectVersion: '2.0.0',
+		migrations: {
+			'2.0.0'(store) {
+				migrationRunCount++;
+				store.set('lastSeenVersion', '2.0.0');
+			},
+		},
+	});
+
+	// Migration should not run again
+	t.is(migrationRunCount, 1);
+	t.is(conf2.get('__internal__.migrations.version'), '2.0.0');
+});
+
+test('migrations - should preserve internal data when store is set to empty object', t => {
+	const cwd = temporaryDirectory();
+
+	const conf = new Conf({
+		cwd,
+		projectVersion: '1.0.0',
+		migrations: {
+			'1.0.0'(store) {
+				store.set('migrated', true);
+			},
+		},
+	});
+
+	t.is(conf.get('__internal__.migrations.version'), '1.0.0');
+
+	// Set store to empty object
+	conf.store = {};
+
+	// Internal data should still be preserved
+	t.is(conf.get('__internal__.migrations.version'), '1.0.0');
+});
+
+test('store setter - should work when config file does not exist yet', t => {
+	const cwd = temporaryDirectory();
+	const conf = new Conf({cwd});
+
+	// Set store when no file exists
+	t.notThrows(() => {
+		conf.store = {foo: 'bar'};
+	});
+
+	t.is(conf.get('foo'), 'bar');
+});
+
+test('migrations - should preserve internal data without dot notation access', t => {
+	const cwd = temporaryDirectory();
+
+	const conf = new Conf({
+		cwd,
+		projectVersion: '1.0.0',
+		accessPropertiesByDotNotation: false,
+		migrations: {
+			'1.0.0'(store) {
+				store.set('migrated', true);
+			},
+		},
+	});
+
+	const internal = conf.get('__internal__') as any; // eslint-disable-line @typescript-eslint/no-unsafe-assignment
+	t.is(internal.migrations.version, '1.0.0');
+
+	// Overwrite store
+	conf.store = {newData: 'test'};
+
+	// Internal data should still be preserved
+	const internal2 = conf.get('__internal__') as any; // eslint-disable-line @typescript-eslint/no-unsafe-assignment
+	t.is(internal2.migrations.version, '1.0.0');
+});
