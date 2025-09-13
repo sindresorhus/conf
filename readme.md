@@ -246,7 +246,14 @@ Type: `string`
 
 **Required unless you specify the `cwd` option.**
 
-You can fetch the `name` field from package.json.
+You can fetch the `name` field from package.json:
+
+```js
+import Conf from 'conf';
+import packageJson from './package.json' assert {type: 'json'};
+
+const config = new Conf({projectName: packageJson.name});
+```
 
 #### projectVersion
 
