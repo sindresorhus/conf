@@ -396,6 +396,82 @@ test('.clear() - `schema` option', t => {
 	t.is(store.get('bar'), 99);
 });
 
+test('.clear() - change events', t => {
+	const store = new Conf({
+		cwd: temporaryDirectory(),
+		defaults: {
+			foo: 42,
+			bar: 'hello',
+		},
+	});
+
+	// Set some values and extra keys
+	store.set('foo', 100);
+	store.set('baz', 'extra');
+
+	// Track change events during clear
+	const events: Array<{newValue: any; oldValue: any}> = [];
+	const unsubscribe = store.onDidAnyChange((newValue, oldValue) => {
+		events.push({
+			newValue: structuredClone(newValue),
+			oldValue: structuredClone(oldValue),
+		});
+	});
+
+	// Clear should emit exactly one change event with final state
+	store.clear();
+
+	unsubscribe();
+
+	t.is(events.length, 1, 'Should emit exactly one change event');
+	t.deepEqual(events[0]!.newValue, {foo: 42, bar: 'hello'}, 'Should emit final state with defaults');
+	t.deepEqual(events[0]!.oldValue, {foo: 100, bar: 'hello', baz: 'extra'}, 'Should emit correct old state');
+});
+
+test('.clear() - without dot notation', t => {
+	const store = new Conf({
+		cwd: temporaryDirectory(),
+		accessPropertiesByDotNotation: false,
+		defaults: {
+			foo: 42,
+			'nested.key': 'value',
+		},
+	});
+
+	// Set some values
+	store.set('foo', 100);
+	store.set('other', 'test');
+
+	// Clear should restore defaults correctly without dot notation
+	store.clear();
+
+	t.is(store.get('foo'), 42);
+	t.is(store.get('nested.key'), 'value'); // Should be literal key, not nested
+	t.is(store.get('other'), undefined);
+	t.is(store.size, 2);
+});
+
+test('.clear() - validation error', t => {
+	// Test that clear() validates default values and throws for invalid JSON types
+	// Note: Invalid defaults can be set during construction but cause errors when used
+	const store = new Conf({
+		cwd: temporaryDirectory(),
+		defaults: {
+			foo: 42,
+			bad: () => {}, // Invalid JSON type
+		},
+	});
+
+	// Constructor succeeds, but invalid default is not included in store
+	t.is(store.get('foo'), 42);
+	t.is(store.get('bad' as any), undefined);
+
+	// clear() should validate defaults and throw for invalid types
+	t.throws(() => {
+		store.clear();
+	}, {message: /not supported by JSON/});
+});
+
 test('.size', t => {
 	t.context.config.set('foo', 'bar');
 	t.is(t.context.config.size, 1);

@@ -320,11 +320,20 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 	This resets known items to their default values, if defined by the `defaults` or `schema` option.
 	*/
 	clear(): void {
-		this.store = createPlainObject();
+		const newStore = createPlainObject<T>();
 
 		for (const key of Object.keys(this.#defaultValues)) {
-			this.reset(key);
+			if (isExist(this.#defaultValues[key])) {
+				checkValueType(key, this.#defaultValues[key]);
+				if (this.#options.accessPropertiesByDotNotation) {
+					setProperty(newStore as Record<string, any>, key, this.#defaultValues[key]);
+				} else {
+					(newStore as any)[key] = this.#defaultValues[key];
+				}
+			}
 		}
+
+		this.store = newStore;
 	}
 
 	/**
