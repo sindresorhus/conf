@@ -197,6 +197,7 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 	*/
 	set<Key extends keyof T>(key: Key, value?: T[Key]): void;
 	set<Key extends DotNotationKeyOf<T>>(key: Key, Value?: DotNotationValueOf<T, Key>): void;
+	// Fallback for dynamic dot-notation paths that can't be statically typed
 	set(key: string, value: unknown): void;
 	set(object: PartialObjectDeep<T>): void;
 	set<Key extends keyof T>(key: PartialObjectDeep<T> | string, value?: unknown): void {
