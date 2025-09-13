@@ -559,9 +559,10 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 				this.events.dispatchEvent(new Event('change'));
 			}, {wait: 100}));
 		} else {
+			// fs.watchFile is used for better cross-platform reliability, but requires a longer debounce
 			fs.watchFile(this.path, {persistent: false}, debounceFn(() => {
 				this.events.dispatchEvent(new Event('change'));
-			}, {wait: 5000}));
+			}, {wait: 1000}));
 		}
 	}
 

@@ -1113,7 +1113,7 @@ test('`watch` option watches for config file changes by file write', async t => 
 
 	conf.onDidChange('foo', checkFoo);
 
-	const delayOS = process.platform === 'win32' ? 50 : 5000;
+	const delayOS = process.platform === 'win32' ? 50 : 1500;
 
 	(async () => {
 		await delay(delayOS);
