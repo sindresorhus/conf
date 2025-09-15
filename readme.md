@@ -555,6 +555,25 @@ module.exports = {
 };
 ```
 
+### Can I use async operations in migrations?
+
+Conf is synchronous by design, so this is not possible. As a workaround, you could use [`make-synchronous`](https://github.com/sindresorhus/make-synchronous) to convert asynchrnous functions to synchronous (with caveats):
+
+```js
+import Conf from 'conf';
+import makeSynchronous from 'make-synchronous';
+
+const config = new Conf({
+	migrations: {
+		'0.0.1': store => {
+			const syncAsyncFunction = makeSynchronous(asyncFunction);
+			const result = syncAsyncFunction();
+			store.set('migrated', result);
+		}
+	}
+});
+```
+
 ## Related
 
 - [electron-store](https://github.com/sindresorhus/electron-store) - Simple data persistence for your Electron app or module
