@@ -1,7 +1,22 @@
+import process from 'node:process';
 import fs from 'node:fs';
 import path from 'node:path';
 import {temporaryDirectory} from 'tempy';
+import {deleteSync} from 'del';
 import Conf from '../source/index.js';
+
+const scheduledCleanups = new Set<string>();
+const pendingCleanups = new Set<() => void>();
+const trackedConfs = new Set<Conf>();
+let projectNameSequence = 0;
+
+process.on('exit', () => {
+	for (const directory of scheduledCleanups) {
+		deleteSync(directory, {force: true});
+	}
+
+	scheduledCleanups.clear();
+});
 
 /**
 Test utilities for reducing duplication in migration tests.
@@ -10,13 +25,15 @@ Test utilities for reducing duplication in migration tests.
 export type MigrationTestOptions = {
 	projectVersion: string;
 	migrations?: Record<string, (store: Conf) => void>;
-	schema?: Record<string, any>;
-	defaults?: Record<string, any>;
+	schema?: Record<string, unknown>;
+	defaults?: Record<string, unknown>;
 	beforeEachMigration?: (store: Conf, context: any) => void;
-	initialData?: Record<string, any>;
+	initialData?: Record<string, unknown>;
 	clearInvalidConfig?: boolean;
 	accessPropertiesByDotNotation?: boolean;
 	cwd?: string;
+	configName?: string;
+	fileExtension?: string;
 };
 
 /**
@@ -28,11 +45,20 @@ export function createMigrationTest(options: MigrationTestOptions): {
 	configPath: string;
 } {
 	const cwd = options.cwd ?? temporaryDirectory();
-	const configPath = path.join(cwd, 'config.json');
+
+	if (!options.cwd) {
+		scheduledCleanups.add(cwd);
+	}
+
+	const sanitizedExtension = (options.fileExtension ?? 'json').replace(/^\.+/, '');
+	const extensionSuffix = sanitizedExtension ? `.${sanitizedExtension}` : '';
+	const fileName = `${options.configName ?? 'config'}${extensionSuffix}`;
+	const configPath = path.join(cwd, fileName);
 
 	// Write initial data if provided
 	if (options.initialData) {
 		fs.writeFileSync(configPath, JSON.stringify(options.initialData, null, '\t'));
+		fs.statSync(configPath);
 	}
 
 	const confOptions: Record<string, unknown> = {
@@ -62,10 +88,56 @@ export function createMigrationTest(options: MigrationTestOptions): {
 		confOptions.accessPropertiesByDotNotation = options.accessPropertiesByDotNotation;
 	}
 
+	if (options.configName !== undefined) {
+		confOptions.configName = options.configName;
+	}
+
+	if (options.fileExtension !== undefined) {
+		confOptions.fileExtension = options.fileExtension;
+	}
+
 	const conf = new Conf(confOptions);
 
 	return {conf, cwd, configPath};
 }
+
+export const nextProjectName = (): string => {
+	projectNameSequence++;
+	return `conf-project-${projectNameSequence}`;
+};
+
+export const registerCleanup = (cleanup: () => void): void => {
+	pendingCleanups.add(cleanup);
+};
+
+export const runRegisteredCleanups = (): void => {
+	for (const cleanup of pendingCleanups) {
+		cleanup();
+	}
+
+	pendingCleanups.clear();
+};
+
+export const createTempDirectory = (): string => {
+	const directory = temporaryDirectory();
+	registerCleanup(() => {
+		deleteSync(directory, {force: true});
+	});
+	scheduledCleanups.add(directory);
+	return directory;
+};
+
+export const trackConf = <T extends Conf>(instance: T): T => {
+	trackedConfs.add(instance);
+	return instance;
+};
+
+export const resetTrackedConfs = (): void => {
+	trackedConfs.clear();
+};
+
+export const createNullProtoObject = <T extends Record<string, unknown>>(obj: T): T =>
+	Object.assign(Object.create(null), obj) as T;
 
 /**
 Creates a test that tracks migration execution order.
@@ -98,6 +170,22 @@ export function createVersionTest(versions: string[]): Record<string, (store: Co
 
 	return migrations;
 }
+
+export const getMigrationVersion = (conf: Conf): string | undefined => {
+	const direct = conf.get('__internal__.migrations.version') as string | undefined;
+	if (direct !== undefined) {
+		return direct;
+	}
+
+	const internal = conf.get('__internal__') as Record<string, unknown> | undefined;
+	if (!internal || typeof internal !== 'object') {
+		return undefined;
+	}
+
+	const migrations = internal.migrations as Record<string, unknown> | undefined;
+	const version = migrations?.version;
+	return typeof version === 'string' ? version : undefined;
+};
 
 /**
 Creates invalid data scenarios for schema testing.
@@ -200,15 +288,7 @@ export const assertions = {
 	 Assert that migration internal state is preserved.
 	*/
 	migrationStatePreserved(conf: Conf, expectedVersion: string) {
-		// Try dot notation first (works when accessPropertiesByDotNotation is true)
-		let migrationVersion = conf.get('__internal__.migrations.version');
-
-		// If that doesn't work, try accessing via nested object (for when accessPropertiesByDotNotation is false)
-		if (migrationVersion === undefined) {
-			const internal = conf.get('__internal__') as Record<string, Record<string, unknown>>;
-			migrationVersion = internal?.migrations?.version as string;
-		}
-
+		const migrationVersion = getMigrationVersion(conf);
 		if (migrationVersion !== expectedVersion) {
 			throw new Error(`Expected migration version ${expectedVersion}, got ${String(migrationVersion)}`);
 		}

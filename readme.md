@@ -534,8 +534,8 @@ import yaml from 'js-yaml';
 const config = new Conf({
 	projectName: 'foo',
 	fileExtension: 'yaml',
-	serialize: yaml.safeDump,
-	deserialize: yaml.safeLoad
+	serialize: yaml.dump,
+	deserialize: yaml.load
 });
 ```
 

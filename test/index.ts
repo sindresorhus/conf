@@ -1,53 +1,48 @@
 /* eslint-disable no-new, @typescript-eslint/no-empty-function, @typescript-eslint/naming-convention */
-import process from 'node:process';
 import fs from 'node:fs';
 import path from 'node:path';
-import {temporaryDirectory} from 'tempy';
-import {deleteSync} from 'del';
-import {pEvent} from 'p-event';
-import delay from 'delay';
-import anyTest, {type TestFn} from 'ava';
+import {
+	describe,
+	it,
+	before,
+	after,
+	beforeEach,
+	afterEach,
+	test,
+} from 'node:test';
+import assert from 'node:assert/strict';
 import Conf, {type Schema} from '../source/index.js';
-
-const test = anyTest as TestFn<{
-	config: Conf;
-	configWithoutDotNotation: Conf;
-	configWithSchema: Conf<{foo: unknown; bar: unknown}>;
-	configWithDefaults: Conf;
-}>;
+import {
+	createTempDirectory,
+	trackConf,
+	runRegisteredCleanups,
+	resetTrackedConfs,
+	nextProjectName,
+	createNullProtoObject,
+} from './_utilities.js';
 
 const fixture = '🦄';
 
-test.beforeEach(t => {
-	t.context.config = new Conf({cwd: temporaryDirectory()});
-	t.context.configWithoutDotNotation = new Conf({cwd: temporaryDirectory(), accessPropertiesByDotNotation: false});
-});
+const failingTest = (title: string, fn: () => void | Promise<void>): void => {
+	test(title, async () => {
+		try {
+			await fn();
+		} catch {
+			return;
+		}
 
-test('.get()', t => {
-	t.is(t.context.config.get('foo'), undefined);
-	t.is(t.context.config.get('foo', '🐴'), '🐴');
-	t.context.config.set('foo', fixture);
-	t.is(t.context.config.get('foo'), fixture);
-});
-
-test('.get() - `defaults` option', t => {
-	const store = new Conf({
-		cwd: temporaryDirectory(),
-		defaults: {
-			foo: 42,
-			nested: {
-				bar: 55,
-			},
-		},
+		throw new Error('Expected test to fail');
 	});
+};
 
-	t.is(store.get('foo'), 42);
-	t.is(store.get('nested.bar'), 55);
+afterEach(() => {
+	resetTrackedConfs();
+	runRegisteredCleanups();
 });
 
-test.failing('.get() - `schema` option - default', t => {
+failingTest('.get() - `schema` option - default', () => {
 	const store = new Conf({
-		cwd: temporaryDirectory(),
+		cwd: createTempDirectory(),
 		schema: {
 			foo: {
 				type: 'boolean',
@@ -65,1523 +60,1269 @@ test.failing('.get() - `schema` option - default', t => {
 		},
 	});
 
-	t.is(store.get('foo'), true);
-	t.is(store.get('nested.bar'), 55); // See: https://github.com/sindresorhus/electron-store/issues/102
+	assert.strictEqual(store.get('foo'), true);
+	assert.strictEqual(store.get('nested.bar'), 55); // See: https://github.com/sindresorhus/electron-store/issues/102
 });
+describe('Conf', () => {
+	let config: Conf;
+	let configWithoutDotNotation: Conf;
+	let keepAliveTimer: NodeJS.Timeout;
 
-test('.set()', t => {
-	t.context.config.set('foo', fixture);
-	t.context.config.set('baz.boo', fixture);
-	t.is(t.context.config.get('foo'), fixture);
-	t.is(t.context.config.get('baz.boo'), fixture);
-});
-
-test('.set() - with object', t => {
-	t.context.config.set({
-		foo1: 'bar1',
-		foo2: 'bar2',
-		baz: {
-			boo: 'foo',
-			foo: {
-				bar: 'baz',
-			},
-		},
-	});
-	t.is(t.context.config.get('foo1'), 'bar1');
-	t.is(t.context.config.get('foo2'), 'bar2');
-	t.deepEqual(t.context.config.get('baz'), {boo: 'foo', foo: {bar: 'baz'}});
-	t.is(t.context.config.get('baz.boo'), 'foo');
-	t.deepEqual(t.context.config.get('baz.foo'), {bar: 'baz'});
-	t.is(t.context.config.get('baz.foo.bar'), 'baz');
-});
-
-test('.set() - with undefined', t => {
-	t.throws(() => {
-		t.context.config.set('foo', undefined);
-	}, {message: 'Use `delete()` to clear values'});
-});
-
-test('.set() - with unsupported values', t => {
-	t.throws(() => {
-		t.context.config.set('a', () => {});
-	}, {message: /not supported by JSON/});
-
-	t.throws(() => {
-		t.context.config.set('a', Symbol('a'));
-	}, {message: /not supported by JSON/});
-
-	t.throws(() => {
-		t.context.config.set({
-			a: undefined,
-		});
-	}, {message: /not supported by JSON/});
-
-	t.throws(() => {
-		t.context.config.set({
-			a() {},
-		});
-	}, {message: /not supported by JSON/});
-
-	t.throws(() => {
-		t.context.config.set({
-			a: Symbol('a'),
-		});
-	}, {message: /not supported by JSON/});
-});
-
-test('.set() - invalid key', t => {
-	t.throws(() => {
-		// For our tests to fail and TypeScript to compile, we'll ignore this TS error.
-		// @ts-expect-error
-		t.context.config.set(1, 'unicorn');
-	}, {message: 'Expected `key` to be of type `string` or `object`, got number'});
-});
-
-test('.has()', t => {
-	t.context.config.set('foo', fixture);
-	t.context.config.set('baz.boo', fixture);
-	t.true(t.context.config.has('foo'));
-	t.true(t.context.config.has('baz.boo'));
-	t.false(t.context.config.has('missing'));
-});
-
-test('.appendToArray()', t => {
-	// Test appending to non-existent key creates array
-	t.context.config.appendToArray('newArray', 'first');
-	t.deepEqual(t.context.config.get('newArray'), ['first']);
-
-	// Test appending to existing array
-	t.context.config.set('items', ['a', 'b']);
-	t.context.config.appendToArray('items', 'c');
-	t.deepEqual(t.context.config.get('items'), ['a', 'b', 'c']);
-
-	// Test appending objects
-	t.context.config.set('objects', [{id: 1}, {id: 2}]);
-	t.context.config.appendToArray('objects', {id: 3});
-	t.deepEqual(t.context.config.get('objects'), [{id: 1}, {id: 2}, {id: 3}]);
-
-	// Test with nested arrays using dot notation
-	t.context.config.set('nested.items', [1, 2]);
-	t.context.config.appendToArray('nested.items', 3);
-	t.deepEqual(t.context.config.get('nested.items'), [1, 2, 3]);
-
-	// Test creating nested array that doesn't exist
-	t.context.config.appendToArray('deeply.nested.array', 'value');
-	t.deepEqual(t.context.config.get('deeply.nested.array'), ['value']);
-});
-
-test('.appendToArray() - error when key is not array', t => {
-	// Test error when existing value is not an array
-	t.context.config.set('notArray', 'string value');
-	t.throws(() => {
-		t.context.config.appendToArray('notArray', 'item');
-	}, {message: 'The key `notArray` is already set to a non-array value'});
-
-	// Test with number
-	t.context.config.set('numberValue', 42);
-	t.throws(() => {
-		t.context.config.appendToArray('numberValue', 'item');
-	}, {message: 'The key `numberValue` is already set to a non-array value'});
-
-	// Test with object
-	t.context.config.set('objectValue', {foo: 'bar'});
-	t.throws(() => {
-		t.context.config.appendToArray('objectValue', 'item');
-	}, {message: 'The key `objectValue` is already set to a non-array value'});
-
-	// Test with nested non-array
-	t.context.config.set('nested.notArray', false);
-	t.throws(() => {
-		t.context.config.appendToArray('nested.notArray', 'item');
-	}, {message: 'The key `nested.notArray` is already set to a non-array value'});
-});
-
-test('.appendToArray() - without dot notation', t => {
-	const store = new Conf({
-		cwd: temporaryDirectory(),
-		accessPropertiesByDotNotation: false,
+	// Workaround for Node.js test runner bug
+	// See: https://github.com/nodejs/node/issues/49952
+	before(() => {
+		keepAliveTimer = setInterval(() => {}, 100_000);
 	});
 
-	// Test basic functionality without dot notation
-	store.appendToArray('items', 'first');
-	t.deepEqual(store.get('items'), ['first']);
-
-	store.appendToArray('items', 'second');
-	t.deepEqual(store.get('items'), ['first', 'second']);
-
-	// Dot notation key should be treated as literal
-	store.appendToArray('nested.items', 'value');
-	t.deepEqual(store.get('nested.items'), ['value']);
-});
-
-test('.appendToArray() - value validation', t => {
-	// Test that unsupported JSON types throw appropriate errors
-	t.context.config.set('items', ['valid']);
-
-	t.throws(() => {
-		t.context.config.appendToArray('items', () => {});
-	}, {message: /not supported by JSON/});
-
-	t.throws(() => {
-		t.context.config.appendToArray('items', Symbol('test'));
-	}, {message: /not supported by JSON/});
-
-	t.throws(() => {
-		t.context.config.appendToArray('items', undefined);
-	}, {message: /not supported by JSON/});
-});
-
-test('.appendToArray() - change events', t => {
-	let changeCallCount = 0;
-	let lastNewValue;
-	let lastOldValue;
-
-	const unsubscribe = t.context.config.onDidChange('items', (newValue, oldValue) => {
-		changeCallCount++;
-		lastNewValue = newValue;
-		lastOldValue = oldValue;
+	after(() => {
+		clearInterval(keepAliveTimer);
 	});
 
-	// First append should create array and fire change event
-	t.context.config.appendToArray('items', 'first');
-	t.is(changeCallCount, 1);
-	t.deepEqual(lastNewValue, ['first']);
-	t.is(lastOldValue, undefined);
-
-	// Second append should fire change event with updated array
-	t.context.config.appendToArray('items', 'second');
-	t.is(changeCallCount, 2);
-	t.deepEqual(lastNewValue, ['first', 'second']);
-	t.deepEqual(lastOldValue, ['first']);
-
-	unsubscribe();
-});
-
-test('.appendToArray() - empty arrays', t => {
-	// Test appending to explicitly set empty array
-	t.context.config.set('empty', []);
-	t.context.config.appendToArray('empty', 'item');
-	t.deepEqual(t.context.config.get('empty'), ['item']);
-
-	// Test multiple appends to empty array
-	t.context.config.set('multi', []);
-	t.context.config.appendToArray('multi', 'a');
-	t.context.config.appendToArray('multi', 'b');
-	t.context.config.appendToArray('multi', 'c');
-	t.deepEqual(t.context.config.get('multi'), ['a', 'b', 'c']);
-});
-
-test('.reset() - `defaults` option', t => {
-	const store = new Conf({
-		cwd: temporaryDirectory(),
-		defaults: {
-			foo: 42,
-			bar: 99,
-		},
+	beforeEach(() => {
+		config = trackConf(new Conf({cwd: createTempDirectory()}));
+		configWithoutDotNotation = trackConf(new Conf({cwd: createTempDirectory(), accessPropertiesByDotNotation: false}));
 	});
 
-	store.set('foo', 77);
-	store.set('bar', 0);
-	store.reset('foo', 'bar');
-	t.is(store.get('foo'), 42);
-	t.is(store.get('bar'), 99);
-});
-
-test('.reset() - falsy `defaults` option', t => {
-	const defaultsValue: {
-		foo: number;
-		bar: string;
-		fox: boolean;
-		bax: boolean;
-	} = {
-		foo: 0,
-		bar: '',
-		fox: false,
-		bax: true,
-	};
-	const store = new Conf({
-		cwd: temporaryDirectory(),
-		defaults: defaultsValue,
-	});
-
-	store.set('foo', 5);
-	store.set('bar', 'exist');
-	store.set('fox', true);
-	store.set('fox', false);
-
-	store.reset('foo', 'bar', 'fox', 'bax');
-
-	t.is(store.get('foo'), 0);
-	t.is(store.get('bar'), '');
-	t.is(store.get('fox'), false);
-	t.is(store.get('bax'), true);
-});
-
-test('.reset() - `schema` option', t => {
-	const store = new Conf({
-		cwd: temporaryDirectory(),
-		schema: {
-			foo: {
-				default: 42,
-			},
-			bar: {
-				default: 99,
-			},
-		},
-	});
-
-	store.set('foo', 77);
-	store.set('bar', 0);
-	store.reset('foo', 'bar');
-	t.is(store.get('foo'), 42);
-	t.is(store.get('bar'), 99);
-});
-
-test('.delete()', t => {
-	const {config} = t.context;
-	config.set('foo', 'bar');
-	config.set('baz.boo', true);
-	config.set('baz.foo.bar', 'baz');
-	config.delete('foo');
-	t.is(config.get('foo'), undefined);
-	config.delete('baz.boo');
-	t.not(config.get('baz.boo'), true);
-	config.delete('baz.foo');
-	t.not(config.get('baz.foo'), {bar: 'baz'});
-	config.set('foo.bar.baz', {awesome: 'icecream'});
-	config.set('foo.bar.zoo', {awesome: 'redpanda'});
-	config.delete('foo.bar.baz');
-	t.is(config.get('foo.bar.zoo.awesome'), 'redpanda');
-});
-
-test('.clear()', t => {
-	t.context.config.set('foo', 'bar');
-	t.context.config.set('foo1', 'bar1');
-	t.context.config.set('baz.boo', true);
-	t.context.config.clear();
-	t.is(t.context.config.size, 0);
-});
-
-test('.clear() - `defaults` option', t => {
-	const store = new Conf({
-		cwd: temporaryDirectory(),
-		defaults: {
-			foo: 42,
-			bar: 99,
-		},
-	});
-
-	store.set('foo', 2);
-	store.clear();
-	t.is(store.get('foo'), 42);
-	t.is(store.get('bar'), 99);
-});
-
-test('.clear() - `schema` option', t => {
-	const store = new Conf({
-		cwd: temporaryDirectory(),
-		schema: {
-			foo: {
-				default: 42,
-			},
-			bar: {
-				default: 99,
-			},
-		},
-	});
-
-	store.set('foo', 2);
-	store.clear();
-	t.is(store.get('foo'), 42);
-	t.is(store.get('bar'), 99);
-});
-
-test('.clear() - change events', t => {
-	const store = new Conf({
-		cwd: temporaryDirectory(),
-		defaults: {
-			foo: 42,
-			bar: 'hello',
-		},
-	});
-
-	// Set some values and extra keys
-	store.set('foo', 100);
-	store.set('baz', 'extra');
-
-	// Track change events during clear
-	const events: Array<{newValue: any; oldValue: any}> = [];
-	const unsubscribe = store.onDidAnyChange((newValue, oldValue) => {
-		events.push({
-			newValue: structuredClone(newValue),
-			oldValue: structuredClone(oldValue),
-		});
-	});
-
-	// Clear should emit exactly one change event with final state
-	store.clear();
-
-	unsubscribe();
-
-	t.is(events.length, 1, 'Should emit exactly one change event');
-	t.deepEqual(events[0]!.newValue, {foo: 42, bar: 'hello'}, 'Should emit final state with defaults');
-	t.deepEqual(events[0]!.oldValue, {foo: 100, bar: 'hello', baz: 'extra'}, 'Should emit correct old state');
-});
-
-test('.clear() - without dot notation', t => {
-	const store = new Conf({
-		cwd: temporaryDirectory(),
-		accessPropertiesByDotNotation: false,
-		defaults: {
-			foo: 42,
-			'nested.key': 'value',
-		},
-	});
-
-	// Set some values
-	store.set('foo', 100);
-	store.set('other', 'test');
-
-	// Clear should restore defaults correctly without dot notation
-	store.clear();
-
-	t.is(store.get('foo'), 42);
-	t.is(store.get('nested.key'), 'value'); // Should be literal key, not nested
-	t.is(store.get('other'), undefined);
-	t.is(store.size, 2);
-});
-
-test('.clear() - validation error', t => {
-	// Test that clear() validates default values and throws for invalid JSON types
-	// Note: Invalid defaults can be set during construction but cause errors when used
-	const store = new Conf({
-		cwd: temporaryDirectory(),
-		defaults: {
-			foo: 42,
-			bad() {}, // Invalid JSON type
-		},
-	});
-
-	// Constructor succeeds, but invalid default is not included in store
-	t.is(store.get('foo'), 42);
-	t.is(store.get('bad' as any), undefined);
-
-	// Clear() should validate defaults and throw for invalid types
-	t.throws(() => {
-		store.clear();
-	}, {message: /not supported by JSON/});
-});
-
-test('.size', t => {
-	t.context.config.set('foo', 'bar');
-	t.is(t.context.config.size, 1);
-});
-
-test('.store', t => {
-	t.context.config.set('foo', 'bar');
-	t.context.config.set('baz.boo', true);
-	t.deepEqual(t.context.config.store, {
-		foo: 'bar',
-		baz: {
-			boo: true,
-		},
-	});
-});
-
-test('`defaults` option', t => {
-	const config = new Conf({
-		cwd: temporaryDirectory(),
-		defaults: {
-			foo: 'bar',
-		},
-	});
-
-	t.is(config.get('foo'), 'bar');
-});
-
-test('`configName` option', t => {
-	const configName = 'alt-config';
-	const config = new Conf<{foo: string | undefined}>({
-		cwd: temporaryDirectory(),
-		configName,
-	});
-	t.is(config.get('foo'), undefined);
-	config.set('foo', fixture);
-	t.is(config.get('foo'), fixture);
-	t.is(path.basename(config.path, '.json'), configName);
-	t.true(fs.existsSync(config.path));
-});
-
-test('no `suffix` option', t => {
-	const config = new Conf({projectName: Date.now().toString()});
-	t.true(config.path.includes('-nodejs'));
-	config.clear();
-});
-
-test('with `suffix` option set to empty string', t => {
-	const projectSuffix = '';
-	const projectName = 'conf-temp1-project';
-	const config = new Conf({projectSuffix, projectName});
-	const configPathSegments = config.path.split(path.sep);
-	const configRootIndex = configPathSegments.indexOf(projectName);
-	t.true(configRootIndex !== -1 && configRootIndex < configPathSegments.length);
-});
-
-test('with `projectSuffix` option set to non-empty string', t => {
-	const projectSuffix = 'new-projectSuffix';
-	const projectName = 'conf-temp2-project';
-	const config = new Conf({projectSuffix, projectName});
-	const configPathSegments = config.path.split(path.sep);
-	const expectedRootName = `${projectName}-${projectSuffix}`;
-	const configRootIndex = configPathSegments.indexOf(expectedRootName);
-	t.true(configRootIndex !== -1 && configRootIndex < configPathSegments.length);
-});
-
-test('`fileExtension` option', t => {
-	const fileExtension = 'alt-ext';
-	const config = new Conf({
-		cwd: temporaryDirectory(),
-		fileExtension,
-	});
-	t.is(config.get('foo'), undefined);
-	config.set('foo', fixture);
-	t.is(config.get('foo'), fixture);
-	t.is(path.extname(config.path), `.${fileExtension}`);
-});
-
-test('`fileExtension` option = empty string', t => {
-	const configName = 'unicorn';
-	const config = new Conf({
-		cwd: temporaryDirectory(),
-		fileExtension: '',
-		configName,
-	});
-	t.is(path.basename(config.path), configName);
-});
-
-test('`serialize` and `deserialize` options', t => {
-	t.plan(4);
-	const serialized = `foo:${fixture}`;
-	const deserialized = {foo: fixture};
-	const serialize = (value: unknown): string => {
-		t.is(value, deserialized);
-		return serialized;
-	};
-
-	const deserialize = (value: unknown) => {
-		t.is(value, serialized);
-		return deserialized;
-	};
-
-	const config = new Conf({
-		cwd: temporaryDirectory(),
-		serialize,
-		deserialize,
-	});
-
-	t.deepEqual(config.store, {} as any);
-	config.store = deserialized;
-	t.deepEqual(config.store, deserialized);
-});
-
-test('`projectName` option', t => {
-	const projectName = 'conf-fixture-project-name';
-	const config = new Conf({projectName});
-	t.is(config.get('foo'), undefined);
-	config.set('foo', fixture);
-	t.is(config.get('foo'), fixture);
-	t.true(config.path.includes(projectName));
-	deleteSync(config.path, {force: true});
-});
-
-test('ensure `.store` is always an object', t => {
-	const cwd = temporaryDirectory();
-	const config = new Conf({cwd});
-
-	deleteSync(cwd, {force: true});
-
-	t.notThrows(() => {
-		config.get('foo');
-	});
-});
-
-test('instance is iterable', t => {
-	t.context.config.set({
-		foo: fixture,
-		bar: fixture,
-	});
-	t.deepEqual(
-		[...t.context.config],
-		[['foo', fixture], ['bar', fixture]],
-	);
-});
-
-test('`cwd` option overrides `projectName` option', t => {
-	const cwd = temporaryDirectory();
-
-	t.notThrows(() => {
-		const config: Conf = new Conf({cwd, projectName: ''});
-		t.true(config.path.startsWith(cwd));
-		t.is(config.get('foo'), undefined);
+	it('.get()', () => {
+		assert.strictEqual(config.get('foo'), undefined);
+		assert.strictEqual(config.get('foo', '🐴'), '🐴');
 		config.set('foo', fixture);
-		t.is(config.get('foo'), fixture);
-		deleteSync(config.path, {force: true});
-	});
-});
-
-test('encryption', t => {
-	const config = new Conf({
-		cwd: temporaryDirectory(),
-		encryptionKey: 'abc123',
+		assert.strictEqual(config.get('foo'), fixture);
 	});
 
-	t.is(config.get('foo'), undefined);
-	t.is(config.get('foo', '🐴'), '🐴');
-	config.set('foo', fixture);
-	config.set('baz.boo', fixture);
-	t.is(config.get('foo'), fixture);
-	t.is(config.get('baz.boo'), fixture);
-});
+	it('.get() - `defaults` option', () => {
+		const store = new Conf({
+			cwd: createTempDirectory(),
+			defaults: {
+				foo: 42,
+				nested: {
+					bar: 55,
+				},
+			},
+		});
 
-test('encryption - upgrade', t => {
-	const cwd = temporaryDirectory();
-
-	const before = new Conf({cwd});
-	before.set('foo', fixture);
-	t.is(before.get('foo'), fixture);
-
-	const after = new Conf({cwd, encryptionKey: 'abc123'});
-	t.is(after.get('foo'), fixture);
-});
-
-test('encryption - corrupt file', t => {
-	const cwd = temporaryDirectory();
-
-	const before = new Conf({
-		cwd,
-		encryptionKey: 'abc123',
-		clearInvalidConfig: true,
+		assert.strictEqual(store.get('foo'), 42);
+		assert.strictEqual(store.get('nested.bar'), 55);
 	});
 
-	before.set('foo', fixture);
-	t.is(before.get('foo'), fixture);
-
-	fs.appendFileSync(path.join(cwd, 'config.json'), 'corrupt file');
-
-	const after = new Conf({
-		cwd,
-		encryptionKey: 'abc123',
-		clearInvalidConfig: true,
+	it('.set()', () => {
+		config.set('foo', fixture);
+		config.set('baz.boo', fixture);
+		assert.strictEqual(config.get('foo'), fixture);
+		assert.strictEqual(config.get('baz.boo'), fixture);
 	});
 
-	t.is(after.get('foo'), undefined);
-});
-
-test('onDidChange()', t => {
-	const {config} = t.context;
-
-	t.plan(8);
-
-	const checkFoo = (newValue: unknown, oldValue: unknown): void => {
-		t.is(newValue, '🐴');
-		t.is(oldValue, fixture);
-	};
-
-	const checkBaz = (newValue: unknown, oldValue: unknown): void => {
-		t.is(newValue, '🐴');
-		t.is(oldValue, fixture);
-	};
-
-	config.set('foo', fixture);
-	let unsubscribe = config.onDidChange('foo', checkFoo);
-	config.set('foo', '🐴');
-	unsubscribe();
-	config.set('foo', fixture);
-
-	config.set('baz.boo', fixture);
-	unsubscribe = config.onDidChange('baz.boo', checkBaz);
-	config.set('baz.boo', '🐴');
-	unsubscribe();
-	config.set('baz.boo', fixture);
-
-	const checkUndefined = (newValue: unknown, oldValue: unknown): void => {
-		t.is(oldValue, fixture);
-		t.is(newValue, undefined);
-	};
-
-	const checkSet = (newValue: unknown, oldValue: unknown): void => {
-		t.is(oldValue, undefined);
-		t.is(newValue, '🐴');
-	};
-
-	unsubscribe = config.onDidChange('foo', checkUndefined);
-	config.delete('foo');
-	unsubscribe();
-	unsubscribe = config.onDidChange('foo', checkSet);
-	config.set('foo', '🐴');
-	unsubscribe();
-	config.set('foo', fixture);
-});
-
-test('onDidAnyChange()', t => {
-	const {config} = t.context;
-
-	t.plan(8);
-
-	const checkFoo = (newValue: unknown, oldValue: unknown): void => {
-		t.deepEqual(newValue, {foo: '🐴'});
-		t.deepEqual(oldValue, {foo: fixture});
-	};
-
-	const checkBaz = (newValue: unknown, oldValue: unknown): void => {
-		t.deepEqual(newValue, {
-			foo: fixture,
-			baz: {boo: '🐴'},
+	it('.set() - with object', () => {
+		config.set({
+			foo1: 'bar1',
+			foo2: 'bar2',
+			baz: {
+				boo: 'foo',
+				foo: {
+					bar: 'baz',
+				},
+			},
 		});
-		t.deepEqual(oldValue, {
-			foo: fixture,
-			baz: {boo: fixture},
+		assert.strictEqual(config.get('foo1'), 'bar1');
+		assert.strictEqual(config.get('foo2'), 'bar2');
+		assert.deepStrictEqual(config.get('baz'), {boo: 'foo', foo: {bar: 'baz'}});
+		assert.strictEqual(config.get('baz.boo'), 'foo');
+		assert.deepStrictEqual(config.get('baz.foo'), {bar: 'baz'});
+		assert.strictEqual(config.get('baz.foo.bar'), 'baz');
+	});
+
+	it('.set() - with undefined', () => {
+		assert.throws(() => {
+			config.set('foo', undefined);
+		}, {message: 'Use `delete()` to clear values'});
+	});
+
+	it('.set() - with unsupported values', () => {
+		assert.throws(() => {
+			config.set('a', () => {});
+		}, {message: /not supported by JSON/});
+
+		assert.throws(() => {
+			config.set('a', Symbol('a'));
+		}, {message: /not supported by JSON/});
+
+		assert.throws(() => {
+			config.set({
+				a: undefined,
+			});
+		}, {message: /not supported by JSON/});
+
+		assert.throws(() => {
+			config.set({
+				a() {},
+			});
+		}, {message: /not supported by JSON/});
+
+		assert.throws(() => {
+			config.set({
+				a: Symbol('a'),
+			});
+		}, {message: /not supported by JSON/});
+	});
+
+	it('.set() - invalid key', () => {
+		assert.throws(() => {
+			// For our tests to fail and TypeScript to compile, we'll ignore this TS error.
+			// @ts-expect-error
+			config.set(1, 'unicorn');
+		}, {message: 'Expected `key` to be of type `string` or `object`, got number'});
+	});
+
+	it('.has()', () => {
+		config.set('foo', fixture);
+		config.set('baz.boo', fixture);
+		assert.ok(config.has('foo'));
+		assert.ok(config.has('baz.boo'));
+		assert.ok(!config.has('missing'));
+	});
+
+	it('.appendToArray()', () => {
+		// Test appending to non-existent key creates array
+		config.appendToArray('newArray', 'first');
+		assert.deepStrictEqual(config.get('newArray'), ['first']);
+
+		// Test appending to existing array
+		config.set('items', ['a', 'b']);
+		config.appendToArray('items', 'c');
+		assert.deepStrictEqual(config.get('items'), ['a', 'b', 'c']);
+
+		// Test appending objects
+		config.set('objects', [{id: 1}, {id: 2}]);
+		config.appendToArray('objects', {id: 3});
+		assert.deepStrictEqual(config.get('objects'), [{id: 1}, {id: 2}, {id: 3}]);
+
+		// Test with nested arrays using dot notation
+		config.set('nested.items', [1, 2]);
+		config.appendToArray('nested.items', 3);
+		assert.deepStrictEqual(config.get('nested.items'), [1, 2, 3]);
+
+		// Test creating nested array that doesn't exist
+		config.appendToArray('deeply.nested.array', 'value');
+		assert.deepStrictEqual(config.get('deeply.nested.array'), ['value']);
+	});
+
+	it('.appendToArray() - error when key is not array', () => {
+		// Test error when existing value is not an array
+		config.set('notArray', 'string value');
+		assert.throws(() => {
+			config.appendToArray('notArray', 'item');
+		}, {message: /already set to a non-array value/});
+
+		// Test with number
+		config.set('numberValue', 42);
+		assert.throws(() => {
+			config.appendToArray('numberValue', 'item');
+		}, {message: /already set to a non-array value/});
+
+		// Test with object
+		config.set('objectValue', {foo: 'bar'});
+		assert.throws(() => {
+			config.appendToArray('objectValue', 'item');
+		}, {message: /already set to a non-array value/});
+
+		// Test with nested non-array
+		config.set('nested.notArray', false);
+		assert.throws(() => {
+			config.appendToArray('nested.notArray', 'item');
+		}, {message: /already set to a non-array value/});
+	});
+
+	it('.appendToArray() - without dot notation', () => {
+		const store = new Conf({
+			cwd: createTempDirectory(),
+			accessPropertiesByDotNotation: false,
 		});
-	};
 
-	config.set('foo', fixture);
-	let unsubscribe = config.onDidAnyChange(checkFoo);
-	config.set('foo', '🐴');
-	unsubscribe();
-	config.set('foo', fixture);
+		// Test basic functionality without dot notation
+		store.appendToArray('items', 'first');
+		assert.deepStrictEqual(store.get('items'), ['first']);
 
-	config.set('baz.boo', fixture);
-	unsubscribe = config.onDidAnyChange(checkBaz);
-	config.set('baz.boo', '🐴');
-	unsubscribe();
-	config.set('baz.boo', fixture);
+		// Dot notation key should be treated as literal
+		store.appendToArray('nested.items', 'value');
+		assert.deepStrictEqual(store.get('nested.items'), ['value']);
+	});
 
-	const checkUndefined = (newValue: unknown, oldValue: unknown): void => {
-		t.deepEqual(oldValue, {
-			foo: '🦄',
-			baz: {boo: '🦄'},
+	it('.appendToArray() - value validation', () => {
+		// Test that unsupported JSON types throw appropriate errors
+		config.set('items', ['valid']);
+
+		assert.throws(() => {
+			config.appendToArray('items', () => {});
+		}, {message: /not supported by JSON/});
+
+		assert.throws(() => {
+			config.appendToArray('items', Symbol('test'));
+		}, {message: /not supported by JSON/});
+
+		assert.throws(() => {
+			config.appendToArray('items', undefined);
+		}, {message: /not supported by JSON/});
+	});
+
+	it('.appendToArray() - change events', () => {
+		let changeCallCount = 0;
+		let lastNewValue;
+		let lastOldValue;
+
+		const unsubscribe = config.onDidChange('items', (newValue, oldValue) => {
+			changeCallCount++;
+			lastNewValue = newValue;
+			lastOldValue = oldValue;
 		});
 
-		t.deepEqual(newValue, {
-			baz: {boo: fixture},
+		// First append should create array and fire change event
+		config.appendToArray('items', 'first');
+		assert.strictEqual(changeCallCount, 1);
+		assert.deepStrictEqual(lastNewValue, ['first']);
+		assert.strictEqual(lastOldValue, undefined);
+
+		// Second append should fire change event with updated array
+		config.appendToArray('items', 'second');
+		assert.strictEqual(changeCallCount, 2);
+		assert.deepStrictEqual(lastNewValue, ['first', 'second']);
+		assert.deepStrictEqual(lastOldValue, ['first']);
+
+		unsubscribe();
+	});
+
+	it('.appendToArray() - empty arrays', () => {
+		// Test appending to explicitly set empty array
+		config.set('empty', []);
+		config.appendToArray('empty', 'item');
+		assert.deepStrictEqual(config.get('empty'), ['item']);
+
+		// Test multiple appends to empty array
+		config.set('multi', []);
+		config.appendToArray('multi', 'a');
+		config.appendToArray('multi', 'b');
+		config.appendToArray('multi', 'c');
+		assert.deepStrictEqual(config.get('multi'), ['a', 'b', 'c']);
+	});
+
+	it('.reset() - `defaults` option', () => {
+		const store = new Conf({
+			cwd: createTempDirectory(),
+			defaults: {
+				foo: 42,
+				bar: 99,
+			},
 		});
-	};
 
-	const checkSet = (newValue: unknown, oldValue: unknown): void => {
-		t.deepEqual(oldValue, {
-			baz: {boo: fixture},
+		store.set('foo', 77);
+		store.set('bar', 0);
+		store.reset('foo', 'bar');
+		assert.strictEqual(store.get('foo'), 42);
+		assert.strictEqual(store.get('bar'), 99);
+	});
+
+	it('.reset() - falsy `defaults` option', () => {
+		const defaultsValue: {
+			foo: number;
+			bar: string;
+			fox: boolean;
+			bax: boolean;
+		} = {
+			foo: 0,
+			bar: '',
+			fox: false,
+			bax: true,
+		};
+		const store = new Conf({
+			cwd: createTempDirectory(),
+			defaults: defaultsValue,
 		});
 
-		t.deepEqual(newValue, {
-			baz: {boo: '🦄'},
-			foo: '🐴',
+		store.set('foo', 5);
+		store.set('bar', 'exist');
+		store.set('fox', true);
+		store.set('fox', false);
+
+		store.reset('foo', 'bar', 'fox', 'bax');
+
+		assert.strictEqual(store.get('foo'), 0);
+		assert.strictEqual(store.get('bar'), '');
+		assert.strictEqual(store.get('fox'), false);
+		assert.strictEqual(store.get('bax'), true);
+	});
+
+	it('.reset() - `schema` option', () => {
+		const store = new Conf({
+			cwd: createTempDirectory(),
+			schema: {
+				foo: {
+					default: 42,
+				},
+				bar: {
+					default: 99,
+				},
+			},
 		});
-	};
 
-	unsubscribe = config.onDidAnyChange(checkUndefined);
-	config.delete('foo');
-	unsubscribe();
-	unsubscribe = config.onDidAnyChange(checkSet);
-	config.set('foo', '🐴');
-	unsubscribe();
-	config.set('foo', fixture);
-});
+		store.set('foo', 77);
+		store.set('bar', 0);
+		store.reset('foo', 'bar');
+		assert.strictEqual(store.get('foo'), 42);
+		assert.strictEqual(store.get('bar'), 99);
+	});
 
-// See #32
-test('doesn\'t write to disk upon instanciation if and only if the store didn\'t change', t => {
-	let exists = fs.existsSync(t.context.config.path);
-	t.is(exists, false);
+	it('.delete()', () => {
+		config.set('foo', 'bar');
+		config.set('baz.boo', true);
+		config.set('baz.foo.bar', 'baz');
+		config.delete('foo');
+		assert.strictEqual(config.get('foo'), undefined);
+		config.delete('baz.boo');
+		assert.notStrictEqual(config.get('baz.boo'), true);
+		config.delete('baz.foo');
+		assert.notDeepStrictEqual(config.get('baz.foo'), {bar: 'baz'});
+		config.set('foo.bar.baz', {awesome: 'icecream'});
+		config.set('foo.bar.zoo', {awesome: 'redpanda'});
+		config.delete('foo.bar.baz');
+		assert.strictEqual(config.get('foo.bar.zoo.awesome'), 'redpanda');
+	});
 
-	const conf = new Conf({
-		cwd: temporaryDirectory(),
-		defaults: {
+	it('.clear()', () => {
+		config.set('foo', 'bar');
+		config.set('foo1', 'bar1');
+		config.set('baz.boo', true);
+		config.clear();
+		assert.strictEqual(config.size, 0);
+	});
+
+	it('.clear() - `defaults` option', () => {
+		const store = new Conf({
+			cwd: createTempDirectory(),
+			defaults: {
+				foo: 42,
+				bar: 99,
+			},
+		});
+
+		store.set('foo', 2);
+		store.clear();
+		assert.strictEqual(store.get('foo'), 42);
+		assert.strictEqual(store.get('bar'), 99);
+	});
+
+	it('.clear() - `schema` option', () => {
+		const store = new Conf({
+			cwd: createTempDirectory(),
+			schema: {
+				foo: {
+					default: 42,
+				},
+				bar: {
+					default: 99,
+				},
+			},
+		});
+
+		store.set('foo', 2);
+		store.clear();
+		assert.strictEqual(store.get('foo'), 42);
+		assert.strictEqual(store.get('bar'), 99);
+	});
+
+	it('.clear() - change events', () => {
+		const store = new Conf({
+			cwd: createTempDirectory(),
+			defaults: {
+				foo: 42,
+				bar: 'hello',
+			},
+		});
+
+		// Set some values and extra keys
+		store.set('foo', 100);
+		store.set('baz', 'extra');
+
+		// Track change events during clear
+		const events: Array<{newValue: any; oldValue: any}> = [];
+		const unsubscribe = store.onDidAnyChange((newValue, oldValue) => {
+			events.push({
+				newValue: structuredClone(newValue),
+				oldValue: structuredClone(oldValue),
+			});
+		});
+
+		// Clear should emit exactly one change event with final state
+		store.clear();
+
+		unsubscribe();
+
+		assert.strictEqual(events.length, 1, 'Should emit exactly one change event');
+		assert.deepStrictEqual(events[0]!.newValue, {foo: 42, bar: 'hello'}, 'Should emit final state with defaults');
+		assert.deepStrictEqual(events[0]!.oldValue, {foo: 100, bar: 'hello', baz: 'extra'}, 'Should emit correct old state');
+	});
+
+	it('.clear() - without dot notation', () => {
+		const store = new Conf({
+			cwd: createTempDirectory(),
+			accessPropertiesByDotNotation: false,
+			defaults: {
+				foo: 42,
+				'nested.key': 'value',
+			},
+		});
+
+		// Set some values
+		store.set('foo', 100);
+		store.set('other', 'test');
+
+		// Clear should restore defaults correctly without dot notation
+		store.clear();
+
+		assert.strictEqual(store.get('foo'), 42);
+		assert.strictEqual(store.get('nested.key'), 'value'); // Should be literal key, not nested
+		assert.strictEqual(store.get('other'), undefined);
+		assert.strictEqual(store.size, 2);
+	});
+
+	it('.clear() - validation error', () => {
+		// Test that clear() validates default values and throws for invalid JSON types
+		// Note: Invalid defaults can be set during construction but cause errors when used
+		const store = new Conf({
+			cwd: createTempDirectory(),
+			defaults: {
+				foo: 42,
+				bad() {}, // Invalid JSON type
+			},
+		});
+
+		// Constructor succeeds, but invalid default is not included in store
+		assert.strictEqual(store.get('foo'), 42);
+		assert.strictEqual(store.get('bad' as any), undefined);
+
+		// Clear() should validate defaults and throw for invalid types
+		assert.throws(() => {
+			store.clear();
+		}, {message: /not supported by JSON/});
+	});
+
+	it('.size', () => {
+		config.set('foo', 'bar');
+		assert.strictEqual(config.size, 1);
+	});
+
+	it('.store', () => {
+		config.set('foo', 'bar');
+		config.set('baz.boo', true);
+		assert.deepStrictEqual(config.store, createNullProtoObject({
 			foo: 'bar',
-		},
+			baz: {
+				boo: true,
+			},
+		}));
 	});
-	exists = fs.existsSync(conf.path);
-	t.is(exists, true);
-});
 
-test('`clearInvalidConfig` option - invalid data', t => {
-	const config = new Conf({cwd: temporaryDirectory(), clearInvalidConfig: false});
-	fs.writeFileSync(config.path, '🦄');
+	it('`defaults` option', () => {
+		const conf = new Conf({
+			cwd: createTempDirectory(),
+			defaults: {
+				foo: 'bar',
+			},
+		});
 
-	t.throws(() => {
-		// eslint-disable-next-line @typescript-eslint/no-unused-expressions
-		config.store;
-	}, {instanceOf: SyntaxError});
-});
+		assert.strictEqual(conf.get('foo'), 'bar');
+	});
 
-test('`clearInvalidConfig` option - valid data', t => {
-	const config = new Conf({cwd: temporaryDirectory(), clearInvalidConfig: false});
-	config.set('foo', 'bar');
-	t.deepEqual(config.store, {foo: 'bar'});
-});
+	it('`configName` option', () => {
+		const configName = 'alt-config';
+		const conf = new Conf<{foo: string | undefined}>({
+			cwd: createTempDirectory(),
+			configName,
+		});
+		assert.strictEqual(conf.get('foo'), undefined);
+		conf.set('foo', fixture);
+		assert.strictEqual(conf.get('foo'), fixture);
+		assert.strictEqual(path.basename(conf.path, '.json'), configName);
+		assert.ok(fs.existsSync(conf.path));
+	});
 
-test('`clearInvalidConfig` option - schema validation error', t => {
-	const temporaryDirectoryPath = temporaryDirectory();
-	const configPath = path.join(temporaryDirectoryPath, 'config.json');
+	it('no `suffix` option', () => {
+		const conf = new Conf({projectName: nextProjectName()});
+		assert.ok(conf.path.includes('-nodejs'));
+		conf.clear();
+	});
 
-	// Create config file with invalid schema data
-	fs.writeFileSync(configPath, JSON.stringify({myKey: 'invalid-type'}, null, '\t'));
+	it('with `suffix` option set to empty string', () => {
+		const projectSuffix = '';
+		const projectName = 'conf-temp1-project';
+		const conf = new Conf({projectSuffix, projectName});
+		const configPathSegments = conf.path.split(path.sep);
+		const configRootIndex = configPathSegments.indexOf(projectName);
+		assert.ok(configRootIndex !== -1 && configRootIndex < configPathSegments.length);
+	});
 
-	// Without clearInvalidConfig, should throw
-	t.throws(() => {
-		new Conf({
+	it('with `projectSuffix` option set to non-empty string', () => {
+		const projectSuffix = 'new-projectSuffix';
+		const projectName = 'conf-temp2-project';
+		const conf = new Conf({projectSuffix, projectName});
+		const configPathSegments = conf.path.split(path.sep);
+		const expectedRootName = `${projectName}-${projectSuffix}`;
+		const configRootIndex = configPathSegments.indexOf(expectedRootName);
+		assert.ok(configRootIndex !== -1 && configRootIndex < configPathSegments.length);
+	});
+
+	it('`fileExtension` option', () => {
+		const fileExtension = 'alt-ext';
+		const conf = new Conf({
+			cwd: createTempDirectory(),
+			fileExtension,
+		});
+		assert.strictEqual(conf.get('foo'), undefined);
+		conf.set('foo', fixture);
+		assert.strictEqual(conf.get('foo'), fixture);
+		assert.strictEqual(path.extname(conf.path), `.${fileExtension}`);
+	});
+
+	it('`fileExtension` option = empty string', () => {
+		const configName = 'unicorn';
+		const conf = new Conf({
+			cwd: createTempDirectory(),
+			fileExtension: '',
+			configName,
+		});
+		assert.strictEqual(path.basename(conf.path), configName);
+	});
+
+	it('`serialize` and `deserialize` options', () => {
+		const serialized = `foo:${fixture}`;
+		const deserialized = {foo: fixture};
+		let serializeCallCount = 0;
+		let deserializeCallCount = 0;
+
+		const serialize = (value: unknown): string => {
+			serializeCallCount++;
+			assert.deepStrictEqual(value, deserialized);
+			return serialized;
+		};
+
+		const deserialize = (value: unknown) => {
+			deserializeCallCount++;
+			assert.strictEqual(value, serialized);
+			return deserialized;
+		};
+
+		const conf = new Conf({
+			cwd: createTempDirectory(),
+			serialize,
+			deserialize,
+		});
+
+		assert.deepStrictEqual(conf.store, createNullProtoObject({}));
+		conf.store = deserialized;
+		assert.deepStrictEqual(conf.store, createNullProtoObject(deserialized));
+		assert.strictEqual(serializeCallCount, 1);
+		assert.strictEqual(deserializeCallCount, 1);
+	});
+
+	it('`projectName` option', () => {
+		const projectName = 'conf-fixture-project-name';
+		const conf = new Conf({projectName});
+		assert.strictEqual(conf.get('foo'), undefined);
+		conf.set('foo', fixture);
+		assert.strictEqual(conf.get('foo'), fixture);
+		assert.ok(conf.path.includes(projectName));
+		fs.rmSync(conf.path, {force: true});
+	});
+
+	it('ensure `.store` is always an object', () => {
+		const cwd = createTempDirectory();
+		const conf = new Conf({cwd});
+
+		fs.rmSync(cwd, {force: true, recursive: true});
+
+		assert.doesNotThrow(() => {
+			conf.get('foo');
+		});
+	});
+
+	it('instance is iterable', () => {
+		config.set({
+			foo: fixture,
+			bar: fixture,
+		});
+		assert.deepStrictEqual(
+			[...config],
+			[['foo', fixture], ['bar', fixture]],
+		);
+	});
+
+	it('`cwd` option overrides `projectName` option', () => {
+		const cwd = createTempDirectory();
+
+		assert.doesNotThrow(() => {
+			const conf: Conf = new Conf({cwd, projectName: ''});
+			assert.ok(conf.path.startsWith(cwd));
+			assert.strictEqual(conf.get('foo'), undefined);
+			conf.set('foo', fixture);
+			assert.strictEqual(conf.get('foo'), fixture);
+			fs.rmSync(conf.path, {force: true});
+		});
+	});
+
+	it('encryption', () => {
+		const conf = new Conf({
+			cwd: createTempDirectory(),
+			encryptionKey: 'abc123',
+		});
+
+		assert.strictEqual(conf.get('foo'), undefined);
+		assert.strictEqual(conf.get('foo', '🐴'), '🐴');
+		conf.set('foo', fixture);
+		conf.set('baz.boo', fixture);
+		assert.strictEqual(conf.get('foo'), fixture);
+		assert.strictEqual(conf.get('baz.boo'), fixture);
+	});
+
+	it('encryption - upgrade', () => {
+		const cwd = createTempDirectory();
+
+		const before = new Conf({cwd});
+		before.set('foo', fixture);
+		assert.strictEqual(before.get('foo'), fixture);
+
+		const after = new Conf({cwd, encryptionKey: 'abc123'});
+		assert.strictEqual(after.get('foo'), fixture);
+	});
+
+	it('encryption - corrupt file', () => {
+		const cwd = createTempDirectory();
+
+		const before = new Conf({
+			cwd,
+			encryptionKey: 'abc123',
+			clearInvalidConfig: true,
+		});
+
+		before.set('foo', fixture);
+		assert.strictEqual(before.get('foo'), fixture);
+
+		fs.appendFileSync(path.join(cwd, 'config.json'), 'corrupt file');
+
+		const after = new Conf({
+			cwd,
+			encryptionKey: 'abc123',
+			clearInvalidConfig: true,
+		});
+
+		assert.strictEqual(after.get('foo'), undefined);
+	});
+
+	it('encryption - corrupt file with schema clears data', () => {
+		const cwd = createTempDirectory();
+		const schema: Schema<{enabled: boolean}> = {
+			enabled: {type: 'boolean'},
+		};
+
+		const before = new Conf({
+			cwd,
+			encryptionKey: 'enc-schema',
+			schema,
+			clearInvalidConfig: true,
+		});
+
+		before.set('enabled', true);
+		const corruptedPath = path.join(cwd, 'config.json');
+		fs.writeFileSync(corruptedPath, 'corrupt-data');
+		fs.statSync(corruptedPath);
+
+		const after = new Conf({
+			cwd,
+			encryptionKey: 'enc-schema',
+			schema,
+			clearInvalidConfig: true,
+		});
+
+		assert.strictEqual(after.get('enabled'), undefined);
+	});
+
+	it('onDidChange()', () => {
+		let fooChecks = 0;
+		let bazChecks = 0;
+
+		const checkFoo = (newValue: unknown, oldValue: unknown): void => {
+			assert.strictEqual(newValue, '🐴');
+			assert.strictEqual(oldValue, fixture);
+			fooChecks++;
+		};
+
+		const checkBaz = (newValue: unknown, oldValue: unknown): void => {
+			assert.strictEqual(newValue, '🐴');
+			assert.strictEqual(oldValue, fixture);
+			bazChecks++;
+		};
+
+		config.set('foo', fixture);
+		let unsubscribe = config.onDidChange('foo', checkFoo);
+		config.set('foo', '🐴');
+		unsubscribe();
+		config.set('foo', fixture);
+
+		config.set('baz.boo', fixture);
+		unsubscribe = config.onDidChange('baz.boo', checkBaz);
+		config.set('baz.boo', '🐴');
+		unsubscribe();
+		config.set('baz.boo', fixture);
+
+		const checkUndefined = (newValue: unknown, oldValue: unknown): void => {
+			assert.strictEqual(oldValue, fixture);
+			assert.strictEqual(newValue, undefined);
+		};
+
+		const checkSet = (newValue: unknown, oldValue: unknown): void => {
+			assert.strictEqual(oldValue, undefined);
+			assert.strictEqual(newValue, '🐴');
+		};
+
+		unsubscribe = config.onDidChange('foo', checkUndefined);
+		config.delete('foo');
+		unsubscribe();
+		unsubscribe = config.onDidChange('foo', checkSet);
+		config.set('foo', '🐴');
+		unsubscribe();
+		config.set('foo', fixture);
+
+		assert.strictEqual(fooChecks, 1);
+		assert.strictEqual(bazChecks, 1);
+	});
+
+	it('onDidAnyChange()', () => {
+		let checkFooCount = 0;
+		let checkBazCount = 0;
+
+		const checkFoo = (newValue: unknown, oldValue: unknown): void => {
+			assert.deepStrictEqual(newValue, createNullProtoObject({foo: '🐴'}));
+			assert.deepStrictEqual(oldValue, createNullProtoObject({foo: fixture}));
+			checkFooCount++;
+		};
+
+		const checkBaz = (newValue: unknown, oldValue: unknown): void => {
+			assert.deepStrictEqual(newValue, createNullProtoObject({
+				foo: fixture,
+				baz: {boo: '🐴'},
+			}));
+			assert.deepStrictEqual(oldValue, createNullProtoObject({
+				foo: fixture,
+				baz: {boo: fixture},
+			}));
+			checkBazCount++;
+		};
+
+		config.set('foo', fixture);
+		let unsubscribe = config.onDidAnyChange(checkFoo);
+		config.set('foo', '🐴');
+		unsubscribe();
+		config.set('foo', fixture);
+
+		config.set('baz.boo', fixture);
+		unsubscribe = config.onDidAnyChange(checkBaz);
+		config.set('baz.boo', '🐴');
+		unsubscribe();
+		config.set('baz.boo', fixture);
+
+		const checkUndefined = (newValue: unknown, oldValue: unknown): void => {
+			assert.deepStrictEqual(oldValue, createNullProtoObject({
+				foo: '🦄',
+				baz: {boo: '🦄'},
+			}));
+
+			assert.deepStrictEqual(newValue, createNullProtoObject({
+				baz: {boo: fixture},
+			}));
+		};
+
+		const checkSet = (newValue: unknown, oldValue: unknown): void => {
+			assert.deepStrictEqual(oldValue, createNullProtoObject({
+				baz: {boo: fixture},
+			}));
+
+			assert.deepStrictEqual(newValue, createNullProtoObject({
+				baz: {boo: '🦄'},
+				foo: '🐴',
+			}));
+		};
+
+		unsubscribe = config.onDidAnyChange(checkUndefined);
+		config.delete('foo');
+		unsubscribe();
+		unsubscribe = config.onDidAnyChange(checkSet);
+		config.set('foo', '🐴');
+		unsubscribe();
+		config.set('foo', fixture);
+
+		assert.strictEqual(checkFooCount, 1);
+		assert.strictEqual(checkBazCount, 1);
+	});
+
+	// See #32
+	it('doesn\'t write to disk upon instanciation if and only if the store didn\'t change', () => {
+		let exists = fs.existsSync(config.path);
+		assert.strictEqual(exists, false);
+
+		const conf = new Conf({
+			cwd: createTempDirectory(),
+			defaults: {
+				foo: 'bar',
+			},
+		});
+		exists = fs.existsSync(conf.path);
+		assert.strictEqual(exists, true);
+	});
+
+	it('`clearInvalidConfig` option - invalid data', () => {
+		const conf = new Conf({cwd: createTempDirectory(), clearInvalidConfig: false});
+		fs.writeFileSync(conf.path, '🦄');
+		fs.statSync(conf.path);
+
+		assert.throws(() => {
+			// eslint-disable-next-line @typescript-eslint/no-unused-expressions
+			conf.store;
+		}, {name: 'SyntaxError'});
+	});
+
+	it('`clearInvalidConfig` option - valid data', () => {
+		const conf = new Conf({cwd: createTempDirectory(), clearInvalidConfig: false});
+		conf.set('foo', 'bar');
+		assert.deepStrictEqual(conf.store, createNullProtoObject({foo: 'bar'}));
+	});
+
+	it('`clearInvalidConfig` option - schema validation error', () => {
+		const temporaryDirectoryPath = createTempDirectory();
+		const configPath = path.join(temporaryDirectoryPath, 'config.json');
+
+		// Create config file with invalid schema data
+		fs.writeFileSync(configPath, JSON.stringify({myKey: 'invalid-type'}, null, '\t'));
+		fs.statSync(configPath);
+
+		// Without clearInvalidConfig, should throw
+		assert.throws(() => {
+			new Conf({
+				cwd: temporaryDirectoryPath,
+				clearInvalidConfig: false,
+				schema: {
+					myKey: {type: 'boolean'},
+				},
+			});
+		}, {message: /Config schema violation/});
+
+		// With clearInvalidConfig, should clear the invalid data and create empty config
+		const conf = new Conf({
 			cwd: temporaryDirectoryPath,
-			clearInvalidConfig: false,
+			clearInvalidConfig: true,
 			schema: {
 				myKey: {type: 'boolean'},
 			},
 		});
-	}, {message: /Config schema violation/});
 
-	// With clearInvalidConfig, should clear the invalid data and create empty config
-	const config = new Conf({
-		cwd: temporaryDirectoryPath,
-		clearInvalidConfig: true,
-		schema: {
-			myKey: {type: 'boolean'},
-		},
+		assert.deepStrictEqual(conf.store, createNullProtoObject({}));
 	});
 
-	t.deepEqual(config.store, {});
-});
+	it('migrations - fix invalid schema data', () => {
+		const temporaryDirectoryPath = createTempDirectory();
+		const configPath = path.join(temporaryDirectoryPath, 'config.json');
 
-test('migrations - fix invalid schema data', t => {
-	const temporaryDirectoryPath = temporaryDirectory();
-	const configPath = path.join(temporaryDirectoryPath, 'config.json');
+		// Create config file with data that doesn't match current schema
+		fs.writeFileSync(configPath, JSON.stringify({myKey: 'true'}, null, '\t'));
+		fs.statSync(configPath);
 
-	// Create config file with data that doesn't match current schema
-	fs.writeFileSync(configPath, JSON.stringify({myKey: 'true'}, null, '\t'));
-
-	// Migrations should be able to fix invalid data
-	const config = new Conf({
-		cwd: temporaryDirectoryPath,
-		projectVersion: '1.0.0',
-		migrations: {
-			'1.0.0'(store) {
-				// Fix the invalid data by converting string to boolean
-				const value = store.get('myKey');
-				if (typeof value === 'string') {
-					store.set('myKey', value === 'true');
-				}
-			},
-		},
-		schema: {
-			myKey: {type: 'boolean'},
-		},
-	});
-
-	// Should successfully create the store with migrated data
-	t.is(config.get('myKey'), true);
-	t.is(typeof config.get('myKey'), 'boolean');
-});
-
-test('migrations - handle multiple schema violations', t => {
-	const temporaryDirectoryPath = temporaryDirectory();
-	fs.writeFileSync(path.join(temporaryDirectoryPath, 'config.json'), JSON.stringify({
-		enabled: 'yes', // Should be boolean
-		count: '42', // Should be number
-	}, null, '\t'));
-
-	const config = new Conf({
-		cwd: temporaryDirectoryPath,
-		projectVersion: '2.0.0',
-		migrations: {
-			'2.0.0'(store) {
-				store.set('enabled', store.get('enabled') === 'yes');
-				store.set('count', Number.parseInt(store.get('count') as string, 10));
-			},
-		},
-		schema: {
-			enabled: {type: 'boolean'},
-			count: {type: 'number'},
-		},
-	});
-
-	t.is(config.get('enabled'), true);
-	t.is(config.get('count'), 42);
-});
-
-test('migrations - rollback on error', t => {
-	const temporaryDirectoryPath = temporaryDirectory();
-	const configPath = path.join(temporaryDirectoryPath, 'config.json');
-	const originalData = {myKey: 'invalid'};
-	fs.writeFileSync(configPath, JSON.stringify(originalData, null, '\t'));
-
-	t.throws(() => {
-		new Conf({
+		// Migrations should be able to fix invalid data
+		const conf = new Conf({
 			cwd: temporaryDirectoryPath,
 			projectVersion: '1.0.0',
 			migrations: {
-				'1.0.0'() {
-					throw new Error('Migration failed');
-				}
-			}
+				'1.0.0'(store) {
+					// Fix the invalid data by converting string to boolean
+					const value = store.get('myKey');
+					if (typeof value === 'string') {
+						store.set('myKey', value === 'true');
+					}
+				},
+			},
+			schema: {
+				myKey: {type: 'boolean'},
+			},
 		});
-	}, {message: /Migration failed/});
 
-	// Original data should be preserved after rollback
-	t.deepEqual(JSON.parse(fs.readFileSync(configPath, 'utf8')), originalData);
-});
+		// Should successfully create the store with migrated data
+		assert.strictEqual(conf.get('myKey'), true);
+		assert.strictEqual(typeof conf.get('myKey'), 'boolean');
+	});
 
-test('schema - should be an object', t => {
-	const schema: any = 'object';
-	t.throws(() => {
-		new Conf({cwd: temporaryDirectory(), schema}); // eslint-disable-line @typescript-eslint/no-unsafe-assignment
-	}, {message: 'The `schema` option must be an object.'});
-});
+	it('migrations - handle multiple schema violations', () => {
+		const temporaryDirectoryPath = createTempDirectory();
+		const coercionPath = path.join(temporaryDirectoryPath, 'config.json');
+		fs.writeFileSync(coercionPath, JSON.stringify({
+			enabled: 'yes', // Should be boolean
+			count: '42', // Should be number
+		}, null, '\t'));
+		fs.statSync(coercionPath);
 
-test('schema - valid set', t => {
-	const schema: Schema<{foo: {bar: number; foobar: number}}> = {
-		foo: {
-			type: 'object',
-			properties: {
-				bar: {
-					type: 'number',
-				},
-				foobar: {
-					type: 'number',
-					maximum: 100,
+		const conf = new Conf({
+			cwd: temporaryDirectoryPath,
+			projectVersion: '2.0.0',
+			migrations: {
+				'2.0.0'(store) {
+					store.set('enabled', store.get('enabled') === 'yes');
+					store.set('count', Number.parseInt(store.get('count') as string, 10));
 				},
 			},
-		},
-	};
-	const config = new Conf({cwd: temporaryDirectory(), schema});
-	t.notThrows(() => {
-		config.set('foo', {bar: 1, foobar: 2});
-	});
-});
+			schema: {
+				enabled: {type: 'boolean'},
+				count: {type: 'number'},
+			},
+		});
 
-test('schema - one violation', t => {
-	const config = new Conf({
-		cwd: temporaryDirectory(),
-		schema: {
+		assert.strictEqual(conf.get('enabled'), true);
+		assert.strictEqual(conf.get('count'), 42);
+	});
+
+	it('migrations - validation should not prevent migrations from running', () => {
+		const temporaryDirectoryPath = createTempDirectory();
+		const configPath = path.join(temporaryDirectoryPath, 'config.json');
+
+		// Create config with data that violates schema but can be fixed by migration
+		fs.writeFileSync(configPath, JSON.stringify({
+			age: '25', // String instead of number - violates schema
+			active: 'true', // String instead of boolean - violates schema
+		}, null, '\t'));
+
+		// Migration should run BEFORE validation, allowing it to fix the invalid data
+		const conf = new Conf({
+			cwd: temporaryDirectoryPath,
+			projectVersion: '1.0.0',
+			schema: {
+				age: {type: 'number'},
+				active: {type: 'boolean'},
+			},
+			migrations: {
+				'1.0.0'(store) {
+					// Fix the schema violations
+					const age = store.get('age');
+					if (typeof age === 'string') {
+						store.set('age', Number.parseInt(age, 10));
+					}
+
+					const active = store.get('active');
+					if (typeof active === 'string') {
+						store.set('active', active === 'true');
+					}
+				},
+			},
+		});
+
+		// Should successfully migrate and validate
+		assert.strictEqual(conf.get('age'), 25);
+		assert.strictEqual(typeof conf.get('age'), 'number');
+		assert.strictEqual(conf.get('active'), true);
+		assert.strictEqual(typeof conf.get('active'), 'boolean');
+	});
+
+	it('migrations - rollback on error', () => {
+		const temporaryDirectoryPath = createTempDirectory();
+		const configPath = path.join(temporaryDirectoryPath, 'config.json');
+		const originalData = {myKey: 'invalid'};
+		fs.writeFileSync(configPath, JSON.stringify(originalData, null, '\t'));
+		fs.statSync(configPath);
+
+		assert.throws(() => {
+			new Conf({
+				cwd: temporaryDirectoryPath,
+				projectVersion: '1.0.0',
+				migrations: {
+					'1.0.0'() {
+						throw new Error('Migration failed');
+					},
+				},
+			});
+		}, {message: /Migration failed/});
+
+		// Original data should be preserved after rollback
+		assert.deepStrictEqual(JSON.parse(fs.readFileSync(configPath, 'utf8')), originalData);
+	});
+
+	it('schema - should be an object', () => {
+		const schema: any = 'object';
+		assert.throws(() => {
+			new Conf({cwd: createTempDirectory(), schema}); // eslint-disable-line @typescript-eslint/no-unsafe-assignment
+		}, {message: 'The `schema` option must be an object.'});
+	});
+
+	it('schema - valid set', () => {
+		const schema: Schema<{foo: {bar: number; foobar: number}}> = {
+			foo: {
+				type: 'object',
+				properties: {
+					bar: {
+						type: 'number',
+					},
+					foobar: {
+						type: 'number',
+						maximum: 100,
+					},
+				},
+			},
+		};
+		const conf = new Conf({cwd: createTempDirectory(), schema});
+		assert.doesNotThrow(() => {
+			conf.set('foo', {bar: 1, foobar: 2});
+		});
+	});
+
+	it('schema - one violation', () => {
+		const conf = new Conf({
+			cwd: createTempDirectory(),
+			schema: {
+				foo: {
+					type: 'string',
+				},
+			},
+		});
+		assert.throws(() => {
+			conf.set('foo', 1);
+		}, {message: 'Config schema violation: `foo` must be string'});
+	});
+
+	it('schema - multiple violations', () => {
+		const schema: Schema<{foo: {bar: number; foobar: number}}> = {
+			foo: {
+				type: 'object',
+				properties: {
+					bar: {
+						type: 'number',
+					},
+					foobar: {
+						type: 'number',
+						maximum: 100,
+					},
+				},
+			},
+		};
+		const conf = new Conf({cwd: createTempDirectory(), schema});
+		assert.throws(() => {
+			conf.set('foo', {bar: '1', foobar: 101});
+		}, {message: 'Config schema violation: `foo/bar` must be number; `foo/foobar` must be <= 100'});
+	});
+
+	it('schema - complex schema', () => {
+		const schema: Schema<{foo: string; bar: number[]}> = {
+			foo: {
+				type: 'string',
+				maxLength: 3,
+				pattern: '[def]+',
+			},
+			bar: {
+				type: 'array',
+				uniqueItems: true,
+				maxItems: 3,
+				items: {
+					type: 'integer',
+				},
+			},
+		};
+		const conf = new Conf({cwd: createTempDirectory(), schema});
+		assert.throws(() => {
+			conf.set('foo', 'abca');
+		}, {message: 'Config schema violation: `foo` must NOT have more than 3 characters; `foo` must match pattern "[def]+"'});
+		assert.throws(() => {
+			conf.set('bar', [1, 1, 2, 'a']);
+		}, {message: 'Config schema violation: `bar` must NOT have more than 3 items; `bar/3` must be integer; `bar` must NOT have duplicate items (items ## 1 and 0 are identical)'});
+	});
+
+	it('schema - supports formats', () => {
+		const conf = new Conf({
+			cwd: createTempDirectory(),
+			schema: {
+				foo: {
+					type: 'string',
+					format: 'uri',
+				},
+			},
+		});
+		assert.throws(() => {
+			conf.set('foo', 'bar');
+		}, {message: 'Config schema violation: `foo` must match format "uri"'});
+	});
+
+	it('schema - invalid write to config file', () => {
+		const schema: Schema<{foo: string}> = {
 			foo: {
 				type: 'string',
 			},
-		},
+		};
+		const cwd = createTempDirectory();
+
+		const conf = new Conf({cwd, schema});
+		const schemaPath = path.join(cwd, 'config.json');
+		fs.writeFileSync(schemaPath, JSON.stringify({foo: 1}));
+		fs.statSync(schemaPath);
+		assert.throws(() => {
+			conf.get('foo');
+		}, {message: 'Config schema violation: `foo` must be string'});
 	});
-	t.throws(() => {
-		config.set('foo', 1);
-	}, {message: 'Config schema violation: `foo` must be string'});
-});
 
-test('schema - multiple violations', t => {
-	const schema: Schema<{foo: {bar: number; foobar: number}}> = {
-		foo: {
-			type: 'object',
-			properties: {
-				bar: {
-					type: 'number',
-				},
-				foobar: {
-					type: 'number',
-					maximum: 100,
-				},
-			},
-		},
-	};
-	const config = new Conf({cwd: temporaryDirectory(), schema});
-	t.throws(() => {
-		config.set('foo', {bar: '1', foobar: 101});
-	}, {message: 'Config schema violation: `foo/bar` must be number; `foo/foobar` must be <= 100'});
-});
-
-test('schema - complex schema', t => {
-	const schema: Schema<{foo: string; bar: number[]}> = {
-		foo: {
-			type: 'string',
-			maxLength: 3,
-			pattern: '[def]+',
-		},
-		bar: {
-			type: 'array',
-			uniqueItems: true,
-			maxItems: 3,
-			items: {
-				type: 'integer',
-			},
-		},
-	};
-	const config = new Conf({cwd: temporaryDirectory(), schema});
-	t.throws(() => {
-		config.set('foo', 'abca');
-	}, {message: 'Config schema violation: `foo` must NOT have more than 3 characters; `foo` must match pattern "[def]+"'});
-	t.throws(() => {
-		config.set('bar', [1, 1, 2, 'a']);
-	}, {message: 'Config schema violation: `bar` must NOT have more than 3 items; `bar/3` must be integer; `bar` must NOT have duplicate items (items ## 1 and 0 are identical)'});
-});
-
-test('schema - supports formats', t => {
-	const config = new Conf({
-		cwd: temporaryDirectory(),
-		schema: {
+	it('schema - default', () => {
+		const schema: Schema<{foo: string}> = {
 			foo: {
 				type: 'string',
-				format: 'uri',
+				default: 'bar',
 			},
-		},
-	});
-	t.throws(() => {
-		config.set('foo', 'bar');
-	}, {message: 'Config schema violation: `foo` must match format "uri"'});
-});
+		};
+		const conf = new Conf({
+			cwd: createTempDirectory(),
+			schema,
+		});
 
-test('schema - invalid write to config file', t => {
-	const schema: Schema<{foo: string}> = {
-		foo: {
-			type: 'string',
-		},
-	};
-	const cwd = temporaryDirectory();
-
-	const config = new Conf({cwd, schema});
-	fs.writeFileSync(path.join(cwd, 'config.json'), JSON.stringify({foo: 1}));
-	t.throws(() => {
-		config.get('foo');
-	}, {message: 'Config schema violation: `foo` must be string'});
-});
-
-test('schema - default', t => {
-	const schema: Schema<{foo: string}> = {
-		foo: {
-			type: 'string',
-			default: 'bar',
-		},
-	};
-	const config = new Conf({
-		cwd: temporaryDirectory(),
-		schema,
+		const foo: string = conf.get('foo', '');
+		assert.strictEqual(foo, 'bar');
 	});
 
-	const foo: string = config.get('foo', '');
-	t.is(foo, 'bar');
-});
-
-test('schema - Conf defaults overwrites schema default', t => {
-	const schema: Schema<{foo: string}> = {
-		foo: {
-			type: 'string',
-			default: 'bar',
-		},
-	};
-	const config = new Conf({
-		cwd: temporaryDirectory(),
-		defaults: {
-			foo: 'foo',
-		},
-		schema,
-	});
-	t.is(config.get('foo'), 'foo');
-});
-
-test('schema - validate Conf default', t => {
-	const schema: Schema<{foo: string}> = {
-		foo: {
-			type: 'string',
-		},
-	};
-	t.throws(() => {
-		new Conf({
-			cwd: temporaryDirectory(),
+	it('schema - Conf defaults overwrites schema default', () => {
+		const schema: Schema<{foo: string}> = {
+			foo: {
+				type: 'string',
+				default: 'bar',
+			},
+		};
+		const conf = new Conf({
+			cwd: createTempDirectory(),
 			defaults: {
-				// For our tests to fail and typescript to compile, we'll ignore this ts error.
-				// This error is not bad and means the package is well typed.
-				// @ts-expect-error
-				foo: 1,
+				foo: 'foo',
 			},
 			schema,
 		});
-	}, {message: 'Config schema violation: `foo` must be string'});
-});
+		assert.strictEqual(conf.get('foo'), 'foo');
+	});
 
-test('schema - validate rootSchema', t => {
-	t.throws(() => {
-		const config = new Conf({
-			cwd: temporaryDirectory(),
+	it('schema - nested defaults are replaced by Conf defaults', () => {
+		const schema: Schema<{appearance?: {theme?: string; layout?: string}}> = {
+			appearance: {
+				type: 'object',
+				default: {
+					theme: 'light',
+					layout: 'grid',
+				},
+			},
+		};
+
+		const conf = new Conf({
+			cwd: createTempDirectory(),
+			defaults: {
+				appearance: {
+					layout: 'list',
+				},
+			},
+			schema,
+		});
+
+		assert.deepStrictEqual(conf.get('appearance'), {layout: 'list'});
+	});
+
+	it('schema - validate Conf default', () => {
+		const schema: Schema<{foo: string}> = {
+			foo: {
+				type: 'string',
+			},
+		};
+		assert.throws(() => {
+			new Conf({
+				cwd: createTempDirectory(),
+				defaults: {
+					// For our tests to fail and typescript to compile, we'll ignore this ts error.
+					// This error is not bad and means the package is well typed.
+					// @ts-expect-error
+					foo: 1,
+				},
+				schema,
+			});
+		}, {message: 'Config schema violation: `foo` must be string'});
+	});
+
+	it('schema - validate rootSchema', () => {
+		assert.throws(() => {
+			const conf = new Conf({
+				cwd: createTempDirectory(),
+				rootSchema: {
+					additionalProperties: false,
+				},
+			});
+			conf.set('foo', 'bar');
+		}, {message: 'Config schema violation: `` must NOT have additional properties'});
+	});
+
+	it('AJV - validate AJV options', () => {
+		const conf = new Conf({
+			cwd: createTempDirectory(),
+			ajvOptions: {
+				removeAdditional: true,
+			},
 			rootSchema: {
 				additionalProperties: false,
 			},
 		});
-		config.set('foo', 'bar');
-	}, {message: 'Config schema violation: `` must NOT have additional properties'});
-});
-
-test('AJV - validate AJV options', t => {
-	const config = new Conf({
-		cwd: temporaryDirectory(),
-		ajvOptions: {
-			removeAdditional: true,
-		},
-		rootSchema: {
-			additionalProperties: false,
-		},
+		conf.set('foo', 'bar');
+		assert.strictEqual(conf.get('foo'), undefined);
 	});
-	config.set('foo', 'bar');
-	t.is(config.get('foo'), undefined);
-});
 
-test('.get() - without dot notation', t => {
-	t.is(t.context.configWithoutDotNotation.get('foo'), undefined);
-	t.is(t.context.configWithoutDotNotation.get('foo', '🐴'), '🐴');
-	t.context.configWithoutDotNotation.set('foo', fixture);
-	t.is(t.context.configWithoutDotNotation.get('foo'), fixture);
-});
-
-test('.set() - without dot notation', t => {
-	t.context.configWithoutDotNotation.set('foo', fixture);
-	t.context.configWithoutDotNotation.set('baz.boo', fixture);
-	t.is(t.context.configWithoutDotNotation.get('foo'), fixture);
-	t.is(t.context.configWithoutDotNotation.get('baz.boo'), fixture);
-});
-
-test('.set() - with object - without dot notation', t => {
-	t.context.configWithoutDotNotation.set({
-		foo1: 'bar1',
-		foo2: 'bar2',
-		baz: {
-			boo: 'foo',
-			foo: {
-				bar: 'baz',
-			},
-		},
+	it('.get() - without dot notation', () => {
+		assert.strictEqual(configWithoutDotNotation.get('foo'), undefined);
+		assert.strictEqual(configWithoutDotNotation.get('foo', '🐴'), '🐴');
+		configWithoutDotNotation.set('foo', fixture);
+		assert.strictEqual(configWithoutDotNotation.get('foo'), fixture);
 	});
-	t.is(t.context.configWithoutDotNotation.get('foo1'), 'bar1');
-	t.is(t.context.configWithoutDotNotation.get('foo2'), 'bar2');
-	t.deepEqual(t.context.configWithoutDotNotation.get('baz'), {boo: 'foo', foo: {bar: 'baz'}});
-	t.is(t.context.configWithoutDotNotation.get('baz.boo'), undefined);
-	t.is(t.context.configWithoutDotNotation.get('baz.foo.bar'), undefined);
-});
 
-test('.has() - without dot notation', t => {
-	t.context.configWithoutDotNotation.set('foo', fixture);
-	t.context.configWithoutDotNotation.set('baz.boo', fixture);
-	t.true(t.context.configWithoutDotNotation.has('foo'));
-	t.true(t.context.configWithoutDotNotation.has('baz.boo'));
-	t.false(t.context.configWithoutDotNotation.has('missing'));
-});
-
-test('.delete() - without dot notation', t => {
-	const {configWithoutDotNotation} = t.context;
-	configWithoutDotNotation.set('foo', 'bar');
-	configWithoutDotNotation.set('baz.boo', true);
-	configWithoutDotNotation.set('baz.foo.bar', 'baz');
-	configWithoutDotNotation.delete('foo');
-	t.is(configWithoutDotNotation.get('foo'), undefined);
-	configWithoutDotNotation.delete('baz.boo');
-	t.not(configWithoutDotNotation.get('baz.boo'), true);
-	configWithoutDotNotation.delete('baz.foo');
-	t.not(configWithoutDotNotation.get('baz.foo'), {bar: 'baz'});
-	configWithoutDotNotation.set('foo.bar.baz', {awesome: 'icecream'});
-	configWithoutDotNotation.set('foo.bar.zoo', {awesome: 'redpanda'});
-	configWithoutDotNotation.delete('foo.bar.baz');
-	t.deepEqual(configWithoutDotNotation.get('foo.bar.zoo'), {awesome: 'redpanda'});
-});
-
-test('`watch` option watches for config file changes by another process', async t => {
-	const cwd = temporaryDirectory();
-	const conf1 = new Conf({cwd, watch: true});
-	const conf2 = new Conf({cwd});
-	conf1.set('foo', '👾');
-
-	t.plan(4);
-
-	const checkFoo = (newValue: unknown, oldValue: unknown): void => {
-		t.is(newValue, '🐴');
-		t.is(oldValue, '👾');
-	};
-
-	t.is(conf2.get('foo'), '👾');
-	t.is(conf1.path, conf2.path);
-	conf1.onDidChange('foo', checkFoo);
-
-	(async () => {
-		await delay(50);
-		conf2.set('foo', '🐴');
-	})();
-
-	const {events: _events} = conf1;
-
-	await pEvent(_events, 'change');
-});
-
-test('`watch` option watches for config file changes by file write', async t => {
-	const cwd = temporaryDirectory();
-	const conf = new Conf({cwd, watch: true});
-	conf.set('foo', '🐴');
-
-	t.plan(2);
-
-	const checkFoo = (newValue: unknown, oldValue: unknown): void => {
-		t.is(newValue, '🦄');
-		t.is(oldValue, '🐴');
-	};
-
-	conf.onDidChange('foo', checkFoo);
-
-	const delayOS = process.platform === 'win32' ? 50 : 1500;
-
-	(async () => {
-		await delay(delayOS);
-
-		fs.writeFileSync(path.join(cwd, 'config.json'), JSON.stringify({foo: '🦄'}));
-	})();
-
-	const {events} = conf;
-
-	await pEvent(events, 'change');
-});
-
-test('migrations - should save the project version as the initial migrated version', t => {
-	const cwd = temporaryDirectory();
-
-	const conf = new Conf({cwd, projectVersion: '0.0.2', migrations: {}});
-
-	t.is(conf.get('__internal__.migrations.version'), '0.0.2');
-});
-
-test('migrations - should save the project version when a migration occurs', t => {
-	const cwd = temporaryDirectory();
-
-	const migrations = {
-		'0.0.3'(store: Conf) {
-			store.set('foo', 'cool stuff');
-		},
-	};
-
-	const conf = new Conf({cwd, projectVersion: '0.0.2', migrations});
-
-	t.is(conf.get('__internal__.migrations.version'), '0.0.2');
-
-	const conf2 = new Conf({cwd, projectVersion: '0.0.4', migrations});
-
-	t.is(conf2.get('__internal__.migrations.version'), '0.0.4');
-	t.is(conf2.get('foo'), 'cool stuff');
-});
-
-test('migrations - should NOT run the migration when the version doesn\'t change', t => {
-	const cwd = temporaryDirectory();
-
-	const migrations = {
-		'1.0.0'(store: Conf) {
-			store.set('foo', 'cool stuff');
-		},
-	};
-
-	const conf = new Conf({cwd, projectVersion: '0.0.2', migrations});
-	t.is(conf.get('__internal__.migrations.version'), '0.0.2');
-	t.false(conf.has('foo'));
-
-	const conf2 = new Conf({cwd, projectVersion: '0.0.2', migrations});
-
-	t.is(conf2.get('__internal__.migrations.version'), '0.0.2');
-	t.false(conf2.has('foo'));
-});
-
-test('migrations - should run the migration when the version changes', t => {
-	const cwd = temporaryDirectory();
-
-	const migrations = {
-		'1.0.0'(store: Conf) {
-			store.set('foo', 'cool stuff');
-		},
-	};
-
-	const conf = new Conf({cwd, projectVersion: '0.0.2', migrations});
-	t.is(conf.get('__internal__.migrations.version'), '0.0.2');
-	t.false(conf.has('foo'));
-
-	const conf2 = new Conf({cwd, projectVersion: '1.1.0', migrations});
-
-	t.is(conf2.get('__internal__.migrations.version'), '1.1.0');
-	t.true(conf2.has('foo'));
-	t.is(conf2.get('foo'), 'cool stuff');
-});
-
-test('migrations - should run the migration when the version uses semver comparisons', t => {
-	const cwd = temporaryDirectory();
-	const migrations = {
-		'>=1.0'(store: Conf) {
-			store.set('foo', 'cool stuff');
-		},
-	};
-
-	const conf = new Conf({cwd, projectVersion: '1.0.2', migrations});
-	t.is(conf.get('__internal__.migrations.version'), '1.0.2');
-	t.is(conf.get('foo'), 'cool stuff');
-});
-
-test('migrations - should run the migration when the version uses multiple semver comparisons', t => {
-	const cwd = temporaryDirectory();
-	const migrations = {
-		'>=1.0'(store: Conf) {
-			store.set('foo', 'cool stuff');
-		},
-		'>2.0.0'(store: Conf) {
-			store.set('foo', 'modern cool stuff');
-		},
-	};
-
-	const conf = new Conf({cwd, projectVersion: '1.0.2', migrations});
-	t.is(conf.get('__internal__.migrations.version'), '1.0.2');
-	t.is(conf.get('foo'), 'cool stuff');
-
-	const conf2 = new Conf({cwd, projectVersion: '2.0.1', migrations});
-	t.is(conf2.get('__internal__.migrations.version'), '2.0.1');
-	t.is(conf2.get('foo'), 'modern cool stuff');
-});
-
-test('migrations - should run all valid migrations when the version uses multiple semver comparisons', t => {
-	const cwd = temporaryDirectory();
-	const migrations = {
-		'>=1.0'(store: Conf) {
-			store.set('foo', 'cool stuff');
-		},
-		'>2.0.0'(store: Conf) {
-			store.set('woof', 'oof');
-			store.set('medium', 'yes');
-		},
-		'<3.0.0'(store: Conf) {
-			store.set('woof', 'woof');
-			store.set('heart', '❤');
-		},
-	};
-
-	const conf = new Conf({cwd, projectVersion: '2.4.0', migrations});
-	t.is(conf.get('__internal__.migrations.version'), '2.4.0');
-	t.is(conf.get('foo'), 'cool stuff');
-	t.is(conf.get('medium'), 'yes');
-	t.is(conf.get('woof'), 'woof');
-	t.is(conf.get('heart'), '❤');
-});
-
-test('migrations - should cleanup migrations with non-numeric values', t => {
-	const cwd = temporaryDirectory();
-	const migrations = {
-		'1.0.1-alpha'(store: Conf) {
-			store.set('foo', 'cool stuff');
-		},
-		'>2.0.0-beta'(store: Conf) {
-			store.set('woof', 'oof');
-			store.set('medium', 'yes');
-		},
-		'<3.0.0'(store: Conf) {
-			store.set('woof', 'woof');
-			store.set('heart', '❤');
-		},
-	};
-
-	const conf = new Conf({cwd, projectVersion: '2.4.0', migrations});
-	t.is(conf.get('__internal__.migrations.version'), '2.4.0');
-	t.is(conf.get('foo'), 'cool stuff');
-	t.is(conf.get('medium'), 'yes');
-	t.is(conf.get('woof'), 'woof');
-	t.is(conf.get('heart'), '❤');
-});
-
-test('migrations - should NOT throw an error when project version is unspecified but there are no migrations', t => {
-	const cwd = temporaryDirectory();
-
-	t.notThrows(() => {
-		const conf = new Conf({cwd});
-		conf.clear();
+	it('.set() - without dot notation', () => {
+		configWithoutDotNotation.set('foo', fixture);
+		configWithoutDotNotation.set('baz.boo', fixture);
+		assert.strictEqual(configWithoutDotNotation.get('foo'), fixture);
+		assert.strictEqual(configWithoutDotNotation.get('baz.boo'), fixture);
 	});
-});
 
-test('migrations - should not create the previous migration key if the migrations aren\'t needed', t => {
-	const cwd = temporaryDirectory();
-
-	const conf = new Conf({cwd});
-	t.false(conf.has('__internal__.migrations.version'));
-});
-
-test('migrations error handling - should rollback changes if a migration failed', t => {
-	const cwd = temporaryDirectory();
-
-	const failingMigrations = {
-		'1.0.0'(store: Conf) {
-			store.set('foo', 'initial update');
-		},
-		'1.0.1'(store: Conf) {
-			store.set('foo', 'updated before crash');
-
-			throw new Error('throw the migration and rollback');
-
-			// eslint-disable-next-line no-unreachable
-			store.set('foo', 'can you reach here?');
-		},
-	};
-
-	const passingMigrations = {
-		'1.0.0'(store: Conf) {
-			store.set('foo', 'initial update');
-		},
-	};
-
-	let conf = new Conf({cwd, projectVersion: '1.0.0', migrations: passingMigrations});
-
-	t.throws(() => {
-		conf = new Conf({cwd, projectVersion: '1.0.2', migrations: failingMigrations});
-	}, {message: /throw the migration and rollback/});
-
-	t.is(conf.get('__internal__.migrations.version'), '1.0.0');
-	t.true(conf.has('foo'));
-	t.is(conf.get('foo'), 'initial update');
-});
-
-test('__internal__ keys - should not be accessible by the user', t => {
-	const cwd = temporaryDirectory();
-
-	const conf = new Conf({cwd});
-
-	t.throws(() => {
-		conf.set('__internal__.you-shall', 'not-pass');
-	}, {message: /Please don't use the __internal__ key/});
-});
-
-test('__internal__ keys - should not be accessible by the user even without dot notation', t => {
-	const cwd = temporaryDirectory();
-
-	const conf = new Conf({cwd, accessPropertiesByDotNotation: false});
-
-	t.throws(() => {
-		conf.set({
-			__internal__: {
-				'you-shall': 'not-pass',
+	it('.set() - with object - without dot notation', () => {
+		configWithoutDotNotation.set({
+			foo1: 'bar1',
+			foo2: 'bar2',
+			baz: {
+				boo: 'foo',
+				foo: {
+					bar: 'baz',
+				},
 			},
 		});
-	}, {message: /Please don't use the __internal__ key/});
-});
-
-test('__internal__ keys - should only match specific "__internal__" entry', t => {
-	const cwd = temporaryDirectory();
-
-	const conf = new Conf({cwd});
-
-	t.notThrows(() => {
-		conf.set('__internal__foo.you-shall', 'not-pass');
-	});
-});
-
-test('beforeEachMigration - should be called before every migration', t => {
-	const conf = new Conf({
-		cwd: temporaryDirectory(),
-		projectVersion: '2.0.0',
-		beforeEachMigration(store, context) {
-			store.set(`beforeEachMigration ${context.fromVersion} → ${context.toVersion}`, true);
-		},
-		migrations: {
-			'1.0.0'() {},
-			'1.0.1'() {},
-			'2.0.1'() {},
-		},
+		assert.strictEqual(configWithoutDotNotation.get('foo1'), 'bar1');
+		assert.strictEqual(configWithoutDotNotation.get('foo2'), 'bar2');
+		assert.deepStrictEqual(configWithoutDotNotation.get('baz'), {boo: 'foo', foo: {bar: 'baz'}});
+		assert.strictEqual(configWithoutDotNotation.get('baz.boo'), undefined);
+		assert.strictEqual(configWithoutDotNotation.get('baz.foo.bar'), undefined);
 	});
 
-	t.true(conf.get('beforeEachMigration 0.0.0 → 1.0.0'));
-	t.true(conf.get('beforeEachMigration 1.0.0 → 1.0.1'));
-	t.false(conf.has('beforeEachMigration 1.0.1 → 2.0.1'));
-});
-
-test('migrations - should preserve internal data when store is overwritten', t => {
-	const cwd = temporaryDirectory();
-	let migrationRunCount = 0;
-
-	// Create a config with migrations
-	const conf = new Conf({
-		cwd,
-		projectVersion: '2.0.0',
-		migrations: {
-			'2.0.0'(store) {
-				migrationRunCount++;
-				store.set('lastSeenVersion', '2.0.0');
-			},
-		},
+	it('.has() - without dot notation', () => {
+		configWithoutDotNotation.set('foo', fixture);
+		configWithoutDotNotation.set('baz.boo', fixture);
+		assert.ok(configWithoutDotNotation.has('foo'));
+		assert.ok(configWithoutDotNotation.has('baz.boo'));
+		assert.ok(!configWithoutDotNotation.has('missing'));
 	});
 
-	// Migration should run once initially
-	t.is(migrationRunCount, 1);
-	t.is(conf.get('__internal__.migrations.version'), '2.0.0');
-
-	// Overwrite the store - this should NOT destroy the migration info
-	conf.store = {newData: 'test'};
-
-	// The internal migration version should still be preserved
-	t.is(conf.get('__internal__.migrations.version'), '2.0.0');
-
-	// Create a new config instance - migration should NOT run again
-	const conf2 = new Conf({
-		cwd,
-		projectVersion: '2.0.0',
-		migrations: {
-			'2.0.0'(store) {
-				migrationRunCount++;
-				store.set('lastSeenVersion', '2.0.0');
-			},
-		},
+	it('.delete() - without dot notation', () => {
+		configWithoutDotNotation.set('foo', 'bar');
+		configWithoutDotNotation.set('baz.boo', true);
+		configWithoutDotNotation.set('baz.foo.bar', 'baz');
+		configWithoutDotNotation.delete('foo');
+		assert.strictEqual(configWithoutDotNotation.get('foo'), undefined);
+		configWithoutDotNotation.delete('baz.boo');
+		assert.notStrictEqual(configWithoutDotNotation.get('baz.boo'), true);
+		configWithoutDotNotation.delete('baz.foo');
+		assert.notDeepStrictEqual(configWithoutDotNotation.get('baz.foo'), {bar: 'baz'});
+		configWithoutDotNotation.set('foo.bar.baz', {awesome: 'icecream'});
+		configWithoutDotNotation.set('foo.bar.zoo', {awesome: 'redpanda'});
+		configWithoutDotNotation.delete('foo.bar.baz');
+		assert.deepStrictEqual(configWithoutDotNotation.get('foo.bar.zoo'), {awesome: 'redpanda'});
 	});
-
-	// Migration should not run again
-	t.is(migrationRunCount, 1);
-	t.is(conf2.get('__internal__.migrations.version'), '2.0.0');
-});
-
-test('migrations - should preserve internal data when store is set to empty object', t => {
-	const cwd = temporaryDirectory();
-
-	const conf = new Conf({
-		cwd,
-		projectVersion: '1.0.0',
-		migrations: {
-			'1.0.0'(store) {
-				store.set('migrated', true);
-			},
-		},
-	});
-
-	t.is(conf.get('__internal__.migrations.version'), '1.0.0');
-
-	// Set store to empty object
-	conf.store = {};
-
-	// Internal data should still be preserved
-	t.is(conf.get('__internal__.migrations.version'), '1.0.0');
-});
-
-test('store setter - should work when config file does not exist yet', t => {
-	const cwd = temporaryDirectory();
-	const conf = new Conf({cwd});
-
-	// Set store when no file exists
-	t.notThrows(() => {
-		conf.store = {foo: 'bar'};
-	});
-
-	t.is(conf.get('foo'), 'bar');
-});
-
-test('migrations - should preserve internal data without dot notation access', t => {
-	const cwd = temporaryDirectory();
-
-	const conf = new Conf({
-		cwd,
-		projectVersion: '1.0.0',
-		accessPropertiesByDotNotation: false,
-		migrations: {
-			'1.0.0'(store) {
-				store.set('migrated', true);
-			},
-		},
-	});
-
-	const internal = conf.get('__internal__') as any; // eslint-disable-line @typescript-eslint/no-unsafe-assignment
-	t.is(internal.migrations.version, '1.0.0');
-
-	// Overwrite store
-	conf.store = {newData: 'test'};
-
-	// Internal data should still be preserved
-	const internal2 = conf.get('__internal__') as any; // eslint-disable-line @typescript-eslint/no-unsafe-assignment
-	t.is(internal2.migrations.version, '1.0.0');
 });

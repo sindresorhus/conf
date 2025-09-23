@@ -35,13 +35,14 @@ import {
 	type DotNotationKeyOf,
 	type DotNotationValueOf,
 	type PartialObjectDeep,
+	type Schema,
 } from './types.js';
 
 const encryptionAlgorithm = 'aes-256-cbc';
 
 const createPlainObject = <T = Record<string, unknown>>(): T => Object.create(null);
 
-const isExist = <T = unknown>(data: T): boolean => data !== undefined && data !== null;
+const isExist = <T = unknown>(data: T): boolean => data !== undefined;
 
 const checkValueType = (key: string, value: unknown): void => {
 	const nonJsonTypes = new Set([
@@ -63,109 +64,25 @@ const MIGRATION_KEY = `${INTERNAL_KEY}.migrations.version`;
 export default class Conf<T extends Record<string, any> = Record<string, unknown>> implements Iterable<[keyof T, T[keyof T]]> {
 	readonly path: string;
 	readonly events: EventTarget;
-	readonly #validator?: AjvValidateFunction;
+	#validator?: AjvValidateFunction;
 	readonly #encryptionKey?: string | Uint8Array | NodeJS.TypedArray | DataView;
 	readonly #options: Readonly<Partial<Options<T>>>;
 	readonly #defaultValues: Partial<T> = {};
 	#isInMigration = false;
+	#watcher?: fs.FSWatcher;
+	#watchFile?: boolean;
+	#debouncedChangeHandler?: () => void;
 
 	constructor(partialOptions: Readonly<Partial<Options<T>>> = {}) {
-		const options: Partial<Options<T>> = {
-			configName: 'config',
-			fileExtension: 'json',
-			projectSuffix: 'nodejs',
-			clearInvalidConfig: false,
-			accessPropertiesByDotNotation: true,
-			configFileMode: 0o666,
-			...partialOptions,
-		};
-
-		if (!options.cwd) {
-			if (!options.projectName) {
-				throw new Error('Please specify the `projectName` option.');
-			}
-
-			options.cwd = envPaths(options.projectName, {suffix: options.projectSuffix}).config;
-		}
-
+		const options = this.#prepareOptions(partialOptions);
 		this.#options = options;
-
-		if (options.schema ?? options.ajvOptions ?? options.rootSchema) {
-			if (options.schema && typeof options.schema !== 'object') {
-				throw new TypeError('The `schema` option must be an object.');
-			}
-
-			// FIXME: https://github.com/ajv-validator/ajv/issues/2047
-			const ajvFormats = ajvFormatsModule.default;
-
-			const ajv = new Ajv({
-				allErrors: true,
-				useDefaults: true,
-				...options.ajvOptions,
-			});
-			ajvFormats(ajv);
-
-			const schema: JSONSchema = {
-				...options.rootSchema,
-				type: 'object',
-				properties: options.schema,
-			};
-
-			this.#validator = ajv.compile(schema);
-
-			for (const [key, value] of Object.entries(options.schema ?? {}) as any) { // TODO: Remove the `as any`.
-				if (value?.default) {
-					this.#defaultValues[key as keyof T] = value.default; // eslint-disable-line @typescript-eslint/no-unsafe-assignment
-				}
-			}
-		}
-
-		if (options.defaults) {
-			this.#defaultValues = {
-				...this.#defaultValues,
-				...options.defaults,
-			};
-		}
-
-		if (options.serialize) {
-			this._serialize = options.serialize;
-		}
-
-		if (options.deserialize) {
-			this._deserialize = options.deserialize;
-		}
-
+		this.#setupValidator(options);
+		this.#applyDefaultValues(options);
+		this.#configureSerialization(options);
 		this.events = new EventTarget();
 		this.#encryptionKey = options.encryptionKey;
-
-		const fileExtension = options.fileExtension ? `.${options.fileExtension}` : '';
-		this.path = path.resolve(options.cwd, `${options.configName ?? 'config'}${fileExtension}`);
-
-		// Handle migrations if present
-		if (options.migrations) {
-			if (!options.projectVersion) {
-				throw new Error('Please specify the `projectVersion` option.');
-			}
-
-			this.#isInMigration = true;
-			try {
-				this._migrate(options.migrations, options.projectVersion, options.beforeEachMigration);
-			} finally {
-				this.#isInMigration = false;
-			}
-		} else {
-			// No migrations - validate the current state with defaults applied
-			const fileStore = this.store;
-			const store = Object.assign(createPlainObject(), options.defaults, fileStore);
-			this._validate(store);
-
-			// Update store if defaults were applied
-			try {
-				assert.deepEqual(fileStore, store);
-			} catch {
-				this.store = store;
-			}
-		}
+		this.path = this.#resolvePath(options);
+		this.#initializeStore(options);
 
 		if (options.watch) {
 			this._watch();
@@ -227,6 +144,10 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 			if (this.#options.accessPropertiesByDotNotation) {
 				setProperty(store, key, value);
 			} else {
+				if (key === '__proto__' || key === 'constructor' || key === 'prototype') {
+					return;
+				}
+
 				store[key as Key] = value as T[Key];
 			}
 		};
@@ -279,13 +200,15 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 	appendToArray<Key extends DotNotationKeyOf<T>>(key: Key, value: DotNotationValueOf<T, Key> extends ReadonlyArray<infer U> ? U : unknown): void;
 	appendToArray(key: string, value: unknown): void {
 		checkValueType(key, value);
-		const array = this._get(key, []);
+		const array = this.#options.accessPropertiesByDotNotation
+			? this._get(key, [])
+			: (key in this.store ? this.store[key] as unknown : []);
 
 		if (!Array.isArray(array)) {
 			throw new TypeError(`The key \`${key}\` is already set to a non-array value`);
 		}
 
-		this.set(key, [...array, value]);
+		this.set(key, [...(array as unknown[]), value]);
 	}
 
 	/**
@@ -362,7 +285,7 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 			throw new TypeError(`Expected \`callback\` to be of type \`function\`, got ${typeof callback}`);
 		}
 
-		return this._handleChange(() => this.get(key), callback);
+		return this._handleValueChange(() => this.get(key), callback);
 	}
 
 	/**
@@ -376,11 +299,12 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 			throw new TypeError(`Expected \`callback\` to be of type \`function\`, got ${typeof callback}`);
 		}
 
-		return this._handleChange(() => this.store, callback);
+		return this._handleStoreChange(callback);
 	}
 
 	get size(): number {
-		return Object.keys(this.store).length;
+		const entries = Object.keys(this.store);
+		return entries.filter(key => !this._isReservedKeyPath(key)).length;
 	}
 
 	/**
@@ -402,11 +326,12 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 	get store(): T {
 		try {
 			const data = fs.readFileSync(this.path, this.#encryptionKey ? null : 'utf8');
-			const dataString = this._encryptData(data);
+			const dataString = this._decryptData(data);
 			const deserializedData = this._deserialize(dataString);
 			if (!this.#isInMigration) {
 				this._validate(deserializedData);
 			}
+
 			return Object.assign(createPlainObject(), deserializedData);
 		} catch (error: unknown) {
 			if ((error as any)?.code === 'ENOENT') {
@@ -420,6 +345,7 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 				if (errorInstance.name === 'SyntaxError') {
 					return createPlainObject();
 				}
+
 				// Handle schema validation errors (new behavior)
 				if (errorInstance.message?.startsWith('Config schema violation:')) {
 					return createPlainObject();
@@ -438,13 +364,15 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 			try {
 				// Read directly from file to avoid recursion during migration
 				const data = fs.readFileSync(this.path, this.#encryptionKey ? null : 'utf8');
-				const dataString = this._encryptData(data);
+				const dataString = this._decryptData(data);
 				const currentStore = this._deserialize(dataString);
 				if (hasProperty(currentStore, INTERNAL_KEY)) {
 					setProperty(value, INTERNAL_KEY, getProperty(currentStore, INTERNAL_KEY));
 				}
 			} catch {
-				// If we can't read the current store, just proceed without preserving internal data
+				// Silently ignore errors when trying to preserve internal data
+				// This could happen if the file doesn't exist yet or is corrupted
+				// In these cases, we just proceed without preserving internal data
 			}
 		}
 
@@ -458,11 +386,30 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 
 	* [Symbol.iterator](): IterableIterator<[keyof T, T[keyof T]]> {
 		for (const [key, value] of Object.entries(this.store)) {
-			yield [key, value];
+			if (!this._isReservedKeyPath(key)) {
+				yield [key, value];
+			}
 		}
 	}
 
-	private _encryptData(data: string | Uint8Array): string {
+	/**
+	Close the file watcher if one exists. This is useful in tests to prevent the process from hanging.
+	*/
+	_closeWatcher(): void {
+		if (this.#watcher) {
+			this.#watcher.close();
+			this.#watcher = undefined;
+		}
+
+		if (this.#watchFile) {
+			fs.unwatchFile(this.path);
+			this.#watchFile = false;
+		}
+
+		this.#debouncedChangeHandler = undefined;
+	}
+
+	private _decryptData(data: string | Uint8Array): string {
 		if (!this.#encryptionKey) {
 			return typeof data === 'string' ? data : uint8ArrayToString(data);
 		}
@@ -470,29 +417,41 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 		// Check if an initialization vector has been used to encrypt the data.
 		try {
 			const initializationVector = data.slice(0, 16);
-			const password = crypto.pbkdf2Sync(this.#encryptionKey, initializationVector.toString(), 10_000, 32, 'sha512');
+			const password = crypto.pbkdf2Sync(this.#encryptionKey, initializationVector, 10_000, 32, 'sha512');
 			const decipher = crypto.createDecipheriv(encryptionAlgorithm, password, initializationVector);
 			const slice = data.slice(17);
 			const dataUpdate = typeof slice === 'string' ? stringToUint8Array(slice) : slice;
 			return uint8ArrayToString(concatUint8Arrays([decipher.update(dataUpdate), decipher.final()]));
 		} catch {}
 
-		return data.toString();
+		return typeof data === 'string' ? data : uint8ArrayToString(data);
 	}
 
-	private _handleChange<Key extends keyof T>(
-		getter: () => T | undefined,
-		callback: OnDidAnyChangeCallback<T[Key]>
-	): Unsubscribe;
+	private _handleStoreChange(callback: OnDidAnyChangeCallback<T>): Unsubscribe {
+		let currentValue = this.store;
 
-	private _handleChange<Key extends keyof T>(
-		getter: () => T[Key] | undefined,
-		callback: OnDidChangeCallback<T[Key]>
-	): Unsubscribe;
+		const onChange = (): void => {
+			const oldValue = currentValue;
+			const newValue = this.store;
 
-	private _handleChange<Key extends keyof T>(
-		getter: () => T | T[Key] | undefined,
-		callback: OnDidAnyChangeCallback<T | T[Key]> | OnDidChangeCallback<T | T[Key]>,
+			if (isDeepStrictEqual(newValue, oldValue)) {
+				return;
+			}
+
+			currentValue = newValue;
+			callback.call(this, newValue, oldValue);
+		};
+
+		this.events.addEventListener('change', onChange);
+
+		return () => {
+			this.events.removeEventListener('change', onChange);
+		};
+	}
+
+	private _handleValueChange<Value>(
+		getter: () => Value | undefined,
+		callback: OnDidChangeCallback<Value>,
 	): Unsubscribe {
 		let currentValue = getter();
 
@@ -515,8 +474,8 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 		};
 	}
 
-	private readonly _deserialize: Deserialize<T> = value => JSON.parse(value);
-	private readonly _serialize: Serialize<T> = value => JSON.stringify(value, undefined, '\t');
+	private _deserialize: Deserialize<T> = value => JSON.parse(value);
+	private _serialize: Serialize<T> = value => JSON.stringify(value, undefined, '\t');
 
 	private _validate(data: T | unknown): void {
 		if (!this.#validator) {
@@ -543,7 +502,7 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 
 		if (this.#encryptionKey) {
 			const initializationVector = crypto.randomBytes(16);
-			const password = crypto.pbkdf2Sync(this.#encryptionKey, initializationVector.toString(), 10_000, 32, 'sha512');
+			const password = crypto.pbkdf2Sync(this.#encryptionKey, initializationVector, 10_000, 32, 'sha512');
 			const cipher = crypto.createCipheriv(encryptionAlgorithm, password, initializationVector);
 			data = concatUint8Arrays([initializationVector, stringToUint8Array(':'), cipher.update(stringToUint8Array(data)), cipher.final()]);
 		}
@@ -576,16 +535,37 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 			this._write(createPlainObject<T>());
 		}
 
-		if (process.platform === 'win32') {
-			fs.watch(this.path, {persistent: false}, debounceFn(() => {
-			// On Linux and Windows, writing to the config file emits a `rename` event, so we skip checking the event type.
+		// Use fs.watch on Windows and macOS, fs.watchFile on Linux for better reliability
+		if (process.platform === 'win32' || process.platform === 'darwin') {
+			this.#debouncedChangeHandler ??= debounceFn(() => {
 				this.events.dispatchEvent(new Event('change'));
-			}, {wait: 100}));
+			}, {wait: 100});
+
+			// Watch the directory instead of the file to handle atomic writes (rename events)
+			const directory = path.dirname(this.path);
+			const basename = path.basename(this.path);
+
+			this.#watcher = fs.watch(directory, {persistent: false, encoding: 'utf8'}, (_eventType, filename) => {
+				if (filename && filename !== basename) {
+					return;
+				}
+
+				if (typeof this.#debouncedChangeHandler === 'function') {
+					this.#debouncedChangeHandler();
+				}
+			});
 		} else {
-			// Fs.watchFile is used for better cross-platform reliability, but requires a longer debounce
-			fs.watchFile(this.path, {persistent: false}, debounceFn(() => {
+			// Fs.watchFile is used on Linux for better cross-platform reliability
+			this.#debouncedChangeHandler ??= debounceFn(() => {
 				this.events.dispatchEvent(new Event('change'));
-			}, {wait: 1000}));
+			}, {wait: 1000});
+
+			fs.watchFile(this.path, {persistent: false}, (_current, _previous) => {
+				if (typeof this.#debouncedChangeHandler === 'function') {
+					this.#debouncedChangeHandler();
+				}
+			});
+			this.#watchFile = true;
 		}
 	}
 
@@ -595,7 +575,7 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 		const newerVersions = Object.keys(migrations)
 			.filter(candidateVersion => this._shouldPerformMigration(candidateVersion, previousMigratedVersion, versionToMigrate));
 
-		let storeBackup = {...this.store};
+		let storeBackup = structuredClone(this.store);
 
 		for (const version of newerVersions) {
 			try {
@@ -614,12 +594,18 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 				this._set(MIGRATION_KEY, version);
 
 				previousMigratedVersion = version;
-				storeBackup = {...this.store};
+				storeBackup = structuredClone(this.store);
 			} catch (error: unknown) {
 				// Restore backup (validation is skipped during migration)
 				this.store = storeBackup;
+				// Try to write the restored state to disk to ensure rollback persists
+				// If write fails (e.g., read-only file), we still throw the original error
+				try {
+					this._write(storeBackup);
+				} catch {}
 
-				throw new Error(`Something went wrong during the migration! Changes applied to the store until this failed migration will be restored. ${error as string}`);
+				const errorMessage = error instanceof Error ? error.message : String(error);
+				throw new Error(`Something went wrong during the migration! Changes applied to the store until this failed migration will be restored. ${errorMessage}`);
 			}
 		}
 
@@ -629,27 +615,37 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 	}
 
 	private _containsReservedKey(key: string | PartialObjectDeep<T>): boolean {
-		if (typeof key === 'object') {
-			const firstKey = Object.keys(key)[0];
-
-			if (firstKey === INTERNAL_KEY) {
-				return true;
-			}
+		if (typeof key === 'string') {
+			return this._isReservedKeyPath(key);
 		}
 
-		if (typeof key !== 'string') {
+		if (!key || typeof key !== 'object') {
 			return false;
 		}
 
-		if (this.#options.accessPropertiesByDotNotation) {
-			if (key.startsWith(`${INTERNAL_KEY}.`)) {
+		return this._objectContainsReservedKey(key);
+	}
+
+	private _objectContainsReservedKey(value: unknown): boolean {
+		if (!value || typeof value !== 'object') {
+			return false;
+		}
+
+		for (const [candidateKey, candidateValue] of Object.entries(value)) {
+			if (this._isReservedKeyPath(candidateKey)) {
 				return true;
 			}
 
-			return false;
+			if (this._objectContainsReservedKey(candidateValue)) {
+				return true;
+			}
 		}
 
 		return false;
+	}
+
+	private _isReservedKeyPath(candidate: string): boolean {
+		return candidate === INTERNAL_KEY || candidate.startsWith(`${INTERNAL_KEY}.`);
 	}
 
 	private _isVersionInRangeFormat(version: string): boolean {
@@ -678,7 +674,7 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 
 	private _get<Key extends keyof T>(key: Key): T[Key] | undefined;
 	private _get<Key extends keyof T, Default = unknown>(key: Key, defaultValue: Default): T[Key] | Default;
-	private _get<Key extends keyof T, Default = unknown>(key: Key | string, defaultValue?: Default): Default | undefined {
+	private _get<Key extends keyof T, Default = unknown>(key: Key | string, defaultValue?: Default): T[Key] | Default | undefined {
 		return getProperty(this.store, key as string, defaultValue as T[Key]);
 	}
 
@@ -687,6 +683,146 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 		setProperty(store, key, value);
 
 		this.store = store;
+	}
+
+	#prepareOptions(partialOptions: Readonly<Partial<Options<T>>>): Partial<Options<T>> {
+		const options: Partial<Options<T>> = {
+			configName: 'config',
+			fileExtension: 'json',
+			projectSuffix: 'nodejs',
+			clearInvalidConfig: false,
+			accessPropertiesByDotNotation: true,
+			configFileMode: 0o666,
+			...partialOptions,
+		};
+
+		if (!options.cwd) {
+			if (!options.projectName) {
+				throw new Error('Please specify the `projectName` option.');
+			}
+
+			options.cwd = envPaths(options.projectName, {suffix: options.projectSuffix}).config;
+		}
+
+		if (typeof options.fileExtension === 'string') {
+			options.fileExtension = options.fileExtension.replace(/^\.+/, '');
+		}
+
+		return options;
+	}
+
+	#setupValidator(options: Partial<Options<T>>): void {
+		if (!(options.schema ?? options.ajvOptions ?? options.rootSchema)) {
+			return;
+		}
+
+		if (options.schema && typeof options.schema !== 'object') {
+			throw new TypeError('The `schema` option must be an object.');
+		}
+
+		// Workaround for https://github.com/ajv-validator/ajv/issues/2047
+		const ajvFormats = ajvFormatsModule.default;
+
+		const ajv = new Ajv({
+			allErrors: true,
+			useDefaults: true,
+			...options.ajvOptions,
+		});
+		ajvFormats(ajv);
+
+		const schema: JSONSchema = {
+			...options.rootSchema,
+			type: 'object',
+			properties: options.schema,
+		};
+
+		this.#validator = ajv.compile(schema);
+		this.#captureSchemaDefaults(options.schema);
+	}
+
+	#captureSchemaDefaults(schemaConfig: Schema<T> | undefined): void {
+		const schemaEntries = Object.entries(schemaConfig ?? {}) as Array<[keyof T, JSONSchema | undefined]>;
+		for (const [key, schemaDefinition] of schemaEntries) {
+			if (!schemaDefinition || typeof schemaDefinition !== 'object') {
+				continue;
+			}
+
+			if (!Object.hasOwn(schemaDefinition, 'default')) {
+				continue;
+			}
+
+			const {default: defaultValue} = schemaDefinition as {default: unknown};
+			if (defaultValue === undefined) {
+				continue;
+			}
+
+			this.#defaultValues[key] = defaultValue as T[keyof T];
+		}
+	}
+
+	#applyDefaultValues(options: Partial<Options<T>>): void {
+		if (options.defaults) {
+			Object.assign(this.#defaultValues, options.defaults);
+		}
+	}
+
+	#configureSerialization(options: Partial<Options<T>>): void {
+		if (options.serialize) {
+			this._serialize = options.serialize;
+		}
+
+		if (options.deserialize) {
+			this._deserialize = options.deserialize;
+		}
+	}
+
+	#resolvePath(options: Partial<Options<T>>): string {
+		const normalizedFileExtension = typeof options.fileExtension === 'string' ? options.fileExtension : undefined;
+		const fileExtension = normalizedFileExtension ? `.${normalizedFileExtension}` : '';
+		return path.resolve(options.cwd!, `${options.configName ?? 'config'}${fileExtension}`);
+	}
+
+	#initializeStore(options: Partial<Options<T>>): void {
+		if (options.migrations) {
+			this.#runMigrations(options);
+			this._validate(this.store);
+			return;
+		}
+
+		const fileStore = this.store;
+		const storeWithDefaults = Object.assign(createPlainObject(), options.defaults ?? {}, fileStore);
+		this._validate(storeWithDefaults);
+		try {
+			assert.deepEqual(fileStore, storeWithDefaults);
+		} catch {
+			this.store = storeWithDefaults;
+		}
+	}
+
+	#runMigrations(options: Partial<Options<T>>): void {
+		const {migrations, projectVersion} = options;
+		if (!migrations) {
+			return;
+		}
+
+		if (!projectVersion) {
+			throw new Error('Please specify the `projectVersion` option.');
+		}
+
+		this.#isInMigration = true;
+		try {
+			const fileStore = this.store;
+			const storeWithDefaults = Object.assign(createPlainObject(), options.defaults ?? {}, fileStore);
+			try {
+				assert.deepEqual(fileStore, storeWithDefaults);
+			} catch {
+				this._write(storeWithDefaults);
+			}
+
+			this._migrate(migrations, projectVersion, options.beforeEachMigration);
+		} finally {
+			this.#isInMigration = false;
+		}
 	}
 }
 

@@ -20,7 +20,7 @@
 		"node": ">=20"
 	},
 	"scripts": {
-		"test": "xo && npm run build && ava",
+		"test": "xo && tsc --noEmit && tsx --test test/**.ts",
 		"build": "del-cli dist && tsc",
 		"prepack": "npm run build"
 	},
@@ -51,45 +51,32 @@
 		"ajv-formats": "^3.0.1",
 		"atomically": "^2.0.3",
 		"debounce-fn": "^6.0.0",
-		"dot-prop": "^9.0.0",
+		"dot-prop": "^10.0.0",
 		"env-paths": "^3.0.0",
 		"json-schema-typed": "^8.0.1",
 		"semver": "^7.7.2",
-		"uint8array-extras": "^1.4.0"
+		"uint8array-extras": "^1.5.0"
 	},
 	"devDependencies": {
-		"@sindresorhus/tsconfig": "^7.0.0",
-		"@types/node": "^22.15.30",
-		"@types/semver": "^7.7.0",
-		"ava": "^6.3.0",
-		"del": "^8.0.0",
-		"del-cli": "^6.0.0",
+		"@sindresorhus/tsconfig": "^8.0.1",
+		"@types/node": "^24.5.2",
+		"@types/semver": "^7.7.1",
+		"del": "^8.0.1",
+		"del-cli": "^7.0.0",
 		"delay": "^6.0.0",
-		"p-event": "^6.0.1",
+		"expect-type": "^1.2.2",
+		"p-event": "^7.0.0",
 		"tempy": "^3.1.0",
 		"ts-node": "^10.9.2",
-		"tsd": "^0.32.0",
-		"typescript": "^5.8.3",
-		"xo": "^1.0.5"
-	},
-	"ava": {
-		"files": [
-			"test/*",
-			"!test/index.test-d.ts"
-		],
-		"timeout": "1m",
-		"extensions": {
-			"ts": "module"
-		},
-		"nodeArguments": [
-			"--loader=ts-node/esm"
-		],
-		"workerThreads": false
+		"tsx": "^4.20.6",
+		"typescript": "^5.9.2",
+		"xo": "^1.2.2"
 	},
 	"xo": {
 		"rules": {
 			"@typescript-eslint/ban-ts-comment": "off",
-			"unicorn/prevent-abbreviations": "off"
+			"unicorn/prevent-abbreviations": "off",
+			"@typescript-eslint/no-floating-promises": "off"
 		}
 	}
 }

@@ -1,9 +1,11 @@
 import {type JSONSchema as TypedJSONSchema} from 'json-schema-typed';
 // eslint-disable unicorn/import-index
-import type {CurrentOptions as AjvOptions} from 'ajv/dist/core.js';
+import type {Options as AjvOptions_} from 'ajv';
 import type Conf from './index.js';
 
-export type Options<T extends Record<string, any>> = {
+export type AjvOptions = AjvOptions_;
+
+export type Options<T extends Record<string, unknown>> = {
 	/**
 	Config used if there are no existing config.
 
@@ -254,7 +256,7 @@ export type Options<T extends Record<string, any>> = {
 	});
 
 	config.set({
-		`foo.bar.foobar`: '🦄'
+		'foo.bar.foobar': '🦄'
 	});
 
 	console.log(config.get('foo.bar.foobar'));
@@ -283,7 +285,7 @@ export type Options<T extends Record<string, any>> = {
 	readonly configFileMode?: number;
 };
 
-export type Migrations<T extends Record<string, any>> = Record<string, (store: Conf<T>) => void>;
+export type Migrations<T extends Record<string, unknown>> = Record<string, (store: Conf<T>) => void>;
 
 export type BeforeEachMigrationContext = {
 	fromVersion: string;
@@ -291,7 +293,7 @@ export type BeforeEachMigrationContext = {
 	finalVersion: string;
 	versions: string[];
 };
-export type BeforeEachMigrationCallback<T extends Record<string, any>> = (store: Conf<T>, context: BeforeEachMigrationContext) => void;
+export type BeforeEachMigrationCallback<T extends Record<string, unknown>> = (store: Conf<T>, context: BeforeEachMigrationContext) => void;
 
 export type Schema<T> = {[Property in keyof T]: ValueSchema};
 export type ValueSchema = TypedJSONSchema;
@@ -300,27 +302,27 @@ export type Serialize<T> = (value: T) => string;
 export type Deserialize<T> = (text: string) => T;
 
 export type OnDidChangeCallback<T> = (newValue?: T, oldValue?: T) => void;
-export type OnDidAnyChangeCallback<T> = (newValue?: Readonly<T>, oldValue?: Readonly<T>) => void;
+export type OnDidAnyChangeCallback<T> = (newValue: Readonly<T>, oldValue?: Readonly<T>) => void;
 
 export type Unsubscribe = () => void;
 
-export type DotNotationKeyOf<T extends Record<string, any>> = {
+export type DotNotationKeyOf<T extends Record<string, unknown>> = {
 	[K in keyof Required<T>]: K extends string
-		? Required<T>[K] extends Record<string, any>
+		? Required<T>[K] extends Record<string, unknown>
 			? K | `${K}.${DotNotationKeyOf<Required<T>[K]>}`
 			: K
 		: never
 }[keyof T];
 
-export type DotNotationValueOf<T extends Record<string, any>, K extends DotNotationKeyOf<T>> =
+export type DotNotationValueOf<T extends Record<string, unknown>, K extends DotNotationKeyOf<T>> =
 	K extends `${infer Head}.${infer Tail}`
 		? Head extends keyof T
-			? T[Head] extends Record<string, any>
+			? T[Head] extends Record<string, unknown>
 				? Tail extends DotNotationKeyOf<T[Head]>
 					// Type of objects for required properties
 					? DotNotationValueOf<T[Head], Tail>
 					: never
-				: Required<T>[Head] extends Record<string, any>
+				: Required<T>[Head] extends Record<string, unknown>
 					? Tail extends DotNotationKeyOf<Required<T>[Head]>
 						// Type of objects for optional properties
 						? DotNotationValueOf<Required<T>[Head], Tail> | undefined
@@ -331,6 +333,19 @@ export type DotNotationValueOf<T extends Record<string, any>, K extends DotNotat
 			? T[K]
 			: never;
 
-export type PartialObjectDeep<T> = {[K in keyof T]?: PartialObjectDeep<T[K]>};
+type ImmutablePrimitives = Date | RegExp | URL | Error;
 
-export type {CurrentOptions as AjvOptions} from 'ajv/dist/core.js';
+export type PartialObjectDeep<T> =
+	T extends ImmutablePrimitives
+		? T
+		: T extends Map<infer K, infer V>
+			? Map<PartialObjectDeep<K>, PartialObjectDeep<V>>
+			: T extends Set<infer U>
+				? Set<PartialObjectDeep<U>>
+				: T extends Array<infer U>
+					? Array<PartialObjectDeep<U>>
+					: T extends (...args: unknown[]) => unknown
+						? T
+						: T extends Record<string, unknown>
+							? {[K in keyof T]?: PartialObjectDeep<T[K]>}
+							: T;
