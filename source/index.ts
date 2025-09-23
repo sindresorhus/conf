@@ -67,6 +67,7 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 	readonly #encryptionKey?: string | Uint8Array | NodeJS.TypedArray | DataView;
 	readonly #options: Readonly<Partial<Options<T>>>;
 	readonly #defaultValues: Partial<T> = {};
+	#isInMigration = false;
 
 	constructor(partialOptions: Readonly<Partial<Options<T>>> = {}) {
 		const options: Partial<Options<T>> = {
@@ -140,24 +141,30 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 		const fileExtension = options.fileExtension ? `.${options.fileExtension}` : '';
 		this.path = path.resolve(options.cwd, `${options.configName ?? 'config'}${fileExtension}`);
 
-		const fileStore = this.store;
-		const store = Object.assign(createPlainObject(), options.defaults, fileStore);
-
+		// Handle migrations if present
 		if (options.migrations) {
 			if (!options.projectVersion) {
 				throw new Error('Please specify the `projectVersion` option.');
 			}
 
-			this._migrate(options.migrations, options.projectVersion, options.beforeEachMigration);
-		}
+			this.#isInMigration = true;
+			try {
+				this._migrate(options.migrations, options.projectVersion, options.beforeEachMigration);
+			} finally {
+				this.#isInMigration = false;
+			}
+		} else {
+			// No migrations - validate the current state with defaults applied
+			const fileStore = this.store;
+			const store = Object.assign(createPlainObject(), options.defaults, fileStore);
+			this._validate(store);
 
-		// We defer validation until after migrations are applied so that the store can be updated to the current schema.
-		this._validate(store);
-
-		try {
-			assert.deepEqual(fileStore, store);
-		} catch {
-			this.store = store;
+			// Update store if defaults were applied
+			try {
+				assert.deepEqual(fileStore, store);
+			} catch {
+				this.store = store;
+			}
 		}
 
 		if (options.watch) {
@@ -397,7 +404,9 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 			const data = fs.readFileSync(this.path, this.#encryptionKey ? null : 'utf8');
 			const dataString = this._encryptData(data);
 			const deserializedData = this._deserialize(dataString);
-			this._validate(deserializedData);
+			if (!this.#isInMigration) {
+				this._validate(deserializedData);
+			}
 			return Object.assign(createPlainObject(), deserializedData);
 		} catch (error: unknown) {
 			if ((error as any)?.code === 'ENOENT') {
@@ -405,8 +414,16 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 				return createPlainObject();
 			}
 
-			if (this.#options.clearInvalidConfig && (error as Error).name === 'SyntaxError') {
-				return createPlainObject();
+			if (this.#options.clearInvalidConfig) {
+				const errorInstance = error as Error;
+				// Handle JSON parsing errors (existing behavior)
+				if (errorInstance.name === 'SyntaxError') {
+					return createPlainObject();
+				}
+				// Handle schema validation errors (new behavior)
+				if (errorInstance.message?.startsWith('Config schema violation:')) {
+					return createPlainObject();
+				}
 			}
 
 			throw error;
@@ -419,7 +436,10 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 		// Preserve existing internal data if it exists and the new value doesn't contain it
 		if (!hasProperty(value, INTERNAL_KEY)) {
 			try {
-				const currentStore = this.store;
+				// Read directly from file to avoid recursion during migration
+				const data = fs.readFileSync(this.path, this.#encryptionKey ? null : 'utf8');
+				const dataString = this._encryptData(data);
+				const currentStore = this._deserialize(dataString);
 				if (hasProperty(currentStore, INTERNAL_KEY)) {
 					setProperty(value, INTERNAL_KEY, getProperty(currentStore, INTERNAL_KEY));
 				}
@@ -428,9 +448,11 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 			}
 		}
 
-		this._validate(value);
-		this._write(value);
+		if (!this.#isInMigration) {
+			this._validate(value);
+		}
 
+		this._write(value);
 		this.events.dispatchEvent(new Event('change'));
 	}
 
@@ -560,7 +582,7 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 				this.events.dispatchEvent(new Event('change'));
 			}, {wait: 100}));
 		} else {
-			// fs.watchFile is used for better cross-platform reliability, but requires a longer debounce
+			// Fs.watchFile is used for better cross-platform reliability, but requires a longer debounce
 			fs.watchFile(this.path, {persistent: false}, debounceFn(() => {
 				this.events.dispatchEvent(new Event('change'));
 			}, {wait: 1000}));
@@ -594,6 +616,7 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 				previousMigratedVersion = version;
 				storeBackup = {...this.store};
 			} catch (error: unknown) {
+				// Restore backup (validation is skipped during migration)
 				this.store = storeBackup;
 
 				throw new Error(`Something went wrong during the migration! Changes applied to the store until this failed migration will be restored. ${error as string}`);

@@ -458,7 +458,7 @@ test('.clear() - validation error', t => {
 		cwd: temporaryDirectory(),
 		defaults: {
 			foo: 42,
-			bad: () => {}, // Invalid JSON type
+			bad() {}, // Invalid JSON type
 		},
 	});
 
@@ -466,7 +466,7 @@ test('.clear() - validation error', t => {
 	t.is(store.get('foo'), 42);
 	t.is(store.get('bad' as any), undefined);
 
-	// clear() should validate defaults and throw for invalid types
+	// Clear() should validate defaults and throw for invalid types
 	t.throws(() => {
 		store.clear();
 	}, {message: /not supported by JSON/});
@@ -816,6 +816,114 @@ test('`clearInvalidConfig` option - valid data', t => {
 	const config = new Conf({cwd: temporaryDirectory(), clearInvalidConfig: false});
 	config.set('foo', 'bar');
 	t.deepEqual(config.store, {foo: 'bar'});
+});
+
+test('`clearInvalidConfig` option - schema validation error', t => {
+	const temporaryDirectoryPath = temporaryDirectory();
+	const configPath = path.join(temporaryDirectoryPath, 'config.json');
+
+	// Create config file with invalid schema data
+	fs.writeFileSync(configPath, JSON.stringify({myKey: 'invalid-type'}, null, '\t'));
+
+	// Without clearInvalidConfig, should throw
+	t.throws(() => {
+		new Conf({
+			cwd: temporaryDirectoryPath,
+			clearInvalidConfig: false,
+			schema: {
+				myKey: {type: 'boolean'},
+			},
+		});
+	}, {message: /Config schema violation/});
+
+	// With clearInvalidConfig, should clear the invalid data and create empty config
+	const config = new Conf({
+		cwd: temporaryDirectoryPath,
+		clearInvalidConfig: true,
+		schema: {
+			myKey: {type: 'boolean'},
+		},
+	});
+
+	t.deepEqual(config.store, {});
+});
+
+test('migrations - fix invalid schema data', t => {
+	const temporaryDirectoryPath = temporaryDirectory();
+	const configPath = path.join(temporaryDirectoryPath, 'config.json');
+
+	// Create config file with data that doesn't match current schema
+	fs.writeFileSync(configPath, JSON.stringify({myKey: 'true'}, null, '\t'));
+
+	// Migrations should be able to fix invalid data
+	const config = new Conf({
+		cwd: temporaryDirectoryPath,
+		projectVersion: '1.0.0',
+		migrations: {
+			'1.0.0'(store) {
+				// Fix the invalid data by converting string to boolean
+				const value = store.get('myKey');
+				if (typeof value === 'string') {
+					store.set('myKey', value === 'true');
+				}
+			},
+		},
+		schema: {
+			myKey: {type: 'boolean'},
+		},
+	});
+
+	// Should successfully create the store with migrated data
+	t.is(config.get('myKey'), true);
+	t.is(typeof config.get('myKey'), 'boolean');
+});
+
+test('migrations - handle multiple schema violations', t => {
+	const temporaryDirectoryPath = temporaryDirectory();
+	fs.writeFileSync(path.join(temporaryDirectoryPath, 'config.json'), JSON.stringify({
+		enabled: 'yes', // Should be boolean
+		count: '42', // Should be number
+	}, null, '\t'));
+
+	const config = new Conf({
+		cwd: temporaryDirectoryPath,
+		projectVersion: '2.0.0',
+		migrations: {
+			'2.0.0'(store) {
+				store.set('enabled', store.get('enabled') === 'yes');
+				store.set('count', Number.parseInt(store.get('count') as string, 10));
+			},
+		},
+		schema: {
+			enabled: {type: 'boolean'},
+			count: {type: 'number'},
+		},
+	});
+
+	t.is(config.get('enabled'), true);
+	t.is(config.get('count'), 42);
+});
+
+test('migrations - rollback on error', t => {
+	const temporaryDirectoryPath = temporaryDirectory();
+	const configPath = path.join(temporaryDirectoryPath, 'config.json');
+	const originalData = {myKey: 'invalid'};
+	fs.writeFileSync(configPath, JSON.stringify(originalData, null, '\t'));
+
+	t.throws(() => {
+		new Conf({
+			cwd: temporaryDirectoryPath,
+			projectVersion: '1.0.0',
+			migrations: {
+				'1.0.0'() {
+					throw new Error('Migration failed');
+				}
+			}
+		});
+	}, {message: /Migration failed/});
+
+	// Original data should be preserved after rollback
+	t.deepEqual(JSON.parse(fs.readFileSync(configPath, 'utf8')), originalData);
 });
 
 test('schema - should be an object', t => {

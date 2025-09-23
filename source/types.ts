@@ -186,7 +186,7 @@ export type Options<T extends Record<string, any>> = {
 	fileExtension?: string;
 
 	/**
-	The config is cleared if reading the config file causes a `SyntaxError`. This is a good behavior for unimportant data, as the config file is not intended to be hand-edited, so it usually means the config is corrupt and there's nothing the user can do about it anyway. However, if you let the user edit the config file directly, mistakes might happen and it could be more useful to throw an error when the config is invalid instead of clearing.
+	The config is cleared if reading the config file causes a `SyntaxError` (malformed JSON) or a schema validation error when using the `schema` option. This is a good behavior for unimportant data, as the config file is not intended to be hand-edited, so it usually means the config is corrupt and there's nothing the user can do about it anyway. However, if you let the user edit the config file directly, mistakes might happen and it could be more useful to throw an error when the config is invalid instead of clearing.
 
 	@default false
 	*/

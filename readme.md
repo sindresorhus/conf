@@ -56,7 +56,8 @@ Type: `object`
 
 Default values for the config items.
 
-**Note:** The values in `defaults` will overwrite the `default` key in the `schema` option.
+> [!NOTE]
+> The values in `defaults` will overwrite the `default` key in the `schema` option.
 
 #### schema
 
@@ -96,7 +97,8 @@ config.set('foo', '1');
 // [Error: Config schema violation: `foo` should be number]
 ```
 
-**Note:** The `default` value will be overwritten by the `defaults` option if set.
+> [!NOTE]
+> The `default` value will be overwritten by the `defaults` option if set.
 
 #### rootSchema
 
@@ -126,7 +128,8 @@ Type: `object`
 
 Under the hood, the JSON Schema validator [ajv](https://ajv.js.org/json-schema.html) is used to validate your config. We use [JSON Schema draft-2020-12](https://json-schema.org/draft/2020-12/release-notes) and support all validation keywords and formats.
 
-**Note:** By default, `allErrors` and `useDefaults` are both set to `true`, but can be overridden.
+> [!NOTE]
+> By default, `allErrors` and `useDefaults` are both set to `true`, but can be overridden.
 
 Example:
 
@@ -181,7 +184,8 @@ const store = new Conf({
 });
 ```
 
-> Note: The version the migrations use refers to the **project version** by default. If you want to change this behavior, specify the [`projectVersion`](#projectVersion) option.
+> [!NOTE]
+> The version the migrations use refers to the **project version** by default. If you want to change this behavior, specify the [`projectVersion`](#projectVersion) option.
 
 #### beforeEachMigration
 
@@ -279,7 +283,8 @@ The only use-case I can think of is having the config located in the app directo
 Type: `string | Uint8Array | TypedArray | DataView`\
 Default: `undefined`
 
-Note that this is **not intended for security purposes**, since the encryption key would be easily found inside a plain-text Node.js app.
+> [!CAUTION]
+> This is **not intended for security purposes**, since the encryption key would be easily found inside a plain-text Node.js app.
 
 Its main use is for obscurity. If a user looks through the config directory and finds the config file, since it's just a JSON file, they may be tempted to modify it. By providing an encryption key, the file will be obfuscated, which should hopefully deter any users from doing so.
 
@@ -299,7 +304,7 @@ You would usually not need this, but could be useful if you want to interact wit
 Type: `boolean`\
 Default: `false`
 
-The config is cleared if reading the config file causes a `SyntaxError`. This is a good behavior for unimportant data, as the config file is not intended to be hand-edited, so it usually means the config is corrupt and there's nothing the user can do about it anyway. However, if you let the user edit the config file directly, mistakes might happen and it could be more useful to throw an error when the config is invalid instead of clearing.
+The config is cleared if reading the config file causes a `SyntaxError` (malformed JSON) or a schema validation error when using the `schema` option. This is a good behavior for unimportant data, as the config file is not intended to be hand-edited, so it usually means the config is corrupt and there's nothing the user can do about it anyway. However, if you let the user edit the config file directly, mistakes might happen and it could be more useful to throw an error when the config is invalid instead of clearing.
 
 #### serialize
 
@@ -390,7 +395,8 @@ The [mode](https://en.wikipedia.org/wiki/File-system_permissions#Numeric_notatio
 
 You would usually not need this, but it could be useful if you want to restrict the permissions of the config file. Setting a permission such as `0o600` would result in a config file that can only be accessed by the user running the program.
 
-Note that setting restrictive permissions can cause problems if different users need to read the file. A common problem is a user running your tool with and without `sudo` and then not being able to access the config the second time.
+> [!NOTE]
+> Setting restrictive permissions can cause problems if different users need to read the file. A common problem is a user running your tool with and without `sudo` and then not being able to access the config the second time.
 
 ### Instance
 
