@@ -142,15 +142,6 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 
 		const fileStore = this.store;
 		const store = Object.assign(createPlainObject(), options.defaults, fileStore);
-
-		if (options.migrations) {
-			if (!options.projectVersion) {
-				throw new Error('Please specify the `projectVersion` option.');
-			}
-
-			this._migrate(options.migrations, options.projectVersion, options.beforeEachMigration);
-		}
-
 		// We defer validation until after migrations are applied so that the store can be updated to the current schema.
 		this._validate(store);
 
@@ -158,6 +149,14 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 			assert.deepEqual(fileStore, store);
 		} catch {
 			this.store = store;
+		}
+
+		if (options.migrations) {
+			if (!options.projectVersion) {
+				throw new Error('Please specify the `projectVersion` option.');
+			}
+
+			this._migrate(options.migrations, options.projectVersion, options.beforeEachMigration);
 		}
 
 		if (options.watch) {
