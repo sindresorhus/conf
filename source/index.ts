@@ -424,7 +424,7 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 			return uint8ArrayToString(concatUint8Arrays([decipher.update(dataUpdate), decipher.final()]));
 		} catch {
 			try {
-				// fallback to legacy scheme (iv.toString() as salt)
+				// Fallback to legacy scheme (iv.toString() as salt)
 				const initializationVector = data.slice(0, 16);
 				const password = crypto.pbkdf2Sync(this.#encryptionKey, initializationVector.toString(), 10_000, 32, 'sha512');
 				const decipher = crypto.createDecipheriv(encryptionAlgorithm, password, initializationVector);
