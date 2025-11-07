@@ -212,6 +212,27 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 	}
 
 	/**
+	Calls supplied mutation on the item and replaces it with its result.
+
+	@param key - The key of the item to mutate.
+	@param mutation - Function which returns new derived value
+	@returns new value
+	*/
+	mutate<Key extends keyof T>(key: Key, mutation: (currentValue: T[Key] extends ReadonlyArray<infer U> ? U : unknown) => T[Key] extends ReadonlyArray<infer U> ? U : unknown): void;
+	mutate<Key extends DotNotationKeyOf<T>>(key: Key, mutation: (currentValue: DotNotationValueOf<T, Key> extends ReadonlyArray<infer U> ? U : unknown) => DotNotationValueOf<T, Key> extends ReadonlyArray<infer U> ? U : unknown): void;
+	mutate(key: string, mutation: unknown): void {
+	// mutate<Key extends keyof T>(key: Key | string, mutation: (currentValue: T[Key]) => T[Key]): T[Key] {
+		if (typeof mutation !== 'function') {
+			throw new TypeError(`Expected type of mutation to be of type \`function\`, is ${typeof mutation}`);
+		}
+
+		this.set(key, mutation(this.get(key)));
+
+		return this.get(key);
+	}
+
+
+	/**
 	Reset items to their default values, as defined by the `defaults` or `schema` option.
 
 	@see `clear()` to reset all items.

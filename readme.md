@@ -414,6 +414,10 @@ The `value` must be JSON serializable. Trying to set the type `undefined`, `func
 
 Set multiple items at once.
 
+#### .mutate(key, mutation)
+
+Calls supplied mutation on the item and replaces it with its result.
+
 #### .get(key, defaultValue?)
 
 Get an item or `defaultValue` if the item does not exist.
