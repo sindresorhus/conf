@@ -484,8 +484,22 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 		};
 	}
 
-	private _deserialize: Deserialize<T> = value => JSON.parse(value);
-	private _serialize: Serialize<T> = value => JSON.stringify(value, undefined, '\t');
+	private _deserialize: Deserialize<T> = value => {
+		const decrypt = this.#options.encryption?.decrypt;
+		const data = decrypt ? this.#options.encryption?.decrypt(Uint8Array.from(value)) : value;
+		const deserialize = this.#options.deserialize;
+
+		return deserialize ? deserialize(data) : JSON.parse(data);
+	}
+
+	private _serialize: Serialize<T> = value => {
+		const encrypt = this.#options.encryption?.encrypt;
+		const serialize = this.#options.serialize;
+
+		const data = serialize ? serialize(value) : JSON.stringify(value, undefined, '\t');
+
+		return encrypt ? encrypt(data).toString() : data;
+	}
 
 	private _validate(data: T | unknown): void {
 		if (!this.#validator) {
@@ -777,13 +791,13 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 	}
 
 	#configureSerialization(options: Partial<Options<T>>): void {
-		if (options.serialize) {
-			this._serialize = options.serialize;
-		}
+		// if (options.serialize) {
+		// 	this._serialize = options.serialize;
+		// }
 
-		if (options.deserialize) {
-			this._deserialize = options.deserialize;
-		}
+		// if (options.deserialize) {
+		// 	this._deserialize = options.deserialize;
+		// }
 	}
 
 	#resolvePath(options: Partial<Options<T>>): string {

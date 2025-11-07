@@ -178,6 +178,11 @@ export type Options<T extends Record<string, unknown>> = {
 	*/
 	encryptionKey?: string | Uint8Array | NodeJS.TypedArray | DataView;
 
+	encryption?: {
+		encrypt: (data: string) => Uint8Array;
+		decrypt: (data: Uint8Array) => string;
+	};
+
 	/**
 	Extension of the config file.
 
