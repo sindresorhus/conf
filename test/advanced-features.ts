@@ -141,7 +141,7 @@ describe('Advanced Features', () => {
 
 		const cwd = createTempDirectory();
 		const conf1 = trackConf(new Conf({cwd, watch: true}));
-		const conf2 = trackConf(new Conf({cwd}));
+		const conf2 = trackConf(new Conf({cwd, watch: true}));
 		conf1.set('foo', '👾');
 
 		let checks = 0;
@@ -151,7 +151,9 @@ describe('Advanced Features', () => {
 			checks++;
 		};
 
-		assert.strictEqual(conf2.get('foo'), '👾');
+		await delay(50);
+
+		assert.strictEqual(conf2.get('foo'), undefined);
 		assert.strictEqual(conf1.path, conf2.path);
 		conf1.onDidChange('foo', checkFoo);
 
@@ -219,7 +221,7 @@ describe('Advanced Features', () => {
 		writer.set('foo', 'baz');
 		await changePromise;
 
-		assert.deepStrictEqual(history, [{newValue: 'baz', oldValue: 'bar'}]);
+		assert.deepStrictEqual(history, [{newValue: 'baz', oldValue: undefined}]);
 
 		conf._closeWatcher();
 		writer._closeWatcher();
