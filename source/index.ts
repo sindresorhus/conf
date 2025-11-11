@@ -235,8 +235,8 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 	@param mutation - Function which returns new derived value
 	@returns new value
 	*/
-	mutate<Key extends keyof T, V extends T[Key] extends ReadonlyArray<infer U> ? U : unknown>(key: Key, mutation: (currentValue: V) => V): void;
-	mutate<Key extends DotNotationKeyOf<T>, V extends DotNotationValueOf<T, Key> extends ReadonlyArray<infer U> ? U : unknown>(key: Key, mutation: (currentValue: V) => V): void;
+	mutate<Key extends keyof T>(key: Key, mutation: (currentValue: T[Key]) => T[Key]): void;
+	mutate<Key extends DotNotationKeyOf<T>>(key: Key, mutation: (currentValue: DotNotationValueOf<T, Key>) => DotNotationValueOf<T, Key>): void;
 	mutate(key: string, mutation: unknown): void {
 		if (typeof mutation !== 'function') {
 			throw new TypeError(`Expected type of mutation to be of type \`function\`, is ${typeof mutation}`);

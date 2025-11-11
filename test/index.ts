@@ -304,6 +304,13 @@ describe('Conf', () => {
 		assert.deepStrictEqual(config.get('multi'), ['a', 'b', 'c']);
 	});
 
+	it('.mutate()', () => {
+		config.set('count', 10);
+		// @ts-ignore
+		config.mutate('count', (current: number) => current + 5);
+		assert.strictEqual(config.get('count'), 15);
+	});
+
 	it('.reset() - `defaults` option', () => {
 		const store = new Conf({
 			cwd: createTempDirectory(),
