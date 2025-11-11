@@ -242,9 +242,31 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 			throw new TypeError(`Expected type of mutation to be of type \`function\`, is ${typeof mutation}`);
 		}
 
-		this.set(key, mutation.call(this.get(key)));
+		this.set(key, mutation.call(this, this.get(key)));
+	}
 
-		return this.get(key);
+	/**
+	Merge an object into the item at `key`
+	@throws {TypeError} when the current value at `key` or the `value` to merge is not an object.
+	@param {key} - You can use [dot-notation](https://github.com/sindresorhus/dot-prop) in a key to access nested properties.
+	@param value - Must be JSON serializable. Trying to set the type `undefined`, `function`, or `symbol` will result in a `TypeError`.
+	*/
+	merge<Key extends keyof T>(key: Key, value?: T[Key]): void;
+	merge<Key extends DotNotationKeyOf<T>>(key: Key, Value?: DotNotationValueOf<T, Key>): void;
+	// Fallback for dynamic dot-notation paths that can't be statically typed
+	merge(key: string, value: unknown): void;
+	merge<Key extends keyof T>(key: string, value?: unknown): void {
+		const current = this.get(key);
+
+		if (typeof current !== 'object' || current === null) {
+			throw new TypeError(`Cannot merge into non-object value at key \`${String(key)}\``);
+		}
+
+		if (typeof value !== 'object' || value === null) {
+			throw new TypeError(`Cannot merge non-object value into key \`${String(key)}\``);
+		}
+
+		this.set(key, cloneWithNullProto({...current, ...value}));
 	}
 
 	/**

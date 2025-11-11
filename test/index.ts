@@ -304,6 +304,12 @@ describe('Conf', () => {
 		assert.deepStrictEqual(config.get('multi'), ['a', 'b', 'c']);
 	});
 
+	it('.merge()', () => {
+		config.set('merge', {a: 1, b: 2});
+		config.merge('merge', {b: 3, c: 4});
+		assert.deepStrictEqual(config.get('merge'), {a: 1, b: 3, c: 4});
+	});
+
 	it('.mutate()', () => {
 		config.set('count', 10);
 		// @ts-ignore
