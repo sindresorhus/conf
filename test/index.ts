@@ -1331,4 +1331,44 @@ describe('Conf', () => {
 		configWithoutDotNotation.delete('foo.bar.baz');
 		assert.deepStrictEqual(configWithoutDotNotation.get('foo.bar.zoo'), {awesome: 'redpanda'});
 	});
+
+	it('.runWithoutChangeEvents()', async () => {
+		config.set('count', 0);
+		let changeCalled = 0;
+		const unsubscribe = config.onDidChange('count', () => {
+			changeCalled++;
+		});
+
+		await config.runWithoutChangeEvents(() => {
+			for (let i = 0; i < 5; i++) {
+				// @ts-ignore
+				config.mutate('count', (current: number) => current + 1);
+			}
+		});
+
+		unsubscribe();
+		assert.strictEqual(changeCalled, 1);
+		assert.strictEqual(config.get('count'), 5);
+	});
+
+	it('set ignoreChangeEvents', () => {
+		config.set('count', 0);
+		let changeCalled = 0;
+		const unsubscribe = config.onDidChange('count', () => {
+			changeCalled++;
+		});
+
+		config.ignoreChangeEvents = true;
+
+		for (let i = 0; i < 5; i++) {
+			// @ts-ignore
+			config.mutate('count', (current: number) => current + 1);
+		}
+
+		config.ignoreChangeEvents = false;
+
+		unsubscribe();
+		assert.strictEqual(changeCalled, 0);
+		assert.strictEqual(config.get('count'), 5);
+	});
 });

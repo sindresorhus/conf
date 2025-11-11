@@ -80,6 +80,7 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 	#cache?: T;
 	#writePending = false;
 	#writeTimer?: NodeJS.Timeout;
+	#ignoreChangeEvents = false;
 
 	constructor(partialOptions: Readonly<Partial<Options<T>>> = {}) {
 		const options = this.#prepareOptions(partialOptions);
@@ -414,7 +415,7 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 		}
 
 		this._write(value);
-		this.events.dispatchEvent(new Event('change'));
+		this.triggerChangeEvent();
 	}
 
 	* [Symbol.iterator](): IterableIterator<[keyof T, T[keyof T]]> {
@@ -422,6 +423,24 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 			if (!this._isReservedKeyPath(key)) {
 				yield [key, value];
 			}
+		}
+	}
+
+	get ignoreChangeEvents(): boolean {
+		return this.#ignoreChangeEvents;
+	}
+
+	set ignoreChangeEvents(value: boolean) {
+		this.#ignoreChangeEvents = Boolean(value);
+	}
+
+	async runWithoutChangeEvents(handler: () => void | Promise<void>): Promise<void> {
+		try {
+			this.ignoreChangeEvents = true;
+			await handler.call(this);
+		} finally {
+			this.ignoreChangeEvents = false;
+			this.triggerChangeEvent();
 		}
 	}
 
@@ -440,6 +459,12 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 		}
 
 		this.#debouncedChangeHandler = undefined;
+	}
+
+	triggerChangeEvent(): void {
+		if (!this.ignoreChangeEvents) {
+			this.events.dispatchEvent(new Event('change'));
+		}
 	}
 
 	private _decryptData(data: string | Uint8Array): string {
@@ -669,7 +694,7 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 		if (process.platform === 'win32' || process.platform === 'darwin') {
 			this.#debouncedChangeHandler ??= debounceFn(() => {
 				this.clearCache();
-				this.events.dispatchEvent(new Event('change'));
+				this.triggerChangeEvent();
 			}, {wait: 100});
 
 			// Watch the directory instead of the file to handle atomic writes (rename events)
@@ -689,7 +714,7 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 			// Fs.watchFile is used on Linux for better cross-platform reliability
 			this.#debouncedChangeHandler ??= debounceFn(() => {
 				this.clearCache();
-				this.events.dispatchEvent(new Event('change'));
+				this.triggerChangeEvent();
 			}, {wait: 1000});
 
 			fs.watchFile(this.path, {persistent: false}, (_current, _previous) => {
