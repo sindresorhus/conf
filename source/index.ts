@@ -82,6 +82,8 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 	#writeTimer?: NodeJS.Timeout;
 	#ignoreChangeEvents = false;
 
+	ignoreChangeEvents = false;
+
 	constructor(partialOptions: Readonly<Partial<Options<T>>> = {}) {
 		const options = this.#prepareOptions(partialOptions);
 		this.#options = options;
@@ -426,20 +428,12 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 		}
 	}
 
-	get ignoreChangeEvents(): boolean {
-		return this.#ignoreChangeEvents;
-	}
-
-	set ignoreChangeEvents(value: boolean) {
-		this.#ignoreChangeEvents = Boolean(value);
-	}
-
 	async runWithoutChangeEvents(handler: () => void | Promise<void>): Promise<void> {
 		try {
-			this.ignoreChangeEvents = true;
+			this.#ignoreChangeEvents = true;
 			await handler.call(this);
 		} finally {
-			this.ignoreChangeEvents = false;
+			this.#ignoreChangeEvents = this.ignoreChangeEvents;
 			this.triggerChangeEvent();
 		}
 	}
@@ -462,7 +456,7 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 	}
 
 	triggerChangeEvent(): void {
-		if (!this.ignoreChangeEvents) {
+		if (!this.#ignoreChangeEvents) {
 			this.events.dispatchEvent(new Event('change'));
 		}
 	}
