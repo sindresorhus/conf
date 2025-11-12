@@ -1,6 +1,6 @@
 {
 	"name": "@eneris/conf",
-	"version": "15.0.2",
+	"version": "15.0.3",
 	"description": "Simple config handling for your app or module",
 	"license": "MIT",
 	"repository": "sindresorhus/conf",
