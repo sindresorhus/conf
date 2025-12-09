@@ -608,11 +608,6 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 			} catch (error: unknown) {
 				// Restore backup (validation is skipped during migration)
 				this.store = storeBackup;
-				// Try to write the restored state to disk to ensure rollback persists
-				// If write fails (e.g., read-only file), we still throw the original error
-				try {
-					this._write(storeBackup);
-				} catch {}
 
 				const errorMessage = error instanceof Error ? error.message : String(error);
 				throw new Error(`Something went wrong during the migration! Changes applied to the store until this failed migration will be restored. ${errorMessage}`);
