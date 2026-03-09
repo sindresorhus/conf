@@ -9,6 +9,9 @@ I initially made this tool to let command-line tools persist some data.
 
 *If you need this for Electron, check out [`electron-store`](https://github.com/sindresorhus/electron-store) instead.*
 
+> [!NOTE]
+> This is not a database. The entire JSON file is read and written on every change, so it's best suited for small data like user settings. For large data, use SQLite or similar.
+
 ## Install
 
 ```sh
