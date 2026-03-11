@@ -764,7 +764,7 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 			projectSuffix: 'nodejs',
 			clearInvalidConfig: false,
 			accessPropertiesByDotNotation: true,
-			configFileMode: 0o666,
+			configFileMode: 0o666, // The process umask reduces the effective permissions (typically to 0o644).
 			...partialOptions,
 		};
 
