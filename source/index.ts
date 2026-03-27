@@ -70,6 +70,45 @@ const checkValueType = (key: string, value: unknown): void => {
 const INTERNAL_KEY = '__internal__';
 const MIGRATION_KEY = `${INTERNAL_KEY}.migrations.version`;
 
+const COMPLEX_TYPE_TAG = '$$type';
+const COMPLEX_VALUE_TAG = '$$value';
+
+/**
+JSON replacer that tags `Date` objects for round-tripping.
+Uses `this` binding from `JSON.stringify` to access the original value
+(before `.toJSON()` converts it to a string).
+*/
+function complexTypeReplacer(this: Record<string, unknown>, key: string, value: unknown): unknown {
+	const rawValue = this[key];
+	if (rawValue instanceof Date) {
+		return {[COMPLEX_TYPE_TAG]: 'Date', [COMPLEX_VALUE_TAG]: rawValue.toISOString()};
+	}
+
+	return value;
+}
+
+/**
+JSON reviver that restores tagged objects back to their original types.
+Only matches objects with exactly `$$type` and `$$value` keys.
+*/
+function complexTypeReviver(_key: string, value: unknown): unknown {
+	if (
+		value !== null
+		&& typeof value === 'object'
+		&& !Array.isArray(value)
+		&& COMPLEX_TYPE_TAG in value
+		&& COMPLEX_VALUE_TAG in value
+		&& Object.keys(value).length === 2
+	) {
+		const tagged = value as Record<string, unknown>;
+		if (tagged[COMPLEX_TYPE_TAG] === 'Date' && typeof tagged[COMPLEX_VALUE_TAG] === 'string') {
+			return new Date(tagged[COMPLEX_VALUE_TAG] as string);
+		}
+	}
+
+	return value;
+}
+
 export default class Conf<T extends Record<string, any> = Record<string, unknown>> implements Iterable<[keyof T, T[keyof T]]> {
 	readonly path: string;
 	readonly events: EventTarget;
@@ -845,12 +884,18 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 	}
 
 	#configureSerialization(options: Partial<Options<T>>): void {
+		const hasCustomSerialization = Boolean(options.serialize ?? options.deserialize);
+
 		if (options.serialize) {
 			this._serialize = options.serialize;
+		} else if (options.deserializeComplexTypes && !hasCustomSerialization) {
+			this._serialize = value => JSON.stringify(value, complexTypeReplacer, '\t');
 		}
 
 		if (options.deserialize) {
 			this._deserialize = options.deserialize;
+		} else if (options.deserializeComplexTypes && !hasCustomSerialization) {
+			this._deserialize = value => JSON.parse(value, complexTypeReviver);
 		}
 	}
 

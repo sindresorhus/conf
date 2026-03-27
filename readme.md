@@ -420,6 +420,34 @@ You would usually not need this, but it could be useful if you use a custom `cwd
 > [!NOTE]
 > Setting restrictive permissions can cause problems if different users need to read the file. A common problem is a user running your tool with and without `sudo` and then not being able to access the config the second time.
 
+#### deserializeComplexTypes
+
+Type: `boolean`\
+Default: `false`
+
+Preserve non-JSON types like `Date` through serialization and deserialization.
+
+When enabled, `Date` objects are tagged during serialization so they can be restored as proper `Date` instances when read back. This allows round-tripping of `Date` values.
+
+```js
+import Conf from 'conf';
+
+const config = new Conf({
+	projectName: 'foo',
+	deserializeComplexTypes: true
+});
+
+config.set('timestamp', new Date());
+console.log(config.get('timestamp') instanceof Date);
+//=> true
+
+config.set('nested', {createdAt: new Date()});
+console.log(config.get('nested').createdAt instanceof Date);
+//=> true
+```
+
+This option is ignored when custom `serialize` or `deserialize` functions are provided.
+
 ### Instance
 
 You can use [dot-notation](https://github.com/sindresorhus/dot-prop) in a `key` to access nested properties.

@@ -304,6 +304,37 @@ export type Options<T extends Record<string, unknown>> = {
 	@default 0o666
 	*/
 	readonly configFileMode?: number;
+
+	/**
+	Preserve non-JSON types like `Date` through serialization and deserialization.
+
+	When enabled, `Date` objects are tagged during serialization so they can be restored as proper `Date` instances when read back. This allows round-tripping of `Date` values.
+
+	Uses a tagged wrapper format in the JSON: `{"$$type": "Date", "$$value": "2024-01-01T00:00:00.000Z"}`.
+
+	This option is ignored when custom `serialize` or `deserialize` functions are provided.
+
+	@default false
+
+	@example
+	```
+	import Conf from 'conf';
+
+	const config = new Conf({
+		projectName: 'foo',
+		deserializeComplexTypes: true
+	});
+
+	config.set('timestamp', new Date());
+	config.get('timestamp') instanceof Date;
+	//=> true
+
+	config.set('nested', {createdAt: new Date()});
+	config.get('nested').createdAt instanceof Date;
+	//=> true
+	```
+	*/
+	readonly deserializeComplexTypes?: boolean;
 };
 
 export type Migrations<T extends Record<string, unknown>> = Record<string, (store: Conf<T>) => void>;
