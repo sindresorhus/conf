@@ -71,7 +71,13 @@ const INTERNAL_KEY = '__internal__';
 const MIGRATION_KEY = `${INTERNAL_KEY}.migrations.version`;
 
 export default class Conf<T extends Record<string, any> = Record<string, unknown>> implements Iterable<[keyof T, T[keyof T]]> {
+	/**
+	Get the path to the config file.
+	*/
 	readonly path: string;
+	/**
+	Dispatches a `change` event whenever the config changes. `onDidChange()` and `onDidAnyChange()` listen on it, and you can also listen to it directly.
+	*/
 	readonly events: EventTarget;
 	#validator?: AjvValidateFunction;
 	readonly #encryptionKey?: string | Uint8Array | NodeJS.TypedArray | DataView;
@@ -202,6 +208,8 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 	If the key doesn't exist, it will be created as an array.
 	If the key exists and is not an array, a `TypeError` will be thrown.
 
+	The `value` must be JSON serializable. Trying to set the type like `undefined`, `function`, or `symbol` will result in a `TypeError`.
+
 	@param key - The key of the array to append to. You can use [dot-notation](https://github.com/sindresorhus/dot-prop) to access nested properties.
 	@param value - The item to append. Must be JSON serializable.
 
@@ -211,6 +219,11 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 	config.appendToArray('items', {name: 'bar'});
 	console.log(config.get('items'));
 	//=> [{name: 'foo'}, {name: 'bar'}]
+
+	// Creates array if key doesn't exist
+	config.appendToArray('newItems', 'first');
+	console.log(config.get('newItems'));
+	//=> ['first']
 	```
 	*/
 	appendToArray<Key extends keyof T>(key: Key, value: T[Key] extends ReadonlyArray<infer U> ? U : unknown): void;
@@ -298,6 +311,13 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 	@param key - The key to watch.
 	@param callback - A callback function that is called on any changes. When a `key` is first set `oldValue` will be `undefined`, and when a key is deleted `newValue` will be `undefined`.
 	@returns A function, that when called, will unsubscribe.
+
+	@example
+	```
+	const unsubscribe = config.onDidChange(key, callback);
+
+	unsubscribe();
+	```
 	*/
 	onDidChange<Key extends keyof T>(key: Key, callback: OnDidChangeCallback<T[Key]>): Unsubscribe;
 	onDidChange<Key extends DotNotationKeyOf<T>>(key: Key, callback: OnDidChangeCallback<DotNotationValueOf<T, Key>>): Unsubscribe;
@@ -316,8 +336,17 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 	/**
 	Watches the whole config object, calling `callback` on any changes.
 
-	@param callback - A callback function that is called on any changes. When a `key` is first set `oldValue` will be `undefined`, and when a key is deleted `newValue` will be `undefined`.
+	`oldValue` and `newValue` will be the config object before and after the change, respectively. You must compare `oldValue` to `newValue` to find out what changed.
+
+	@param callback - A callback function that is called on any changes.
 	@returns A function, that when called, will unsubscribe.
+
+	@example
+	```
+	const unsubscribe = config.onDidAnyChange(callback);
+
+	unsubscribe();
+	```
 	*/
 	onDidAnyChange(callback: OnDidAnyChangeCallback<T>): Unsubscribe {
 		if (typeof callback !== 'function') {
@@ -327,6 +356,9 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 		return this._handleStoreChange(callback);
 	}
 
+	/**
+	Get the item count.
+	*/
 	get size(): number {
 		const entries = Object.keys(this.store);
 		return entries.filter(key => !this._isReservedKeyPath(key)).length;

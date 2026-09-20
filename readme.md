@@ -4,13 +4,14 @@
 
 All you have to care about is what to persist. This module will handle all the dull details like where and how.
 
-**It does not support multiple processes writing to the same store.**\
+**It does not support two processes writing to the same store at the same moment.**\
+A write reads the config file first, so a change made by another process is not lost unless the two writes overlap.\
 I initially made this tool to let command-line tools persist some data.
 
 *If you need this for Electron, check out [`electron-store`](https://github.com/sindresorhus/electron-store) instead.*
 
 > [!NOTE]
-> This is not a database. The entire JSON file is read and written on every change, so it's best suited for small data like user settings that change occasionally. For large data, or for a high rate of changes, use SQLite or similar.
+> This is not a database. The entire JSON file is read and written on every change, so it's best suited for small data like user settings that change occasionally. For large data, or for a high rate of changes, use [`node:sqlite`](https://nodejs.org/api/sqlite.html) or similar.
 
 ## Install
 
@@ -69,6 +70,9 @@ Type: `object`
 [JSON Schema](https://json-schema.org) to validate your config data.
 
 This will be the [`properties`](https://json-schema.org/understanding-json-schema/reference/object.html#properties) object of the JSON schema. That is, define `schema` as an object where each key is the name of your data's property and each value is a JSON schema used to validate that property.
+
+> [!NOTE]
+> The ajv dependency may cause CSP violations. See [Can I use `conf` with strict Content Security Policy (CSP)?](#can-i-use-conf-with-strict-content-security-policy-csp).
 
 Example:
 
@@ -188,7 +192,7 @@ const store = new Conf({
 ```
 
 > [!NOTE]
-> The version the migrations use refers to the **project version** by default. If you want to change this behavior, specify the [`projectVersion`](#projectVersion) option.
+> The version the migrations use refers to the **project version** by default. If you want to change this behavior, specify the [`projectVersion`](#projectversion) option.
 
 #### beforeEachMigration
 
@@ -202,7 +206,7 @@ The function receives the store as the first argument and a context object as th
 - `fromVersion` - The version the migration step is being migrated from.
 - `toVersion` - The version the migration step is being migrated to.
 - `finalVersion` - The final version after all the migrations are applied.
-- `versions` - All the versions with a migration step.
+- `versions` - The versions that will run in this migration pass.
 
 This can be useful for logging purposes, preparing migration data, etc.
 
@@ -424,7 +428,7 @@ Default: `0o666`
 
 The [mode](https://en.wikipedia.org/wiki/File-system_permissions#Numeric_notation) used when creating the config file.
 
-The mode is modified by the [process umask](https://en.wikipedia.org/wiki/Umask). With the typical umask of `0o022`, the default results in `0o644`. Config files are also stored in the user's home directory (`~/.config/`), which is typically protected.
+The mode is modified by the [process umask](https://en.wikipedia.org/wiki/Umask). With the typical umask of `0o022`, the default results in `0o644`. Config files are also stored in a location that is typically protected already, so the default is usually fine.
 
 You would usually not need this, but it could be useful if you use a custom `cwd`. Setting `0o600` would make the file only readable by the owner.
 
@@ -523,6 +527,16 @@ Returns a function which you can use to unsubscribe:
 const unsubscribe = config.onDidAnyChange(callback);
 
 unsubscribe();
+```
+
+#### .events
+
+An [`EventTarget`](https://developer.mozilla.org/en-US/docs/Web/API/EventTarget) that dispatches a `change` event whenever the config changes. This is what `.onDidChange()` and `.onDidAnyChange()` listen on, and it is there if you want to listen directly:
+
+```js
+config.events.addEventListener('change', () => {
+	console.log('The config changed');
+});
 ```
 
 #### .size

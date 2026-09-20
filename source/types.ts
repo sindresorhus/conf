@@ -7,7 +7,7 @@ export type AjvOptions = AjvOptions_;
 
 export type Options<T extends Record<string, unknown>> = {
 	/**
-	Config used if there are no existing config.
+	Default values for the config items.
 
 	**Note:** The values in `defaults` will overwrite the `default` key in the `schema` option.
 	*/
@@ -18,7 +18,7 @@ export type Options<T extends Record<string, unknown>> = {
 
 	This will be the [`properties`](https://json-schema.org/understanding-json-schema/reference/object.html#properties) object of the JSON schema. That is, define `schema` as an object where each key is the name of your data's property and each value is a JSON schema used to validate that property.
 
-	**Note:** The ajv dependency may cause CSP violations. See readme FAQ for workarounds.
+	**Note:** The ajv dependency may cause CSP violations. See the readme FAQ: Can I use `conf` with strict Content Security Policy (CSP)?
 
 	@example
 	```
@@ -108,7 +108,15 @@ export type Options<T extends Record<string, unknown>> = {
 	/**
 	__Required unless you specify the `cwd` option.__
 
-	You can fetch the `name` field from package.json.
+	You can fetch the `name` field from package.json:
+
+	@example
+	```
+	import Conf from 'conf';
+	import packageJson from './package.json' assert {type: 'json'};
+
+	const config = new Conf({projectName: packageJson.name});
+	```
 	*/
 	projectName?: string;
 
@@ -120,7 +128,9 @@ export type Options<T extends Record<string, unknown>> = {
 	projectVersion?: string;
 
 	/**
-	You can use migrations to perform operations to the store whenever a version is changed.
+	**Important: I cannot provide support for this feature. It has some known bugs. I have no plans to work on it, but pull requests are welcome.**
+
+	You can use migrations to perform operations to the store whenever a **project version** is upgraded.
 
 	The `migrations` object should consist of a key-value pair of `'version': handler`. The `version` can also be a [semver range](https://github.com/npm/node-semver#ranges).
 
@@ -156,12 +166,52 @@ export type Options<T extends Record<string, unknown>> = {
 	/**
 	The given callback function will be called before each migration step.
 
+	The function receives the store as the first argument and a context object as the second argument with the following properties:
+
+	- `fromVersion` - The version the migration step is being migrated from.
+	- `toVersion` - The version the migration step is being migrated to.
+	- `finalVersion` - The final version after all the migrations are applied.
+	- `versions` - The versions that will run in this migration pass.
+
 	This can be useful for logging purposes, preparing migration data, etc.
+
+	@default undefined
+
+	@example
+	```
+	import Conf from 'conf';
+
+	console.log = someLogger.log;
+
+	const mainConfig = new Conf({
+		projectName: 'foo1',
+		beforeEachMigration: (store, context) => {
+			console.log(`[main-config] migrate from ${context.fromVersion} → ${context.toVersion}`);
+		},
+		migrations: {
+			'0.4.0': store => {
+				store.set('debugPhase', true);
+			},
+		}
+	});
+
+	const secondConfig = new Conf({
+		projectName: 'foo2',
+		beforeEachMigration: (store, context) => {
+			console.log(`[second-config] migrate from ${context.fromVersion} → ${context.toVersion}`);
+		},
+		migrations: {
+			'1.0.1': store => {
+				store.set('debugPhase', true);
+			},
+		}
+	});
+	```
 	*/
 	beforeEachMigration?: BeforeEachMigrationCallback<T>;
 
 	/**
-	__You most likely don't need this. Please don't use it unless you really have to.__
+	__You most likely don't need this. Please don't use it unless you really have to. By default, it will pick the optimal location by adhering to system conventions. You are very likely to get this wrong and annoy users.__
 
 	Default: System default user [config directory](https://github.com/sindresorhus/env-paths#pathsconfig).
 
@@ -181,6 +231,8 @@ export type Options<T extends Record<string, unknown>> = {
 	When using `aes-256-gcm`, the config file is authenticated. If the file is changed in any way, the decryption will fail. With `aes-256-cbc` and `aes-256-ctr`, tampering can go undetected.
 
 	When specified, the store will be encrypted using the `encryptionAlgorithm` option (defaults to `aes-256-cbc`).
+
+	@default undefined
 	*/
 	encryptionKey?: string | Uint8Array | NodeJS.TypedArray | DataView;
 
@@ -245,12 +297,14 @@ export type Options<T extends Record<string, unknown>> = {
 	readonly projectSuffix?: string;
 
 	/**
-	Access nested properties by dot notation.
+	Accessing nested properties by dot notation. For example:
 
 	@default true
 
 	@example
 	```
+	import Conf from 'conf';
+
 	const config = new Conf({projectName: 'foo'});
 
 	config.set({
@@ -269,13 +323,15 @@ export type Options<T extends Record<string, unknown>> = {
 
 	@example
 	```
+	import Conf from 'conf';
+
 	const config = new Conf({
 		projectName: 'foo',
 		accessPropertiesByDotNotation: false
 	});
 
 	config.set({
-		'foo.bar.foobar': '🦄'
+		`foo.bar.foobar`: '🦄'
 	});
 
 	console.log(config.get('foo.bar.foobar'));
@@ -306,7 +362,7 @@ export type Options<T extends Record<string, unknown>> = {
 	/**
 	The [mode](https://en.wikipedia.org/wiki/File-system_permissions#Numeric_notation) used when creating the config file.
 
-	The mode is modified by the [process umask](https://en.wikipedia.org/wiki/Umask). With the typical umask of `0o022`, the default results in `0o644`. Config files are also stored in the user's home directory (`~/.config/`), which is typically protected.
+	The mode is modified by the [process umask](https://en.wikipedia.org/wiki/Umask). With the typical umask of `0o022`, the default results in `0o644`. Config files are also stored in a location that is typically protected already, so the default is usually fine.
 
 	You would usually not need this, but it could be useful if you use a custom `cwd`. Setting `0o600` would make the file only readable by the owner.
 
