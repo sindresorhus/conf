@@ -78,6 +78,7 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 	readonly #encryptionAlgorithm: EncryptionAlgorithm;
 	readonly #options: Readonly<Partial<Options<T>>>;
 	readonly #defaultValues: Partial<T> = {};
+	#cachedStore?: T;
 	#isInMigration = false;
 	#watcher?: fs.FSWatcher;
 	#watchFile?: boolean;
@@ -148,7 +149,8 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 			throw new TypeError(`Please don't use the ${INTERNAL_KEY} key, as it's used to manage this module internal operations.`);
 		}
 
-		const {store} = this;
+		// Read from the file instead of the cache so that changes made by another process are not lost when writing.
+		const store = this._readStore();
 
 		const set = (key: string, value?: T[Key] | T | unknown): void => {
 			checkValueType(key, value);
@@ -211,9 +213,10 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 	appendToArray<Key extends DotNotationKeyOf<T>>(key: Key, value: DotNotationValueOf<T, Key> extends ReadonlyArray<infer U> ? U : unknown): void;
 	appendToArray(key: string, value: unknown): void {
 		checkValueType(key, value);
+		const store = this._readStore();
 		const array = this.#options.accessPropertiesByDotNotation
-			? this._get(key, [])
-			: (key in this.store ? this.store[key] as unknown : []);
+			? getProperty(store, key, [])
+			: (key in store ? store[key] as unknown : []);
 
 		if (!Array.isArray(array)) {
 			throw new TypeError(`The key \`${key}\` is already set to a non-array value`);
@@ -245,7 +248,7 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 	delete<Key extends keyof T>(key: Key): void;
 	delete<Key extends DotNotationKeyOf<T>>(key: Key): void;
 	delete(key: string): void {
-		const {store} = this;
+		const store = this._readStore();
 		if (this.#options.accessPropertiesByDotNotation) {
 			deleteProperty(store, key);
 		} else {
@@ -335,44 +338,12 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 	```
 	*/
 	get store(): T {
-		try {
-			const data = fs.readFileSync(this.path, this.#encryptionKey ? null : 'utf8');
-			const dataString = this._decryptData(data);
-			const parseStore = (value: string): T => {
-				const deserializedData = this._deserialize(value);
-				if (!this.#isInMigration) {
-					this._validate(deserializedData);
-				}
-
-				return Object.assign(createPlainObject(), deserializedData);
-			};
-
-			return parseStore(dataString);
-		} catch (error: unknown) {
-			if ((error as any)?.code === 'ENOENT') {
-				this._ensureDirectory();
-				return createPlainObject();
-			}
-
-			if (this.#options.clearInvalidConfig) {
-				const errorInstance = error as Error;
-				// Handle JSON parsing errors (existing behavior)
-				if (errorInstance.name === 'SyntaxError') {
-					return createPlainObject();
-				}
-
-				// Handle schema validation errors (new behavior)
-				if (errorInstance.message?.startsWith('Config schema violation:')) {
-					return createPlainObject();
-				}
-
-				if (errorInstance.message === 'Failed to decrypt config data.') {
-					return createPlainObject();
-				}
-			}
-
-			throw error;
+		if (!this.#options.cache) {
+			return this._readStore();
 		}
+
+		this.#cachedStore ??= this._readStore();
+		return this.#cachedStore;
 	}
 
 	set store(value: T) {
@@ -426,6 +397,43 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 		}
 
 		this.#debouncedChangeHandler = undefined;
+	}
+
+	private _readStore(): T {
+		try {
+			const data = fs.readFileSync(this.path, this.#encryptionKey ? null : 'utf8');
+			const dataString = this._decryptData(data);
+			const deserializedData = this._deserialize(dataString);
+			if (!this.#isInMigration) {
+				this._validate(deserializedData);
+			}
+
+			return Object.assign(createPlainObject(), deserializedData);
+		} catch (error: unknown) {
+			if ((error as any)?.code === 'ENOENT') {
+				this._ensureDirectory();
+				return createPlainObject();
+			}
+
+			if (this.#options.clearInvalidConfig) {
+				const errorInstance = error as Error;
+				// Handle JSON parsing errors (existing behavior)
+				if (errorInstance.name === 'SyntaxError') {
+					return createPlainObject();
+				}
+
+				// Handle schema validation errors (new behavior)
+				if (errorInstance.message?.startsWith('Config schema violation:')) {
+					return createPlainObject();
+				}
+
+				if (errorInstance.message === 'Failed to decrypt config data.') {
+					return createPlainObject();
+				}
+			}
+
+			throw error;
+		}
 	}
 
 	private _decryptData(data: string | Uint8Array): string {
@@ -567,6 +575,9 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 	}
 
 	private _write(value: T): void {
+		// The file is about to change, so any cached read is no longer trustworthy.
+		this.#cachedStore = undefined;
+
 		let data: string | Uint8Array = this._serialize(value);
 
 		const encryptionKey = this.#encryptionKey;
@@ -615,6 +626,7 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 		// Use fs.watch on Windows and macOS, fs.watchFile on Linux for better reliability
 		if (process.platform === 'win32' || process.platform === 'darwin') {
 			this.#debouncedChangeHandler ??= debounceFn(() => {
+				this.#cachedStore = undefined;
 				this.events.dispatchEvent(new Event('change'));
 			}, {wait: 100});
 
@@ -634,6 +646,7 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 		} else {
 			// Fs.watchFile is used on Linux for better cross-platform reliability
 			this.#debouncedChangeHandler ??= debounceFn(() => {
+				this.#cachedStore = undefined;
 				this.events.dispatchEvent(new Event('change'));
 			}, {wait: 1000});
 
@@ -751,7 +764,7 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 	}
 
 	private _set(key: string, value: unknown): void {
-		const {store} = this;
+		const store = this._readStore();
 		setProperty(store, key, value);
 
 		this.store = store;

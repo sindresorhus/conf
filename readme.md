@@ -10,7 +10,7 @@ I initially made this tool to let command-line tools persist some data.
 *If you need this for Electron, check out [`electron-store`](https://github.com/sindresorhus/electron-store) instead.*
 
 > [!NOTE]
-> This is not a database. The entire JSON file is read and written on every change, so it's best suited for small data like user settings. For large data, use SQLite or similar.
+> This is not a database. The entire JSON file is read and written on every change, so it's best suited for small data like user settings that change occasionally. For large data, or for a high rate of changes, use SQLite or similar.
 
 ## Install
 
@@ -401,10 +401,21 @@ console.log(config.get('foo.bar.foobar'));
 
 #### watch
 
-type: `boolean`\
+Type: `boolean`\
 Default: `false`
 
 Watch for any changes in the config file and call the callback for `onDidChange` or `onDidAnyChange` if set. This is useful if there are multiple processes changing the same config file.
+
+#### cache
+
+Type: `boolean`\
+Default: `false`
+
+Keep the store in memory, so reading a value does not read and parse the config file each time. This makes reads much faster, in particular when the config file is large.
+
+The cache is dropped on every write and whenever the [`watch`](#watch) option reports a change to the config file. Writes read the config file first, so changes made by another process are not lost, but reads only see them when `watch` is enabled or after a write.
+
+The objects returned by [`.store`](#store) and by `.get()`, and the values passed to the `onDidChange` and `onDidAnyChange` callbacks, are the cache itself, so do not change them directly. Use `.set()` and `.delete()` instead.
 
 #### configFileMode
 

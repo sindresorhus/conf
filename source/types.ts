@@ -293,6 +293,17 @@ export type Options<T extends Record<string, unknown>> = {
 	readonly watch?: boolean;
 
 	/**
+	Keep the store in memory, so reading a value does not read and parse the config file each time. This makes reads much faster, in particular when the config file is large.
+
+	The cache is dropped on every write and whenever the `watch` option reports a change to the config file. Writes read the config file first, so changes made by another process are not lost, but reads only see them when `watch` is enabled or after a write.
+
+	The objects returned by `.store` and by `.get()`, and the values passed to the `onDidChange` and `onDidAnyChange` callbacks, are the cache itself, so do not change them directly. Use `.set()` and `.delete()` instead.
+
+	@default false
+	*/
+	readonly cache?: boolean;
+
+	/**
 	The [mode](https://en.wikipedia.org/wiki/File-system_permissions#Numeric_notation) used when creating the config file.
 
 	The mode is modified by the [process umask](https://en.wikipedia.org/wiki/Umask). With the typical umask of `0o022`, the default results in `0o644`. Config files are also stored in the user's home directory (`~/.config/`), which is typically protected.

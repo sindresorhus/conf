@@ -395,7 +395,7 @@ describe('Migrations', () => {
 			assert.strictEqual(getMigrationVersion(conf1), '1.0.0');
 
 			// Overwrite the entire store
-			conf1.store = {newData: 'test'} as any;
+			conf1.store = {newData: 'test'};
 
 			// Verify internal data was preserved
 			const internal = conf1.get('__internal__') as any;
@@ -418,7 +418,7 @@ describe('Migrations', () => {
 			assert.strictEqual(getMigrationVersion(conf), '1.0.0');
 
 			// Clear the store
-			conf.store = {} as any;
+			conf.store = {};
 
 			// Verify internal data was preserved
 			const internal = conf.get('__internal__') as any;
@@ -440,7 +440,7 @@ describe('Migrations', () => {
 			});
 
 			// Set the entire store
-			conf.store = {newData: 'test'} as any;
+			conf.store = {newData: 'test'};
 
 			// Verify internal data was preserved
 			const internal2 = conf.get('__internal__') as any;

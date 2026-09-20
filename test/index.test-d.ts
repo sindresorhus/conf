@@ -63,13 +63,12 @@ new Conf<UnicornFoo>({
 	cwd: temporaryDirectory(),
 	encryptionKey: new DataView(new ArrayBuffer(2)),
 });
-const encryptionAlgorithmOptions = {
+new Conf<UnicornFoo>({
 	projectName: typeTestProjectName,
 	cwd: temporaryDirectory(),
 	encryptionKey: 'secret',
 	encryptionAlgorithm: 'aes-256-gcm',
-} satisfies Options<UnicornFoo>;
-void encryptionAlgorithmOptions;
+});
 type EncryptionAlgorithmOption = Options<UnicornFoo>['encryptionAlgorithm'];
 // @ts-expect-error - `encryptionAlgorithm` must be a supported value
 const invalidEncryptionAlgorithm: EncryptionAlgorithmOption = 'aes-256-foo';

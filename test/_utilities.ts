@@ -30,11 +30,13 @@ export type MigrationTestOptions = {
 	projectVersion: string;
 	migrations?: Record<string, (store: Conf) => void>;
 	schema?: Record<string, unknown>;
+	ajvOptions?: Record<string, unknown>;
 	defaults?: Record<string, unknown>;
 	beforeEachMigration?: (store: Conf, context: any) => void;
 	initialData?: Record<string, unknown>;
 	clearInvalidConfig?: boolean;
 	accessPropertiesByDotNotation?: boolean;
+	cache?: boolean;
 	cwd?: string;
 	configName?: string;
 	fileExtension?: string;
@@ -76,6 +78,10 @@ export function createMigrationTest(options: MigrationTestOptions): {
 		confOptions.schema = options.schema;
 	}
 
+	if (options.ajvOptions !== undefined) {
+		confOptions.ajvOptions = options.ajvOptions;
+	}
+
 	if (options.defaults !== undefined) {
 		confOptions.defaults = options.defaults;
 	}
@@ -90,6 +96,10 @@ export function createMigrationTest(options: MigrationTestOptions): {
 
 	if (options.accessPropertiesByDotNotation !== undefined) {
 		confOptions.accessPropertiesByDotNotation = options.accessPropertiesByDotNotation;
+	}
+
+	if (options.cache !== undefined) {
+		confOptions.cache = options.cache;
 	}
 
 	if (options.configName !== undefined) {
