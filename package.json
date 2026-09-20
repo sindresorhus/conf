@@ -5,11 +5,7 @@
 	"license": "MIT",
 	"repository": "sindresorhus/conf",
 	"funding": "https://github.com/sponsors/sindresorhus",
-	"author": {
-		"name": "Sindre Sorhus",
-		"email": "sindresorhus@gmail.com",
-		"url": "https://sindresorhus.com"
-	},
+	"author": "Sindre Sorhus <sindresorhus@gmail.com> (https://sindresorhus.com)",
 	"type": "module",
 	"exports": {
 		"types": "./dist/source/index.d.ts",
@@ -17,7 +13,7 @@
 	},
 	"sideEffects": false,
 	"engines": {
-		"node": ">=20"
+		"node": ">=22"
 	},
 	"scripts": {
 		"test": "xo && tsc --noEmit && tsx --test test/**.ts",
@@ -47,29 +43,27 @@
 		"cache"
 	],
 	"dependencies": {
-		"ajv": "^8.17.1",
+		"ajv": "^8.20.0",
 		"ajv-formats": "^3.0.1",
-		"atomically": "^2.0.3",
+		"atomically": "^2.1.1",
 		"debounce-fn": "^6.0.0",
-		"dot-prop": "^10.0.0",
-		"env-paths": "^3.0.0",
-		"json-schema-typed": "^8.0.1",
-		"semver": "^7.7.2",
+		"dot-prop": "^10.2.0",
+		"env-paths": "^4.0.0",
+		"json-schema-typed": "^8.0.2",
+		"semver": "^7.8.5",
 		"uint8array-extras": "^1.5.0"
 	},
 	"devDependencies": {
-		"@sindresorhus/tsconfig": "^8.0.1",
-		"@types/node": "^24.5.2",
-		"@types/semver": "^7.7.1",
+		"@sindresorhus/tsconfig": "^8.1.0",
+		"@types/node": "^26.6.3",
+		"@types/semver": "^7.8.0",
 		"del": "^8.0.1",
 		"del-cli": "^7.0.0",
-		"delay": "^6.0.0",
-		"expect-type": "^1.2.2",
-		"p-event": "^7.0.0",
-		"tempy": "^3.1.0",
-		"ts-node": "^10.9.2",
-		"tsx": "^4.20.6",
-		"typescript": "^5.9.2",
+		"expect-type": "^1.4.0",
+		"p-event": "^7.1.1",
+		"tempy": "^3.2.0",
+		"tsx": "^4.23.15",
+		"typescript": "^6.0.3",
 		"xo": "^1.2.2"
 	},
 	"xo": {

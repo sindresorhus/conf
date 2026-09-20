@@ -3,14 +3,15 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import {Buffer} from 'node:buffer';
+import {setTimeout as delay} from 'node:timers/promises';
+import {pEvent} from 'p-event';
 import {temporaryDirectory} from 'tempy';
 import {deleteSync} from 'del';
 import Conf from '../source/index.js';
 
 const scheduledCleanups = new Set<string>();
 const pendingCleanups = new Set<() => void>();
-const trackedConfs = new Set<Conf>();
-let projectNameSequence = 0;
+const trackedConfs = new Set<Conf<any>>();
 const encryptionInitializationVectorLength = 16;
 const encryptionSeparatorCharacter = ':';
 
@@ -26,7 +27,7 @@ process.on('exit', () => {
 Test utilities for reducing duplication in migration tests.
 */
 
-export type MigrationTestOptions = {
+type MigrationTestOptions = {
 	projectVersion: string;
 	migrations?: Record<string, (store: Conf) => void>;
 	schema?: Record<string, unknown>;
@@ -45,9 +46,14 @@ export type MigrationTestOptions = {
 /**
 Creates the config file, so the store is treated as one that already exists. A store that does not exist yet skips its migrations.
 */
-export const createExistingConfig = (cwd: string, data: Record<string, unknown> = {}, fileName = 'config.json'): void => {
+export const createExistingConfig = (cwd: string, data: unknown = {}, fileName = 'config.json'): void => {
 	fs.writeFileSync(path.join(cwd, fileName), JSON.stringify(data, null, '\t'));
 };
+
+/**
+Reads a config file, or the config file of a store, as JSON.
+*/
+export const readConfigFile = (file: string | {readonly path: string}): Record<string, any> => JSON.parse(fs.readFileSync(typeof file === 'string' ? file : file.path, 'utf8')) as Record<string, any>;
 
 /**
 Creates a temporary Conf instance with migrations for testing.
@@ -75,50 +81,21 @@ export function createMigrationTest(options: MigrationTestOptions): {
 		createExistingConfig(cwd, {}, fileName);
 	}
 
-	fs.statSync(configPath);
-
+	// An option that is set to `undefined` is the same as one that is not passed, so every option is passed on as the test gives it.
 	const confOptions: Record<string, unknown> = {
 		cwd,
 		projectVersion: options.projectVersion,
 		migrations: options.migrations,
+		schema: options.schema,
+		ajvOptions: options.ajvOptions,
+		defaults: options.defaults,
+		beforeEachMigration: options.beforeEachMigration,
+		clearInvalidConfig: options.clearInvalidConfig,
+		accessPropertiesByDotNotation: options.accessPropertiesByDotNotation,
+		cache: options.cache,
+		configName: options.configName,
+		fileExtension: options.fileExtension,
 	};
-
-	// Only add optional properties if they are defined
-	if (options.schema !== undefined) {
-		confOptions.schema = options.schema;
-	}
-
-	if (options.ajvOptions !== undefined) {
-		confOptions.ajvOptions = options.ajvOptions;
-	}
-
-	if (options.defaults !== undefined) {
-		confOptions.defaults = options.defaults;
-	}
-
-	if (options.beforeEachMigration !== undefined) {
-		confOptions.beforeEachMigration = options.beforeEachMigration;
-	}
-
-	if (options.clearInvalidConfig !== undefined) {
-		confOptions.clearInvalidConfig = options.clearInvalidConfig;
-	}
-
-	if (options.accessPropertiesByDotNotation !== undefined) {
-		confOptions.accessPropertiesByDotNotation = options.accessPropertiesByDotNotation;
-	}
-
-	if (options.cache !== undefined) {
-		confOptions.cache = options.cache;
-	}
-
-	if (options.configName !== undefined) {
-		confOptions.configName = options.configName;
-	}
-
-	if (options.fileExtension !== undefined) {
-		confOptions.fileExtension = options.fileExtension;
-	}
 
 	const conf = new Conf(confOptions);
 
@@ -143,11 +120,19 @@ export const writeLegacyEncryptedConfig = ({
 	fs.writeFileSync(filePath, data);
 };
 
-export const nextProjectName = (): string => {
-	projectNameSequence++;
-	return `conf-project-${projectNameSequence}`;
-};
+/**
+The `skip` option of a test that needs a file permission to refuse the process, which it never does for the root user.
+*/
+export const skipAsRoot = process.getuid?.() === 0 ? 'the root user is not refused by file permissions' : false;
 
+/**
+A project name no other run of the suite uses, so a store made in the user's own config directory never finds a directory an earlier or a concurrent run left there.
+*/
+export const nextProjectName = (): string => `conf-project-${crypto.randomUUID()}`;
+
+/**
+Runs the given cleanup once the test is done, which every test file does from `afterEach()` through `runRegisteredCleanups()`.
+*/
 export const registerCleanup = (cleanup: () => void): void => {
 	pendingCleanups.add(cleanup);
 };
@@ -169,14 +154,200 @@ export const createTempDirectory = (): string => {
 	return directory;
 };
 
-export const trackConf = <T extends Conf>(instance: T): T => {
+/**
+Tracks a store so that `resetTrackedConfs()` closes its watcher, which a test that fails before it closes the watcher itself would otherwise leave open.
+*/
+export const trackConf = <T extends Conf<any>>(instance: T): T => {
 	trackedConfs.add(instance);
 	return instance;
 };
 
+/**
+Closes the watcher of every store `trackConf()` tracked. A file that tracks stores calls it from `afterEach()`.
+*/
 export const resetTrackedConfs = (): void => {
+	for (const conf of trackedConfs) {
+		conf._closeWatcher();
+	}
+
 	trackedConfs.clear();
 };
+
+/**
+How long a test waits for a watcher to report a change. A watcher reports a change after a debounce, and a file system event can take a while to arrive on a machine that is busy running the rest of the suite beside it. Every wait on a change event goes through this, so a slow run fails on the behaviour it is testing and not on how long the machine took to deliver an event.
+*/
+export const changeEventTimeout = 20_000;
+
+/**
+Waits longer than a watcher takes to report a change, so a change that was not reported by then is one that is not going to be. `fs.watch` reports a change once a debounce of 100 ms has let the events of a write settle, and the polling watcher Linux uses polls every 500 ms and reports a change a second after it.
+
+A wait like this proves nothing on its own, since a watcher that is not running reports nothing either, so a test that checks a change is not reported also checks that a change is reported.
+*/
+export const settle = async (): Promise<void> => {
+	await delay(process.platform === 'linux' ? 2000 : 300);
+};
+
+/**
+Waits for the watchers a test just made to start. On macOS every `fs.watch` of a process shares one FSEvents stream, which is started again whenever a watcher is made or closed, so a change made right after that can be missed, and a test that waits for it would wait in vain.
+*/
+export const untilWatching = async (): Promise<void> => {
+	await delay(process.platform === 'darwin' ? 300 : 0);
+};
+
+/**
+Waits for the next change the watcher of the given store reports. It is called before the change is made, so that a report that comes at once is not missed.
+*/
+export const nextChange = async (conf: Conf<any>): Promise<void> => {
+	await pEvent(conf.events, 'change', {timeout: changeEventTimeout});
+};
+
+/**
+Waits until a count of reported changes stops moving, which is what a fixed wait cannot promise while the machine is busy.
+
+A report the debounce had already started is made as soon as the event loop has room for it, so a wait that ends before the machine gives that room reads a count the report has not reached yet, and counts that report against whatever the test does next. Waiting for the count to hold still for a whole wait reports everything that was on its way and still notices a report that comes twice, since the count moves once more.
+*/
+export const untilQuiet = async (reported: () => number): Promise<void> => {
+	let previous = reported();
+
+	for (let round = 0; round < 10; round++) {
+		// eslint-disable-next-line no-await-in-loop -- each round is a wait for a count to stop moving, which is what the loop is.
+		await settle();
+
+		const current = reported();
+		if (current === previous) {
+			return;
+		}
+
+		previous = current;
+	}
+};
+
+/**
+The `skip` option of a test that needs the file system to deliver change events, which it does not do reliably in CI.
+*/
+export const skipWatching = process.env.CI ? 'file system events are not reliable in CI' : false;
+
+/**
+Runs the test with the polling watcher, which is the one Linux uses, so a watcher test does not depend on `fs.watch` events. `#watch()` picks the watcher by platform, so the stores are made inside the body.
+*/
+export const withPollingWatcher = async (body: () => Promise<void>): Promise<void> => {
+	const platformDescriptor = Object.getOwnPropertyDescriptor(process, 'platform');
+	Object.defineProperty(process, 'platform', {value: 'linux'});
+
+	try {
+		await body();
+	} finally {
+		Object.defineProperty(process, 'platform', platformDescriptor!);
+	}
+};
+
+/**
+A temporary directory with a config file holding the given data in it.
+*/
+export const configDirectoryHolding = (data: unknown): string => {
+	const cwd = createTempDirectory();
+	createExistingConfig(cwd, data);
+	return cwd;
+};
+
+/**
+A temporary directory reached by the path it really has. A path with a link of its own in it is a path the two are different spellings of, which is what a temporary directory on macOS is and what any other one is not, and a test that compares paths or watches one needs the path and the file to be one and the same.
+*/
+export const createResolvedTempDirectory = (): string => fs.realpathSync(createTempDirectory());
+
+/**
+A link at the config path and a file for it to point at, `first/shared.json`, each in a directory of its own.
+*/
+export const linkedConfig = (): {cwd: string; first: string} => {
+	const base = createResolvedTempDirectory();
+	const cwd = path.join(base, 'cwd');
+	const first = path.join(base, 'first');
+	fs.mkdirSync(cwd);
+	fs.mkdirSync(first);
+	fs.symlinkSync(path.join(first, 'shared.json'), path.join(cwd, 'config.json'));
+
+	return {cwd, first};
+};
+
+/**
+The permission bits of the mode of a file, which is what a test reads a file back with, since `stat` answers with the type of the file above them.
+*/
+// eslint-disable-next-line no-bitwise
+export const permissionBits = (filePath: string): number => fs.statSync(filePath).mode & 0o7777;
+
+/**
+Runs the body with the given process umask. Setting the umask gives back the one it was, which is put back afterwards so that the rest of the suite reads the default of `0o022`.
+*/
+export const withUmask = (umask: number, body: () => void): void => {
+	const before = process.umask(umask);
+	try {
+		body();
+	} finally {
+		process.umask(before);
+	}
+};
+
+/**
+Runs the body with or without the Snap workaround, which is what takes a write off the atomic path and onto the one that writes the file in place.
+*/
+export const withSnap = (snap: boolean, body: () => void): void => {
+	const before = process.env.SNAP;
+	try {
+		if (snap) {
+			process.env.SNAP = '1';
+		} else {
+			delete process.env.SNAP;
+		}
+
+		body();
+	} finally {
+		if (before === undefined) {
+			delete process.env.SNAP;
+		} else {
+			process.env.SNAP = before;
+		}
+	}
+};
+
+const isoDate = /^\d{4}-\d{2}-\d{2}T[\d:.]+Z$/;
+
+/**
+A `deserialize` that brings back the `Date`s the store was written with, which is what puts a value that writes itself back into a store.
+*/
+export const dateReviving = {
+	deserialize: ((text: string) => JSON.parse(text, (key, value: unknown) => (typeof value === 'string' && isoDate.test(value) ? new Date(value) : value)) as Record<string, unknown>) as never,
+};
+
+/**
+A price that writes itself as text and keeps what it needs for it in a private field, which a copy cannot carry and a value that writes itself is never written below.
+*/
+export class Money {
+	readonly #cents: number;
+
+	constructor(cents: number) {
+		this.#cents = cents;
+	}
+
+	// eslint-disable-next-line @typescript-eslint/naming-convention -- `toJSON` is the name JSON gives a value that writes itself.
+	toJSON(): string {
+		return `$${(this.#cents / 100).toFixed(2)}`;
+	}
+}
+
+/**
+The prototype of a `price()`, which writes it as text from a property of its own, which a copy does carry.
+*/
+export const pricePrototype = {
+	// eslint-disable-next-line @typescript-eslint/naming-convention -- `toJSON` is the name JSON gives a value that writes itself.
+	toJSON(this: {cents: number}) {
+		return `$${(this.cents / 100).toFixed(2)}`;
+	},
+};
+
+/**
+A price in cents that writes itself as text, so that a copy of it which has lost the prototype it inherits `toJSON` from writes its own properties instead.
+*/
+export const price = (cents: number): {cents: number} => Object.assign(Object.create(pricePrototype) as {cents: number}, {cents});
 
 export const createNullProtoObject = <T extends Record<string, unknown>>(obj: T): T =>
 	Object.assign(Object.create(null), obj) as T;
@@ -199,159 +370,14 @@ export function createMigrationOrderTracker(): {
 }
 
 /**
-Utility for testing version range satisfaction.
-*/
-export function createVersionTest(versions: string[]): Record<string, (store: Conf) => void> {
-	const migrations: Record<string, (store: Conf) => void> = {};
-
-	for (const version of versions) {
-		migrations[version] = (store: Conf) => {
-			store.set(`migrated_${version.replaceAll(/\W/g, '_')}`, true);
-		};
-	}
-
-	return migrations;
-}
-
-/**
-Reads the migration version from the config file. The version is kept under the key this module reserves for itself, which is deliberately not exposed through the public API, so it has to be read from the file.
+Reads the migration version from the config file of the given store, or of a config file at `{path}` where there is no store to ask. The version is kept under the key this module reserves for itself, which is deliberately not exposed through the public API, so it has to be read from the file.
 
 This reads the file as plaintext JSON, so it cannot be used with a store that has the `encryptionKey` or `serialize` option set.
 */
-export const getMigrationVersion = <T extends Record<string, any>>(conf: Conf<T>): string | undefined => {
+export const getMigrationVersion = (conf: {readonly path: string}): string | undefined => {
 	const data = JSON.parse(fs.readFileSync(conf.path, 'utf8')) as {
 		__internal__?: {migrations?: {version?: unknown}};
 	};
 	const version = data.__internal__?.migrations?.version;
 	return typeof version === 'string' ? version : undefined;
-};
-
-/**
-Creates invalid data scenarios for schema testing.
-*/
-export const invalidDataScenarios = {
-	typeCoercion: {
-		data: {port: '8080', enabled: 'true', count: '42'},
-		schema: {
-			port: {type: 'number'},
-			enabled: {type: 'boolean'},
-			count: {type: 'number'},
-		},
-		migration(store: Conf) {
-			const port = store.get('port');
-			const enabled = store.get('enabled');
-			const count = store.get('count');
-
-			if (typeof port === 'string') {
-				store.set('port', Number(port));
-			}
-
-			if (typeof enabled === 'string') {
-				store.set('enabled', enabled === 'true');
-			}
-
-			if (typeof count === 'string') {
-				store.set('count', Number(count));
-			}
-		},
-	},
-	dataTransformation: {
-		data: {settings: 'key1=value1,key2=value2'},
-		schema: {
-			settings: {
-				type: 'object',
-				properties: {
-					key1: {type: 'string'},
-					key2: {type: 'string'},
-				},
-			},
-		},
-		migration(store: Conf) {
-			const settings = store.get('settings');
-
-			if (typeof settings === 'string') {
-				const parsed: Record<string, string> = {};
-				for (const pair of settings.split(',')) {
-					const [key, value] = pair.split('=');
-					if (key && value) {
-						parsed[key] = value;
-					}
-				}
-
-				store.set('settings', parsed);
-			}
-		},
-	},
-} as const;
-
-/**
-Test data with special characters for encoding tests.
-*/
-export const specialCharacterData = {
-	unicode: '🦄✨🌈 Unicode test',
-	emojiKey: '🔑',
-	mixedScripts: 'Hello 世界 🌍 مرحبا',
-	controlChars: 'before\u0000\u0001\u0002after',
-	rtlText: 'العربية עברית',
-	mathematical: '∑∞≠≤≥∆π√',
-	quotesAndEscapes: '"\'`\\n\\t\\r\\\\',
-	zeroWidth: 'invisible\u200B\u200C\u200Dchars',
-} as const;
-
-/**
-Performance test helper for large data.
-*/
-export function generateLargeDataset(itemCount: number, fieldsPerItem = 10): Record<string, any> {
-	const data: Record<string, any> = {};
-
-	for (let index = 0; index < itemCount; index++) {
-		data[`item${index}`] = {
-			id: index,
-			name: `Item ${index}`,
-			metadata: Array.from({length: fieldsPerItem}, (_, j) => ({
-				key: `field${j}`,
-				value: `data-${index}-${j}`,
-				timestamp: Date.now() + (index * j),
-			})),
-		};
-	}
-
-	return data;
-}
-
-/**
-Assertion helpers for common test patterns.
-*/
-export const assertions = {
-	/**
-	 Assert that migration internal state is preserved.
-	*/
-	migrationStatePreserved(conf: Conf, expectedVersion: string) {
-		const migrationVersion = getMigrationVersion(conf);
-		if (migrationVersion !== expectedVersion) {
-			throw new Error(`Expected migration version ${expectedVersion}, got ${String(migrationVersion)}`);
-		}
-	},
-
-	/**
-	Assert that all expected migrations ran.
-	*/
-	migrationsCompleted(conf: Conf, expectedMigrations: string[]) {
-		for (const migration of expectedMigrations) {
-			const key = migration.replaceAll(/\W/g, '_');
-			if (!conf.has(`migrated_${key}`) && !conf.get(migration)) {
-				throw new Error(`Migration ${migration} did not run`);
-			}
-		}
-	},
-
-	/**
-	Assert performance characteristics.
-	*/
-	performanceWithinBounds(startTime: number, maxDurationMs: number) {
-		const duration = Date.now() - startTime;
-		if (duration > maxDurationMs) {
-			throw new Error(`Operation took ${duration}ms, expected under ${maxDurationMs}ms`);
-		}
-	},
 };
