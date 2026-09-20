@@ -971,12 +971,20 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 
 		this.#isInMigration = true;
 		try {
+			// A store that does not exist yet has nothing to migrate, so it starts at the current project version instead of running every migration against the new defaults. Checked before the store is read, since reading it may create the file.
+			const isNewStore = !fs.existsSync(this.path);
+
 			const fileStore = this._readStore();
 			const storeWithDefaults = Object.assign(createPlainObject(), options.defaults ?? {}, fileStore);
 			try {
 				assert.deepEqual(fileStore, storeWithDefaults);
 			} catch {
 				this._write(storeWithDefaults);
+			}
+
+			if (isNewStore) {
+				this._set(MIGRATION_KEY, projectVersion);
+				return;
 			}
 
 			this._migrate(migrations, projectVersion, options.beforeEachMigration);

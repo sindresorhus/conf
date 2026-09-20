@@ -157,6 +157,8 @@ export type Options<T extends Record<string, unknown>> = {
 
 	The store keeps its migration bookkeeping in the config file under a reserved `__internal__` key. It is not exposed through `.store`, `.get()`, `.has()` or iteration.
 
+	Migrations do not run for a config file that does not exist yet. There is no old data to migrate, so the store starts at the current project version. A config file that exists but has no recorded version is still migrated, which covers an app that shipped before it had migrations.
+
 	Note: The version the migrations use refers to the __project version__ by default. If you want to change this behavior, specify the `projectVersion` option.
 
 	@example

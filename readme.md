@@ -189,6 +189,8 @@ The `migrations` object should consist of a key-value pair of `'version': handle
 
 The store keeps its migration bookkeeping in the config file under a reserved `__internal__` key. It is not exposed through `.store`, `.get()`, `.has()` or iteration.
 
+Migrations do not run for a config file that does not exist yet. There is no old data to migrate, so the store starts at the current project version. A config file that exists but has no recorded version is still migrated, which covers an app that shipped before it had migrations.
+
 Example:
 
 ```js

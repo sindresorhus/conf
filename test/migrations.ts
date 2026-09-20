@@ -16,6 +16,7 @@ import {
 	invalidDataScenarios,
 	createTempDirectory,
 	createNullProtoObject,
+	createExistingConfig,
 	getMigrationVersion,
 } from './_utilities.js';
 
@@ -184,6 +185,7 @@ describe('Migrations', () => {
 		it('migrations - should save the project version as the initial migrated version', () => {
 			const cwd = createTempDirectory();
 
+			// The store does not exist yet, so there is nothing to migrate and it starts at the current project version.
 			const conf = new Conf({
 				cwd,
 				projectVersion: '2.0.0',
@@ -194,12 +196,58 @@ describe('Migrations', () => {
 				},
 			});
 
-			assert.strictEqual(conf.get('foo'), 'bar');
+			assert.strictEqual(conf.get('foo'), undefined);
+			assert.strictEqual(getMigrationVersion(conf), '2.0.0');
+		});
+
+		it('migrations - should not run migrations for a store that does not exist yet', () => {
+			const cwd = createTempDirectory();
+			const ran: string[] = [];
+
+			const conf = new Conf({
+				cwd,
+				projectVersion: '2.0.0',
+				defaults: {fromDefaults: true},
+				migrations: {
+					'1.0.0'() {
+						ran.push('1.0.0');
+					},
+					'>=2.0.0'() {
+						ran.push('>=2.0.0');
+					},
+				},
+			});
+
+			// There is no old data, so nothing may run against the new defaults.
+			assert.deepStrictEqual(ran, []);
+			assert.strictEqual(conf.get('fromDefaults'), true);
+			assert.strictEqual(getMigrationVersion(conf), '2.0.0');
+		});
+
+		it('migrations - should run migrations for a store that exists without a recorded version', () => {
+			const cwd = createTempDirectory();
+
+			// An app that shipped before it had migrations leaves a config file without a version.
+			createExistingConfig(cwd, {legacy: 'value'});
+
+			const conf = new Conf({
+				cwd,
+				projectVersion: '2.0.0',
+				migrations: {
+					'2.0.0'(store) {
+						store.set('migrated', true);
+					},
+				},
+			});
+
+			assert.strictEqual(conf.get('migrated'), true);
+			assert.strictEqual(conf.get('legacy'), 'value');
 			assert.strictEqual(getMigrationVersion(conf), '2.0.0');
 		});
 
 		it('migrations - should save the project version when a migration occurs', () => {
 			const cwd = createTempDirectory();
+			createExistingConfig(cwd);
 
 			let conf = new Conf({
 				cwd,
@@ -236,6 +284,7 @@ describe('Migrations', () => {
 
 		it('migrations - should NOT run the migration when the version does not change', () => {
 			const cwd = createTempDirectory();
+			createExistingConfig(cwd);
 
 			let conf = new Conf({
 				cwd,
@@ -264,6 +313,7 @@ describe('Migrations', () => {
 
 		it('migrations - should cleanup migrations with range conditions', () => {
 			const cwd = createTempDirectory();
+			createExistingConfig(cwd);
 
 			let conf = new Conf({
 				cwd,
@@ -297,6 +347,7 @@ describe('Migrations', () => {
 
 		it('migrations - should cleanup migrations with non-numeric values', () => {
 			const cwd = createTempDirectory();
+			createExistingConfig(cwd);
 
 			let conf = new Conf({
 				cwd,
@@ -381,6 +432,8 @@ describe('Migrations', () => {
 
 		it('migrations - should not record a range version when a later migration fails', () => {
 			const cwd = createTempDirectory();
+			createExistingConfig(cwd);
+
 			const migrations = {
 				'>=1.0.0'(store: Conf) {
 					store.set('rangeMigrationRan', true);
@@ -425,8 +478,11 @@ describe('Migrations', () => {
 		});
 
 		it('migrations - should not expose the internal key', () => {
+			const cwd = createTempDirectory();
+			createExistingConfig(cwd);
+
 			const store = new Conf({
-				cwd: createTempDirectory(),
+				cwd,
 				projectVersion: '1.0.0',
 				migrations: {
 					'1.0.0'(store) {
@@ -808,7 +864,7 @@ describe('Migrations', () => {
 				fs.chmodSync(configPath, 0o644); // Restore write permission
 			}
 
-			// Test missing directory recovery
+			// Test missing directory recovery. The store does not exist, so no migration runs, but it still has to be created and be usable.
 			fs.rmSync(cwd, {recursive: true, force: true});
 
 			const conf3 = new Conf({
@@ -821,7 +877,10 @@ describe('Migrations', () => {
 				},
 			});
 
-			assert.ok(conf3.get('recovered'), 'Should recover from missing directory');
+			assert.strictEqual(getMigrationVersion(conf3), '2.0.0', 'Should recover from missing directory');
+
+			conf3.set('recovered', true);
+			assert.ok(conf3.get('recovered'), 'Should be usable after recovering from a missing directory');
 		});
 
 		it('migrations - version normalization edge cases', () => {

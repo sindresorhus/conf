@@ -43,6 +43,13 @@ export type MigrationTestOptions = {
 };
 
 /**
+Creates the config file, so the store is treated as one that already exists. A store that does not exist yet skips its migrations.
+*/
+export const createExistingConfig = (cwd: string, data: Record<string, unknown> = {}, fileName = 'config.json'): void => {
+	fs.writeFileSync(path.join(cwd, fileName), JSON.stringify(data, null, '\t'));
+};
+
+/**
 Creates a temporary Conf instance with migrations for testing.
 */
 export function createMigrationTest(options: MigrationTestOptions): {
@@ -61,11 +68,14 @@ export function createMigrationTest(options: MigrationTestOptions): {
 	const fileName = `${options.configName ?? 'config'}${extensionSuffix}`;
 	const configPath = path.join(cwd, fileName);
 
-	// Write initial data if provided
 	if (options.initialData) {
-		fs.writeFileSync(configPath, JSON.stringify(options.initialData, null, '\t'));
-		fs.statSync(configPath);
+		createExistingConfig(cwd, options.initialData, fileName);
+	} else if (!fs.existsSync(configPath)) {
+		// A migration test is always about a store that already exists, and a store that does not exist yet skips its migrations. A file the test already wrote is left alone.
+		createExistingConfig(cwd, {}, fileName);
 	}
+
+	fs.statSync(configPath);
 
 	const confOptions: Record<string, unknown> = {
 		cwd,
@@ -204,9 +214,11 @@ export function createVersionTest(versions: string[]): Record<string, (store: Co
 }
 
 /**
-Reads the migration version from the config file. The version is kept under the key this module reserves for itself, which is deliberately not exposed through the public API.
+Reads the migration version from the config file. The version is kept under the key this module reserves for itself, which is deliberately not exposed through the public API, so it has to be read from the file.
+
+This reads the file as plaintext JSON, so it cannot be used with a store that has the `encryptionKey` or `serialize` option set.
 */
-export const getMigrationVersion = (conf: Conf): string | undefined => {
+export const getMigrationVersion = <T extends Record<string, any>>(conf: Conf<T>): string | undefined => {
 	const data = JSON.parse(fs.readFileSync(conf.path, 'utf8')) as {
 		__internal__?: {migrations?: {version?: unknown}};
 	};
