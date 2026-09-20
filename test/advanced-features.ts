@@ -224,6 +224,42 @@ describe('Advanced Features', () => {
 		conf._closeWatcher();
 		writer._closeWatcher();
 	});
+
+	it('`rootSchema` accepts root keywords without root `properties`', () => {
+		const conf = new Conf({
+			cwd: createTempDirectory(),
+			rootSchema: {
+				patternProperties: {
+					'^.*$': {
+						type: 'object',
+						properties: {
+							schedule: {type: 'string'},
+							start: {type: 'boolean', default: true},
+						},
+					},
+				},
+			},
+		});
+
+		conf.set('task', {schedule: 'daily'});
+		assert.deepStrictEqual(conf.get('task'), {schedule: 'daily', start: true});
+
+		assert.throws(() => {
+			conf.set('task', {schedule: 1});
+		}, {message: 'Config schema violation: `task/schedule` must be string'});
+	});
+
+	it('`rootSchema` throws when it has a `properties` key', () => {
+		assert.throws(() => {
+			// eslint-disable-next-line no-new
+			new Conf({
+				cwd: createTempDirectory(),
+				rootSchema: {
+					properties: {foo: {type: 'string'}},
+				},
+			});
+		}, {message: 'The `rootSchema` option must not contain a `properties` key. Use the `schema` option for properties.'});
+	});
 });
 
 describe('cache option', () => {

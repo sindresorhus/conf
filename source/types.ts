@@ -54,7 +54,9 @@ export type Options<T extends Record<string, unknown>> = {
 	schema?: Schema<T>;
 
 	/**
-	Top-level properties for the schema, excluding `properties` field.
+	Root-level [JSON Schema keywords](https://json-schema.org/understanding-json-schema/reference) for the schema, such as `additionalProperties` or `patternProperties`. This is useful when you do not know the key names in advance.
+
+	The `properties` keyword comes from the `schema` option. Do not put `properties` in `rootSchema`, as it will throw.
 
 	@example
 	```
@@ -65,6 +67,25 @@ export type Options<T extends Record<string, unknown>> = {
 		schema: {},
 		rootSchema: {
 			additionalProperties: false
+		}
+	});
+	```
+
+	@example
+	```
+	import Conf from 'conf';
+
+	const store = new Conf({
+		projectName: 'foo',
+		rootSchema: {
+			patternProperties: {
+				'^.*$': {
+					type: 'object',
+					properties: {
+						schedule: {type: 'string'}
+					}
+				}
+			}
 		}
 	});
 	```

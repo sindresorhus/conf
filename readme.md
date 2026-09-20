@@ -111,7 +111,9 @@ config.set('foo', '1');
 
 Type: `object`
 
-Top-level properties for the schema, excluding `properties` field.
+Root-level [JSON Schema keywords](https://json-schema.org/understanding-json-schema/reference) for the schema, such as `additionalProperties` or `patternProperties`.
+
+The `properties` keyword comes from the `schema` option. Do not put `properties` in `rootSchema`, as it will throw.
 
 Example:
 
@@ -123,6 +125,26 @@ const store = new Conf({
 	schema: { /* … */ },
 	rootSchema: {
 		additionalProperties: false
+	}
+});
+```
+
+Example with `patternProperties`, for when you do not know the key names in advance:
+
+```js
+import Conf from 'conf';
+
+const store = new Conf({
+	projectName: 'foo',
+	rootSchema: {
+		patternProperties: {
+			'^.*$': {
+				type: 'object',
+				properties: {
+					schedule: {type: 'string'}
+				}
+			}
+		}
 	}
 });
 ```

@@ -859,6 +859,11 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 			throw new TypeError('The `schema` option must be an object.');
 		}
 
+		// The `properties` keyword belongs to the `schema` option. The type already excludes it from `rootSchema`, but JavaScript callers can still pass it, and it would be dropped without a word.
+		if (options.rootSchema && 'properties' in options.rootSchema) {
+			throw new TypeError('The `rootSchema` option must not contain a `properties` key. Use the `schema` option for properties.');
+		}
+
 		// Workaround for https://github.com/ajv-validator/ajv/issues/2047
 		const ajvFormats = ajvFormatsModule.default;
 
