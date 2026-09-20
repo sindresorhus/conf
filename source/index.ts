@@ -236,10 +236,17 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 
 	@param keys - The keys of the items to reset.
 	*/
-	reset<Key extends keyof T>(...keys: Key[]): void {
+	reset<Key extends keyof T>(...keys: Key[]): void;
+	reset<Key extends DotNotationKeyOf<T>>(...keys: Key[]): void;
+	reset(...keys: string[]): void {
 		for (const key of keys) {
-			if (isExist(this.#defaultValues[key])) {
-				this.set(key, this.#defaultValues[key]);
+			// The defaults are stored as a flat object, so a dot-notation key has to be resolved to reach a nested default.
+			const defaultValue = this.#options.accessPropertiesByDotNotation
+				? getProperty(this.#defaultValues, key)
+				: this.#defaultValues[key as keyof T];
+
+			if (isExist(defaultValue)) {
+				this.set(key, defaultValue);
 			}
 		}
 	}

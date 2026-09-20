@@ -381,6 +381,34 @@ describe('Conf', () => {
 		assert.strictEqual(store.get('bar'), 99);
 	});
 
+	it('.reset() - dot notation', () => {
+		const store = new Conf({
+			cwd: createTempDirectory(),
+			defaults: {
+				options: {
+					items: [1, 2],
+					nested: {
+						value: 'default',
+					},
+				},
+			},
+		});
+
+		store.set('options.items', [9, 9]);
+		store.set('options.nested.value', 'changed');
+
+		store.reset('options.items', 'options.nested.value');
+
+		assert.deepStrictEqual(store.get('options.items'), [1, 2]);
+		assert.strictEqual(store.get('options.nested.value'), 'default');
+
+		// A nested key with no default is left alone.
+		store.set('options.other', 'kept');
+		// @ts-expect-error - `options.other` is added at runtime, so it is not part of the inferred type
+		store.reset('options.other');
+		assert.strictEqual(store.get('options.other'), 'kept');
+	});
+
 	it('.reset() - falsy `defaults` option', () => {
 		const defaultsValue: {
 			foo: number;
