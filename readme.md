@@ -107,6 +107,29 @@ config.set('foo', '1');
 > [!NOTE]
 > The `default` value will be overwritten by the `defaults` option if set.
 
+To have `get()` return the right types, annotate the schema with `Schema<T>`:
+
+```ts
+import Conf, {type Schema} from 'conf';
+
+type Store = {
+	isEnabled: boolean;
+	interval: number;
+};
+
+const schema: Schema<Store> = {
+	isEnabled: {type: 'boolean'},
+	interval: {type: 'number'}
+};
+
+const config = new Conf({projectName: 'foo', schema});
+
+console.log(config.get('isEnabled'));
+//=> typed as boolean
+```
+
+Without the annotation, TypeScript cannot tell the value types from the schema, so `get()` returns `unknown`. If you also pass `defaults`, the schema still wins the inference, so a key that is only in `defaults` is an error.
+
 #### rootSchema
 
 Type: `object`
