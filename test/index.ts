@@ -143,6 +143,29 @@ describe('Conf', () => {
 		assert.strictEqual(store.get('nested.bar'), 55);
 	});
 
+	it('.get() - invalid key', () => {
+		config.set('foo', fixture);
+
+		assert.throws(() => {
+			// For our tests to fail and TypeScript to compile, we'll ignore this TS error.
+			// @ts-expect-error
+			config.get(undefined);
+		}, {message: 'Expected `key` to be of type `string`, got undefined'});
+
+		assert.throws(() => {
+			// @ts-expect-error
+			config.get(null);
+		}, {message: 'Expected `key` to be of type `string`, got object'});
+
+		assert.throws(() => {
+			// @ts-expect-error
+			config.get(1);
+		}, {message: 'Expected `key` to be of type `string`, got number'});
+
+		// The store is unchanged.
+		assert.strictEqual(config.get('foo'), fixture);
+	});
+
 	it('.set()', () => {
 		config.set('foo', fixture);
 		config.set('baz.boo', fixture);

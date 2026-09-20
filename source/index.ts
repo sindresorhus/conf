@@ -117,6 +117,10 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 	// We exclude `keyof T` and `DotNotationKeyOf<T>` as an incorrect type for the default value should not fall through to this overload.
 	get<Key extends string, Value = unknown>(key: Exclude<Key, DotNotationKeyOf<T>>, defaultValue?: Value): Value;
 	get(key: string, defaultValue?: unknown): unknown {
+		if (typeof key !== 'string') {
+			throw new TypeError(`Expected \`key\` to be of type \`string\`, got ${typeof key}`);
+		}
+
 		if (this.#options.accessPropertiesByDotNotation) {
 			return this._get(key, defaultValue);
 		}
