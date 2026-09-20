@@ -203,19 +203,14 @@ export function createVersionTest(versions: string[]): Record<string, (store: Co
 	return migrations;
 }
 
+/**
+Reads the migration version from the config file. The version is kept under the key this module reserves for itself, which is deliberately not exposed through the public API.
+*/
 export const getMigrationVersion = (conf: Conf): string | undefined => {
-	const direct = conf.get('__internal__.migrations.version') as string | undefined;
-	if (direct !== undefined) {
-		return direct;
-	}
-
-	const internal = conf.get('__internal__') as Record<string, unknown> | undefined;
-	if (!internal || typeof internal !== 'object') {
-		return undefined;
-	}
-
-	const migrations = internal.migrations as Record<string, unknown> | undefined;
-	const version = migrations?.version;
+	const data = JSON.parse(fs.readFileSync(conf.path, 'utf8')) as {
+		__internal__?: {migrations?: {version?: unknown}};
+	};
+	const version = data.__internal__?.migrations?.version;
 	return typeof version === 'string' ? version : undefined;
 };
 

@@ -187,6 +187,8 @@ You can use migrations to perform operations to the store whenever a **project v
 
 The `migrations` object should consist of a key-value pair of `'version': handler`. The `version` can also be a [semver range](https://github.com/npm/node-semver#ranges).
 
+The store keeps its migration bookkeeping in the config file under a reserved `__internal__` key. It is not exposed through `.store`, `.get()`, `.has()` or iteration.
+
 Example:
 
 ```js

@@ -360,8 +360,7 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 	Get the item count.
 	*/
 	get size(): number {
-		const entries = Object.keys(this.store);
-		return entries.filter(key => !this._isReservedKeyPath(key)).length;
+		return Object.keys(this.store).length;
 	}
 
 	/**
@@ -382,10 +381,10 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 	*/
 	get store(): T {
 		if (!this.#options.cache) {
-			return this._readStore();
+			return this._readUserStore();
 		}
 
-		this.#cachedStore ??= this._readStore();
+		this.#cachedStore ??= this._readUserStore();
 		return this.#cachedStore;
 	}
 
@@ -400,6 +399,8 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 				const dataString = this._decryptData(data);
 				const currentStore = this._deserialize(dataString);
 				if (hasProperty(currentStore, INTERNAL_KEY)) {
+					// Copy first. The caller's object must not be changed, and it may be the same object the `store` getter handed out, which must never contain the internal key.
+					value = Object.assign(createPlainObject(), value);
 					setProperty(value, INTERNAL_KEY, getProperty(currentStore, INTERNAL_KEY));
 				}
 			} catch {
@@ -419,9 +420,7 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 
 	* [Symbol.iterator](): IterableIterator<[keyof T, T[keyof T]]> {
 		for (const [key, value] of Object.entries(this.store)) {
-			if (!this._isReservedKeyPath(key)) {
-				yield [key, value];
-			}
+			yield [key, value];
 		}
 	}
 
@@ -477,6 +476,22 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 
 			throw error;
 		}
+	}
+
+	/**
+	The store as the user sees it. The keys this module keeps for its own bookkeeping are removed, so they never reach the public API.
+	*/
+	private _readUserStore(): T {
+		const store = this._readStore();
+
+		for (const key of Object.keys(store)) {
+			if (this._isReservedKeyPath(key)) {
+				// eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+				delete (store as Record<string, unknown>)[key];
+			}
+		}
+
+		return store;
 	}
 
 	private _decryptData(data: string | Uint8Array): string {
@@ -703,8 +718,9 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 	}
 
 	private _migrate(migrations: Migrations<T>, versionToMigrate: string, beforeEachMigration?: BeforeEachMigrationCallback<T>): void {
+		// Read the version straight from the file, since `_readUserStore()` removes the key it is stored under.
 		// An earlier version could leave a range in the file when a migration failed partway through. A range cannot be compared as a version, so treat it as unknown and let the migrations run again.
-		const storedVersion = this._get(MIGRATION_KEY, '0.0.0');
+		const storedVersion = getProperty(this._readStore(), MIGRATION_KEY, '0.0.0');
 		let previousMigratedVersion = this._isVersionInRangeFormat(storedVersion) ? '0.0.0' : storedVersion;
 
 		const newerVersions = Object.keys(migrations)
@@ -933,7 +949,7 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 			return;
 		}
 
-		const fileStore = this.store;
+		const fileStore = this._readStore();
 		const storeWithDefaults = Object.assign(createPlainObject(), options.defaults ?? {}, fileStore);
 		this._validate(storeWithDefaults);
 		try {
@@ -955,7 +971,7 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 
 		this.#isInMigration = true;
 		try {
-			const fileStore = this.store;
+			const fileStore = this._readStore();
 			const storeWithDefaults = Object.assign(createPlainObject(), options.defaults ?? {}, fileStore);
 			try {
 				assert.deepEqual(fileStore, storeWithDefaults);

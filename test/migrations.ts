@@ -15,6 +15,7 @@ import {
 	assertions,
 	invalidDataScenarios,
 	createTempDirectory,
+	createNullProtoObject,
 	getMigrationVersion,
 } from './_utilities.js';
 
@@ -423,6 +424,27 @@ describe('Migrations', () => {
 			assert.strictEqual(getMigrationVersion(conf), '2.0.0');
 		});
 
+		it('migrations - should not expose the internal key', () => {
+			const store = new Conf({
+				cwd: createTempDirectory(),
+				projectVersion: '1.0.0',
+				migrations: {
+					'1.0.0'(store) {
+						store.set('foo', 'bar');
+					},
+				},
+			});
+
+			assert.deepStrictEqual(store.store, createNullProtoObject({foo: 'bar'}));
+			assert.strictEqual(store.get('__internal__'), undefined);
+			assert.strictEqual(store.has('__internal__'), false);
+			assert.strictEqual(store.size, 1);
+			assert.deepStrictEqual([...store], [['foo', 'bar']]);
+
+			// The version is still persisted.
+			assert.strictEqual(getMigrationVersion(store), '1.0.0');
+		});
+
 		it('migrations - should preserve internal data when store is overwritten', () => {
 			const cwd = createTempDirectory();
 
@@ -443,8 +465,7 @@ describe('Migrations', () => {
 			conf1.store = {newData: 'test'};
 
 			// Verify internal data was preserved
-			const internal = conf1.get('__internal__') as any;
-			assert.strictEqual(internal.migrations.version, '1.0.0');
+			assert.strictEqual(getMigrationVersion(conf1), '1.0.0');
 		});
 
 		it('migrations - should preserve internal data when store is set to empty object', () => {
@@ -466,8 +487,7 @@ describe('Migrations', () => {
 			conf.store = {};
 
 			// Verify internal data was preserved
-			const internal = conf.get('__internal__') as any;
-			assert.strictEqual(internal.migrations.version, '1.0.0');
+			assert.strictEqual(getMigrationVersion(conf), '1.0.0');
 		});
 
 		it('migrations - should preserve internal data without dot notation access', () => {
@@ -488,8 +508,7 @@ describe('Migrations', () => {
 			conf.store = {newData: 'test'};
 
 			// Verify internal data was preserved
-			const internal2 = conf.get('__internal__') as any;
-			assert.strictEqual(internal2.migrations.version, '1.0.0');
+			assert.strictEqual(getMigrationVersion(conf), '1.0.0');
 		});
 	});
 

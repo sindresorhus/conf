@@ -696,6 +696,32 @@ describe('cache option', () => {
 		assert.deepStrictEqual(readConfigFile(conf.path), {foo: 'bar'});
 	});
 
+	it('does not leak the internal key to the object it was given when an assignment fails', () => {
+		const conf = new Conf({
+			cwd: createTempDirectory(),
+			cache: true,
+			projectVersion: '1.0.0',
+			schema: {a: {type: 'number', default: 1}},
+			migrations: {
+				'1.0.0'() {
+					// Only here so the config has an internal key.
+				},
+			},
+		});
+
+		// The setter used to add the internal key to the object it was given. With `cache`, that object is the cached one the `store` getter hands out, so the key ended up on every read surface.
+		const handedBack = conf.store;
+		handedBack.a = 'not-a-number';
+
+		assert.throws(() => {
+			conf.store = handedBack;
+		}, {message: 'Config schema violation: `a` must be number'});
+
+		assert.deepStrictEqual(Object.keys(conf.store), ['a']);
+		assert.strictEqual(conf.size, 1);
+		assert.deepStrictEqual([...conf], [['a', 'not-a-number']]);
+	});
+
 	it('drops the cache when `watch` sees a change', async () => {
 		if (process.env.CI) {
 			// Skip file watcher tests in CI - file system events may not work reliably
