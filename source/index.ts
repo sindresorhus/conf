@@ -671,7 +671,9 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 	}
 
 	private _migrate(migrations: Migrations<T>, versionToMigrate: string, beforeEachMigration?: BeforeEachMigrationCallback<T>): void {
-		let previousMigratedVersion = this._get(MIGRATION_KEY, '0.0.0');
+		// An earlier version could leave a range in the file when a migration failed partway through. A range cannot be compared as a version, so treat it as unknown and let the migrations run again.
+		const storedVersion = this._get(MIGRATION_KEY, '0.0.0');
+		let previousMigratedVersion = this._isVersionInRangeFormat(storedVersion) ? '0.0.0' : storedVersion;
 
 		const newerVersions = Object.keys(migrations)
 			.filter(candidateVersion => this._shouldPerformMigration(candidateVersion, previousMigratedVersion, versionToMigrate));
@@ -692,7 +694,10 @@ export default class Conf<T extends Record<string, any> = Record<string, unknown
 				const migration = migrations[version];
 				migration?.(this);
 
-				this._set(MIGRATION_KEY, version);
+				// A range is not a concrete version, so recording it would leave a value behind that nothing can compare against.
+				if (!this._isVersionInRangeFormat(version)) {
+					this._set(MIGRATION_KEY, version);
+				}
 
 				previousMigratedVersion = version;
 				storeBackup = structuredClone(this.store);

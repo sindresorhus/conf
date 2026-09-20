@@ -378,6 +378,51 @@ describe('Migrations', () => {
 			assert.strictEqual(getMigrationVersion(conf2), '1.5.0'); // Version should reflect last successful migration
 		});
 
+		it('migrations - should not record a range version when a later migration fails', () => {
+			const cwd = createTempDirectory();
+			const migrations = {
+				'>=1.0.0'(store: Conf) {
+					store.set('rangeMigrationRan', true);
+				},
+				'1.5.0'() {
+					throw new Error('a later migration failed');
+				},
+			};
+
+			assert.throws(() => {
+				new Conf({cwd, projectVersion: '2.0.0', migrations});
+			}, /a later migration failed/);
+
+			// Recording `>=1.0.0` would make every later construction throw `Invalid Version`, because a range cannot be compared as a version.
+			assert.throws(() => {
+				new Conf({cwd, projectVersion: '2.0.0', migrations});
+			}, /a later migration failed/);
+
+			assert.strictEqual(getMigrationVersion(new Conf({cwd, projectVersion: '2.0.0'})), undefined);
+		});
+
+		it('migrations - should recover when the file holds a range version from an earlier failure', () => {
+			const cwd = createTempDirectory();
+			fs.writeFileSync(
+				path.join(cwd, 'config.json'),
+				JSON.stringify({__internal__: {migrations: {version: '>=1.0.0'}}}),
+			);
+
+			// This used to throw `Invalid Version: >=1.0.0`, leaving the store impossible to open.
+			const conf = new Conf({
+				cwd,
+				projectVersion: '2.0.0',
+				migrations: {
+					'1.5.0'(store) {
+						store.set('migrated', true);
+					},
+				},
+			});
+
+			assert.strictEqual(conf.get('migrated'), true);
+			assert.strictEqual(getMigrationVersion(conf), '2.0.0');
+		});
+
 		it('migrations - should preserve internal data when store is overwritten', () => {
 			const cwd = createTempDirectory();
 
